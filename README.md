@@ -1,5 +1,7 @@
 # **🎰 LIMINAL SIN**
 
+** Note: This project is a work of fiction. It is designed as a psychological horror experience and is not intended to depict real events or people. All characters, locations, and scenarios are entirely fictional and created for the purpose of storytelling. The project adheres to strict content guidelines to ensure a safe and respectful experience for all players.  Also This project does not Sponsor or Endorse any real-world entities, products, or services. This includes, but is not limited to, the Boring Company, Las Vegas casinos, or any real individuals named Jason, Audrey, or Josh. The use of these names and concepts is purely coincidental and serves the narrative of the game.
+
 **"The House Always Wins. Even in the Unreality."**
 
 A first-person, multi-agent FMV psychological horror experience built for the **Gemini Live Agent Challenge**. Developed by **Mycelia Interactive**.

@@ -5,5 +5,4 @@ out
 *.log
 .DS_Store
 /assets/screen-records/*.mp4
-/assets/references/*.jpg
-/assets/screenshots/*.png
+

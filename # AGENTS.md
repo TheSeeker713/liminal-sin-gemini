@@ -1,4 +1,20 @@
-# AGENTS.md
+# AGENTS.md: Core Multi-Agent Architecture & Rules
+
+## 1. System Architecture: The "Liminal Sin" Engine
+This project utilizes a multi-agent system powered by Gemini to create an interactive, voice-driven FMV psychological horror experience. 
+* **The Game Master (Overseer):** Controls the world state, tracks global variables (like Trust Levels), escalates dread, and triggers FMV sequence warping or visual glitches.
+* **The NPCs (The Lost):** Individual agents relying purely on player voice input. They are emotional but rational enough to follow (or reject) instructions based on their Trust level. 
+
+## 2. The Trust System Core Mechanic
+Trust is the primary variable dictating NPC behavior. It must be tracked and updated by the Game Master based on player actions and speech.
+* **Neutral (Default):** NPCs are cautious but willing to listen. They provide basic information but withhold critical survival secrets. 
+* **High Trust (Earned):** Achieved through honesty and reliable guidance. NPCs become compliant, easier to direct through the liminal spaces, and offer helpful environmental clues.
+* **Low Trust (Deceived):** Triggered if the player lies or leads them into traps. NPCs become unpredictable, may actively disobey commands, hide information, or succumb to paranoia. 
+
+## 3. Safety Permissions & Execution Rules
+* **Strict Adherence:** AI coding assistants must NEVER alter the core Game Master Trust logic without explicit developer confirmation.
+* **API Usage:** Do not hardcode API keys. Always rely on environment variables.
+* **Tone:** Maintain the dark, surreal, and tense tone of the Vegas Underground in all generated UI text and agent prompts.
 
 ### Do
 - default to small components. prefer focused modules over god components
@@ -26,7 +42,6 @@ Allowed without prompt:
 
 Ask first: 
 - package installs
-- git push
 - deleting files, chmod
 - running full build or end-to-end suites
 - any change touching more than one file or module
