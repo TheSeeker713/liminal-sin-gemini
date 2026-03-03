@@ -179,3 +179,178 @@ This section describes how the current repository is intended to move from conce
 * `npm run lint` → lint and code-quality checks  
 * `npm run build` → production build  
 * `npm run start` → serve production build
+
+## **🧪 Installation & Repository Bootstrap (Contest Required)**
+
+This section is the canonical startup path judges and collaborators should follow for local verification.
+
+### **1) Clone the Repository**
+
+```bash
+git clone https://github.com/<your-org-or-user>/liminal-sin-gemini.git
+cd liminal-sin-gemini
+```
+
+### **2) Install Dependencies**
+
+```bash
+npm install
+```
+
+### **3) Create Environment File**
+
+Create `.env.local` at repo root. Never commit this file.
+
+```bash
+cp .env.example .env.local
+```
+
+If `.env.example` is not present yet, create `.env.local` manually with the following minimum keys:
+
+```bash
+GEMINI_API_KEY=
+GOOGLE_CLOUD_PROJECT=myceliainteractive
+GOOGLE_CLOUD_REGION=us-west1
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+```
+
+### **4) Run Local Development**
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000` in Chrome/Edge and allow mic + webcam permissions for full multimodal behavior.
+
+### **5) Local Quality Checks**
+
+```bash
+npm run lint
+npm run build
+```
+
+---
+
+## **☁️ Cloud System Setup (Most Critical Section)**
+
+The contest entry depends on proving an end-to-end live architecture. This playbook is the required implementation strategy.
+
+### **A. Provision Google Cloud Foundation**
+
+1. Create or select project ID: `myceliainteractive`.
+2. Attach billing / hackathon credits.
+3. Set default region (recommended): `us-west1` (or nearest low-latency region).
+4. Enable APIs:
+  - Vertex AI API
+  - Cloud Run Admin API
+  - Firestore API
+  - Cloud Build API
+  - Secret Manager API
+  - Cloud Storage API
+
+### **B. Configure IAM & Secrets**
+
+1. Create service accounts:
+  - `liminal-runtime-sa` (Cloud Run runtime)
+  - `liminal-deploy-sa` (build/deploy automation)
+2. Grant least-privilege roles for Firestore read/write, Secret Manager access, and Storage read.
+3. Store sensitive values in Secret Manager (not source code):
+  - `GEMINI_API_KEY`
+  - Firebase private config (if server-side)
+  - Any Cloudflare/API tokens
+4. Mount secrets into Cloud Run runtime via environment secret bindings.
+
+### **C. Firestore State Model (Authoritative Runtime Memory)**
+
+Create a `sessions/{sessionId}` document with shape aligned to gameplay logic:
+
+```json
+{
+  "player_emotion": "calm",
+  "player_tone": "steady",
+  "player_whisper": false,
+  "fourth_wall_count": 0,
+  "reality_fractured": false,
+  "scene_key": "jason_entry_loop",
+  "slotsky_trigger": null,
+  "characters": {
+   "jason": { "trust_level": 0.1, "fear_index": 0.3, "proximity_state": "FOUND" },
+   "audrey": { "trust_level": 0.3, "fear_index": 0.4, "proximity_state": "ECHO" },
+   "josh": { "trust_level": 0.2, "fear_index": 0.5, "proximity_state": "ECHO" }
+  }
+}
+```
+
+Use atomic updates/transactions when modifying trust, fear, and scene transitions in the same turn.
+
+### **D. Cloud Run Orchestration Service (GameMaster Gateway)**
+
+Implement a single gateway service with these responsibilities:
+
+1. Receive client audio/video events over WebSocket/WebRTC-bridge.
+2. Forward multimodal payloads to Gemini Live sessions.
+3. Run GameMaster turn logic first:
+  - classify player emotional state
+  - increment fourth-wall counters when needed
+  - route speech by `proximity_state`
+4. Fan out to character-agent prompts (Jason/Audrey/Josh).
+5. Persist updated Firestore state.
+6. Return:
+  - generated speech payload metadata
+  - `scene_key`
+  - `slotsky_trigger`
+  - fallback flags when media is late/missing
+
+### **E. Media Delivery & Fallback Strategy**
+
+1. Store FMV clips in Cloud Storage (organized by `scene_key`).
+2. Cache static clip retrieval at edge where possible to cut latency.
+3. If requested clip is unavailable:
+  - set `fmv_fallback_active: true`
+  - play neutral loop clip
+  - continue live dialogue while background generation/selection resolves
+
+### **F. Deployment Steps**
+
+1. Build container image.
+2. Deploy Cloud Run service with `liminal-runtime-sa`.
+3. Inject Secret Manager values.
+4. Confirm service connectivity to Firestore and Storage.
+5. Validate live route from frontend to gateway.
+
+Example deployment command (adapt image name):
+
+```bash
+gcloud run deploy liminal-gateway \
+  --image gcr.io/myceliainteractive/liminal-gateway:latest \
+  --region us-west1 \
+  --platform managed \
+  --allow-unauthenticated \
+  --service-account liminal-runtime-sa@myceliainteractive.iam.gserviceaccount.com
+```
+
+### **G. Observability & Contest Proof Checklist**
+
+Capture the following for submission evidence:
+
+1. Cloud Run service URL + running revision screenshot.
+2. Firestore state updates in real time during voice interaction.
+3. Architecture diagram: Client → Cloud Run Gateway → Gemini Live + Firestore + Cloud Storage.
+4. 4-minute max live demo showing:
+  - barge-in interruption
+  - trust/fear state mutation
+  - scene transition using `scene_key`
+  - at least one Slotsky anomaly event
+
+---
+
+## **📌 Operational Notes**
+
+- Keep prompts and canon logic synchronized with `docs/Characters.md`, `docs/Gamemaster.md`, `docs/Tunnel-and-park.md`, and `docs/WORLD_BIBLE.md`.
+- Do not hardcode API keys.
+- If latency exceeds immersion target (~2.0s), prioritize fallback loops + shorter turn windows before adding complexity.
