@@ -60,3 +60,9 @@ Ask first:
 ### Memory hierarchy
 - ALWAYS read this file + docs/ai/* + docs/cloud/* + docs/architecture.md first
 - If context missing, say “Re-reading memory hierarchy…” and ask
+
+### Strict Execution & Modification Rules
+1. **Never Overwrite for "Elegance"**: NEVER overwrite or replace existing code simply to make it "better", "cleaner", or more "elegant". Only modify the exact lines necessary to achieve the current specific objective.
+2. **Append-First Mentality**: When adding features, default to appending new functions or creating new files rather than mutating existing functional logic.
+3. **Micro-Stepping**: ALWAYS execute tasks in the smallest possible increments. Never write a massive block of code spanning multiple concerns.
+4. **No Unprompted Refactoring**: Do not refactor code unless explicitly commanded by the user. If functional code works, leave it alone.
