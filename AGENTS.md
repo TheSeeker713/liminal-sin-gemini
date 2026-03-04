@@ -55,6 +55,7 @@
 - Do **NOT** add new heavy dependencies without explicit approval.
 - Do **NOT** refactor code unless explicitly commanded. If it works, leave it alone.
 - Maintain the dark, surreal, and tense tone of the Vegas Underground in all generated UI text and agent prompts.
+- **Hallucination / context-loss recovery** — If at any point you are about to overwrite existing code (due to loss of context, hallucination, or uncertainty), **do NOT delete the original**. Instead, comment it out in-place and add a brief inline explanation (e.g. `// [AI: replaced because X — original preserved below for user review]`). This ensures no working logic is silently lost and the user can always restore it.
 
 ---
 
@@ -135,46 +136,3 @@ git push origin main
 - [ ] Lint, type-check, and tests pass on modified files only
 
 ---
----
-
-<!-- ================================================================
-  ⚠️  UNVERIFIED DATA — USER REVIEW REQUIRED
-  The entries below were found in a merged copy of this file.
-  They may belong to a different project template or an earlier draft.
-  AI agents must IGNORE everything in this block until the user
-  explicitly reviews and either confirms, integrates, or removes it.
-================================================================ -->
-
-<!--
-
-CONFLICT 1 — Build command mismatch
-  Found: `yarn build:app`
-  Confirmed project command: `npm run build`
-  These conflict. User must confirm which is authoritative.
-
-CONFLICT 2 — Project structure paths do not match this repository
-  Found references to:
-    - frontend in /apps/web (Next.js / v0-generated)
-    - backend in /apps/api or /services
-    - cloud infra in /infra (Cloud Run, Vertex AI, etc.)
-    - AI live agent endpoints in /agents/gemini-live
-  Actual confirmed structure: Next.js app at root with app/, components/, docs/, public/
-  These paths do not exist. User must verify.
-
-CONFLICT 3 — Referenced files that may not exist
-  - docs/architecture.md  (referenced in Memory Hierarchy and Project Structure)
-  - docs/api/*.md         (referenced in Good and Bad Examples)
-  - docs/ai/GEMINI_INTEGRATION.md  (confirmed file is docs/ai/gemini-archetecture.md)
-  - docs/cloud/GCP.md     (confirmed file is docs/cloud/infrastructure.md)
-  - /lib/api/client.ts    (referenced as approved data layer client — not confirmed to exist)
-  User must verify each before any AI agent acts on them.
-
-UNVERIFIED — Test-First Mode policy
-  "When adding new features or cloud/AI components: write or update tests first, then code to green."
-  This has not been confirmed as active project policy. User must verify.
-
-UNVERIFIED — Memory Hierarchy rule
-  "ALWAYS read this file + docs/ai/* + docs/cloud/* + docs/architecture.md first"
-  The docs/architecture.md reference is unverified (see CONFLICT 3 above).
-
--->
