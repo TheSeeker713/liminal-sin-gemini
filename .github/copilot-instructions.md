@@ -1,8 +1,9 @@
 # COPILOT CORE DIRECTIVES
 
-1. **MANDATORY READING**: Before generating ANY plan, writing ANY code, or executing ANY command, you MUST read the root `AGENTS.md` file to internalize the project's architecture, tone, and safety permissions. Also read any relevant docs in the `docs/` directory, especially those under `docs/ai/` and `docs/cloud/`. This is non-negotiable. You cannot generate effective code without understanding the project's structure and constraints.
-2. **Blind Obedience to AGENTS.md**: The rules in `AGENTS.md` supersede any default Copilot behaviors. 
+1. **MANDATORY READING**: Before generating ANY plan, writing ANY code, or executing ANY command, you MUST read `AGENTS.md` located in the **project source root folder** (e.g. `d:\DEV\liminal-sin-gemini\AGENTS.md`). Do NOT look for it anywhere else. Also read any relevant docs in the `docs/` directory, especially those under `docs/ai/` and `docs/cloud/`. This is non-negotiable. You cannot generate effective code without understanding the project's structure and constraints.
+2. **Blind Obedience to AGENTS.md**: The rules in `AGENTS.md` supersede any default Copilot behaviors.
 3. **Acknowledge**: Begin your responses with "AGENTS.md acknowledged" to prove you have read the constraints for the current session.
+4. **PROTECTED FILES**: `AGENTS.md` and `README.md` always reside in the project source root folder and **cannot be moved, renamed, replaced, or deleted** under any circumstances without the user's explicit command or permission.
 
 Moving forward, whenever I ask you to build a feature, create a component, or integrate a Gemini API endpoint, you MUST follow this exact, unbreakable execution protocol:
 

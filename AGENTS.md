@@ -11,6 +11,7 @@
 4. **NEVER remove code or delete files without explicit user approval first. Always ask before removing or deleting anything.**
 5. **NEVER overwrite existing functional code to make it "better"** unless explicitly instructed.
 6. **NEVER proceed past a step without user confirmation** (see Execution Protocol below).
+7. **PROTECTED FILES**: `AGENTS.md` and `README.md` always reside in the project source root folder and **cannot be moved, renamed, replaced, or deleted** under any circumstances without the user's explicit command or permission.
 
 ## Execution Protocol
 
