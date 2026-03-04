@@ -14,6 +14,7 @@ Moving forward, whenever I ask you to build a feature, create a component, or in
 **STEP 2: Execute ONE Tiny Step**
 - Once approved, execute ONLY Step 1 of the plan. Do not touch Step 2.
 - Write the minimal amount of code required to satisfy Step 1. Remember the rule: NEVER overwrite existing functional code to make it "better".
+- **ALWAYS ask before removing code or deleting files. Never delete or remove anything without explicit user approval.**
 
 **STEP 3: Mandatory Testing**
 - Immediately after writing the code for the single step, run the relevant tests.
