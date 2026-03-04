@@ -150,6 +150,61 @@ Immersion breaks when response latency exceeds the human conversational threshol
 
 ---
 
+---
+
+## JUDGE ACCESS POINT (CRITICAL FOR SUBMISSION)
+
+| Field | Value |
+|---|---|
+| **Judge Backdoor URL** | `https://myceliainteractive.com/ls/judges` |
+| **Direct Game URL** | *(Cloud Run URL — fill in `NEXT_PUBLIC_GAME_URL` when deployed)* |
+| **Instructions to Judges** | "Visit the URL above. Click ENTER THE UNDERGROUND. Allow mic + webcam permissions. Speak to Jason." |
+| **Devpost Field** | Paste URL in "How judges can access the project" field |
+
+The `/ls/judges` route is a **secret static page** on the marketing site. It is not linked from the public `/ls` page. Share only via Devpost submission notes.
+
+---
+
+## IP & TRADEMARK NOTES (DO NOT CHANGE WITHOUT REVIEW)
+
+| Name | Usage | Status |
+|---|---|---|
+| **Bally's Casino** | Historical setting reference in WORLD_BIBLE and Characters | ✅ Covered — Bally's LV rebranded to Horseshoe Las Vegas (Dec 2022). Fictional horror framing + `README.md` disclaimer = adequate protection. |
+| **The Boring Company** | Tunnel infrastructure referenced as setting | ✅ Covered — `README.md` explicitly disclaims: *"This project does not Sponsor or Endorse any real-world entities, products, or services. This includes, but is not limited to, the Boring Company..."* |
+| **Jason / Audrey / Josh** | Character first names | ✅ Covered — same `README.md` disclaimer covers these names as coincidental. |
+
+No action required on any of the above. The existing disclaimer in `README.md` Attribution & Legal section is the protection layer.
+
+---
+
+## COMPETITION LANDSCAPE (as of March 4, 2026)
+
+- **Gallery not published** — Devpost organizers have not opened the project gallery. Zero competitor submissions are visible.
+- **Reddit search** (`r/devpost`, `r/gamedev`): no results for Gemini Live Agent Challenge projects
+- **X.com search**: blocked without login — cannot verify
+- **Devpost "gemini live horror" search**: 23 total results, none from this contest; closest entries:
+  - *Seven Doors to Hell* — AR webcam horror arcade (Gemini 3 Hackathon, different contest; no voice, no FMV)
+  - *The Unseen Narrator* — CoC AI DM (Hacklytics 2026, different contest; text-based, no FMV)
+- **Verdict: No direct competitor has been identified for the Gemini Live Agent Challenge in the FMV horror / voice-narrative space.**
+
+### Liminal Sin Differentiators (Confirmed Unique)
+1. Only FMV video pipeline in contest (VEO 3 + Kling 3.0)
+2. Only project where player voice IS the mechanic (social engineering NPCs)
+3. Only bimodal Game Master watching the player via webcam while invisible to AI characters
+4. Only emergent Trust/Fear system with character rebellion behavior
+5. Only multi-agent hierarchy with 4 distinct agents (Director + Jason + Audrey + Josh)
+
+---
+
+## SESSION UPDATE LOG
+
+| Date | Day | What Changed |
+|---|---|---|
+| Feb 25, 2026 | Day 3 | Initial CONTEST.md created. Phase 1 docs complete. |
+| March 4, 2026 | Day ~10 | Added: judge access point, IP notes, competition landscape, differentiation summary. Phase 1 cloud work NOT YET STARTED — BLOCKING. |
+
+---
+
 *CONTEST.md — LIMINAL SIN*
 *Mycelia Interactive LLC*
-*Last Updated: Day 3 — February 25, 2026 | Version 1.1*
+*Last Updated: Day ~10 — March 4, 2026 | Version 1.2*
