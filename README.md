@@ -4,7 +4,7 @@
 
 **"The House Always Wins. Even in the Unreality."**
 
-A first-person, multi-agent FMV psychological horror experience built for the **Gemini Live Agent Challenge**. Developed by **Mycelia Interactive**.
+A first-person, multi-agent FMV psychological horror experience built for the **Gemini Live Agent Challenge**. Developed by **J.W.**. (**Mycelia Interactive**) with a focus on pushing the boundaries of real-time AI-driven narrative and player agency.
 
 ## **👁️ The Vision**
 
@@ -16,7 +16,7 @@ You play as a disembodied presence, a "voice from the static," communicating wit
 
 ### **Core Pillars:**
 
-1. **Agentic Agency**: Characters use **Gemini 3.1 Pro** and **Gemini 2.5 Flash Native Audio** to reason, remember, and rebel. They are not NPCs: they are agents with shifting Trust and Fear metrics. Unlike traditional branching narratives, their reactions are emergent. If Jason begins to distrust your voice, he may withhold information, choose different paths than the ones you suggest, or even attempt to mute his smart glasses to escape your influence. This creates a "human-on-the-loop" architecture where your social engineering is the primary mechanic.  
+1. **Agentic Agency**: Characters use **Gemini 3.1 Pro** and **Gemini 2.5 Flash Native Audio** to reason, remember, and rebel. They are not NPCs: they are agents with shifting Trust and Fear metrics. Unlike traditional branching narratives, their reactions are emergent. If Jason begins to distrust your voice, he may withhold information, choose different paths than the ones you suggest, or even attempt to ignore you to escape your influence. This creates a "human-on-the-loop" architecture where your social engineering is the primary mechanic.  
 2. **Multimodal Dread**: The game "sees" you via your webcam and "hears" your voice. Using the Gemini Live API, the system monitors your vocal cadence and facial micro-expressions. If you sound panicked, Jason will sense your instability and his own Fear metrics will spike. If you remain eerily calm during a high-tension sequence, the "Director" may interpret this as a sign of your own anomalous nature, triggering more aggressive psychological tactics. The characters smell your confidence or your fear through the static.  
 3. **Full Generative Synthesis**: The environment is constructed entirely through advanced AI generation to ensure total control over the nightmare logic. We utilize **VEO 3**, **Kling 3.0**, and **Grok Imagine** to create synthetic liminal Vegas spaces, such as impossible Bally’s basements and infinite concrete flood tunnels. This workflow allows for "visual glitches" where the architecture subtly shifts in real time; a door that was there a moment ago might dissolve into a wall, or the lighting might begin to pulse in a rhythm that matches the character's heartbeat.  
 4. **The Fourth Wall is a Lie**: The AI agents are programmed with a baseline awareness of their anomalous situation. Attempting to tell the characters they are in a video game or a simulation does not break the immersion; instead, it triggers a "Logic Collapse" event. The characters will experience an existential crisis, the FMV will begin to "tear" with generative artifacts, and the Slotsky engine will drastically increase the Anomalous Intensity. Reality is a consensus, and your interference can shatter it.
@@ -89,12 +89,11 @@ Our mission for the Devpost submission is a high-polish execution of "The Sunken
 ## **🤝 Attribution & Legal**
 
 **Liminal Sin** is a project by **Mycelia Interactive**, a studio dedicated to exploring the intersection of artificial intelligence and interactive storytelling.
+**J.W.** is the founder and lead developer of Mycelia Interactive, with a background in game design, AI research, and narrative development. The project is built using publicly available tools and APIs, with all assets either created in-house or sourced from royalty-free libraries.
 
 * **Author/Lead Dev**: J.W.  
 * **Tech Stack**: Gemini 3.1, Gemini 2.5, Google Cloud, Vertex AI, Firebase, and the Gemini Live API.  
 * **Compliance**: This project is built in strict adherence to the Google Generative AI Prohibited Use Policy. All content is designed to be safe, psychological, and transformative in its use of generative technology.
-
-*"Keep At It, Always. Even if the tunnels never end."*
 
 ### **Reference Documentation:**
 
@@ -354,3 +353,11 @@ Capture the following for submission evidence:
 - Keep prompts and canon logic synchronized with `docs/Characters.md`, `docs/Gamemaster.md`, `docs/Tunnel-and-park.md`, and `docs/WORLD_BIBLE.md`.
 - Do not hardcode API keys.
 - If latency exceeds immersion target (~2.0s), prioritize fallback loops + shorter turn windows before adding complexity.
+
+---
+
+## **🔒 Privacy**
+
+- Repository policy: `PRIVACY_POLICY.md`
+- Deployed policy page (static): `/privacy.html`
+- If deployed from root domain, expected URL: `https://www.myceliainteractive.com/privacy.html`
