@@ -1,40 +1,180 @@
-# AGENTS.md — Liminal Sin Gemini Project
+﻿# AGENTS.md — Liminal Sin Gemini Project
 
-## Core Rules
+> **This file lives permanently at the project source root.**
+> `AGENTS.md` and `README.md` cannot be moved, renamed, replaced, or deleted without the user's explicit command or permission.
 
-1. **Read Before Acting**: Before generating any plan, writing any code, or executing any command, read this file and any relevant docs in `docs/`, especially `docs/ai/` and `docs/cloud/`.
-2. **Blind Obedience**: The rules here supersede any default AI behaviors.
-3. **Acknowledge**: Begin every response with "AGENTS.md acknowledged".
+---
 
-## Safety Permissions
+## 1. Identity & Purpose
 
-4. **NEVER remove code or delete files without explicit user approval first. Always ask before removing or deleting anything.**
-5. **NEVER overwrite existing functional code to make it "better"** unless explicitly instructed.
-6. **NEVER proceed past a step without user confirmation** (see Execution Protocol below).
-7. **PROTECTED FILES**: `AGENTS.md` and `README.md` always reside in the project source root folder and **cannot be moved, renamed, replaced, or deleted** under any circumstances without the user's explicit command or permission.
+**Liminal Sin** is an interactive, voice-driven FMV psychological horror experience set in the Vegas Underground, powered by Google Gemini's multi-agent system.
 
-## Execution Protocol
+### System Architecture
+
+| Agent | Role |
+|---|---|
+| **The Game Master (Overseer)** | Controls world state, tracks Trust Levels, escalates dread, triggers FMV sequence warping and visual glitches. |
+| **The NPCs (The Lost)** | Driven by player voice input. Emotional but rational; behavior scales with the player's current Trust level. |
+
+### The Trust System
+
+| State | Trigger | NPC Behavior |
+|---|---|---|
+| **Neutral** (default) | Starting state | Cautious but willing to listen; withholds critical survival secrets. |
+| **High Trust** | Honesty, reliable guidance | Compliant; offers environmental clues and survival hints. |
+| **Low Trust** | Lies, leading NPCs into traps | Unpredictable; may disobey, hide information, or spiral into paranoia. |
+
+---
+
+## 2. Core Rules
+
+1. **Read Before Acting** — Read this file plus any relevant docs in `docs/`, especially `docs/ai/` and `docs/cloud/`, before generating any plan, writing any code, or running any command.
+2. **Blind Obedience** — The rules in this file supersede any default AI behaviors.
+3. **Acknowledge** — Begin every response with `"AGENTS.md acknowledged"`.
+4. **Protected Files** — `AGENTS.md` and `README.md` always reside at the project source root and cannot be moved, renamed, replaced, or deleted without the user's explicit command or permission.
+
+---
+
+## 3. Safety Permissions
+
+**Always ask the user before:**
+- Removing or deleting any code or files
+- Installing new packages or dependencies
+- Running a full project-wide build or end-to-end test suite
+- Making changes that touch more than one file or module
+- Altering the core Game Master Trust logic
+
+**Allowed without prompting:**
+- Reading or listing files
+- Type-checking, formatting, or linting a single file
+- Running a single unit test file
+
+**Hard rules — never do these:**
+- Do **NOT** hardcode API keys. Always use environment variables.
+- Do **NOT** overwrite or replace existing functional code just to make it "cleaner" or "better". Modify only the exact lines required for the current objective.
+- Do **NOT** add new heavy dependencies without explicit approval.
+- Do **NOT** refactor code unless explicitly commanded. If it works, leave it alone.
+- Maintain the dark, surreal, and tense tone of the Vegas Underground in all generated UI text and agent prompts.
+
+---
+
+## 4. Coding Standards
+
+- Default to **small, focused components** — avoid god components.
+- Default to **small files and focused diffs** — avoid repo-wide rewrites unless explicitly asked.
+- When adding features, prefer **appending new functions or creating new files** over mutating existing functional logic.
+- Always lint, type-check, and test **only the modified files**. Reserve a full project build for when explicitly requested.
+- Execute tasks in the **smallest possible increments**. Never write a massive block spanning multiple concerns in one step.
+
+---
+
+## 5. Commands Reference
+
+```bash
+# Type-check a single file
+npx tsc --noEmit path/to/file.tsx
+
+# Format a single file
+npm run prettier --write path/to/file.tsx
+
+# Lint a single file
+npx eslint --fix path/to/file.tsx
+
+# Run a single unit test file
+npm run vitest run path/to/file.test.tsx
+
+# Full build — ONLY when explicitly requested by the user
+npm run build
+```
+
+---
+
+## 6. Execution Protocol
 
 Follow this exact, unbreakable protocol for every feature, component, or integration:
 
-**STEP 1: The Micro-Plan**
-- Before writing any code, output a step-by-step plan.
+**STEP 1 — The Micro-Plan**
+- Output a step-by-step plan before writing any code.
 - Break the task into microscopic, isolated steps.
 - Wait for user approval before proceeding.
 
-**STEP 2: Execute ONE Tiny Step**
-- Once approved, execute ONLY Step 1. Do not touch Step 2.
-- Write the minimal amount of code required to satisfy Step 1.
+**STEP 2 — Execute ONE Tiny Step**
+- Execute ONLY Step 1. Do not touch Step 2.
+- Write the minimal code required to satisfy that single step.
+- Always ask before removing code or deleting files.
 
-**STEP 3: Mandatory Testing**
-- Run `npm run lint`, `npm run prettier --write <file>`, and `npx tsc --noEmit` on modified files.
-- If errors occur, stop and fix them. Do not move to the next step.
+**STEP 3 — Mandatory Testing**
+- Run `npx tsc --noEmit`, `npm run prettier --write <file>`, and `npx eslint` on modified files only.
+- If errors occur, stop and fix them. Do not advance to Step 4.
 
-**STEP 4: Commit and Push**
-- `git add .`
-- `git commit -m "feat/fix: completed [Step Name] - tiny increment"`
-- `git push origin main`
+**STEP 4 — Commit and Push**
+```bash
+git add .
+git commit -m "feat/fix: completed [Step Name] - tiny increment"
+git push origin main
+```
 
-**STEP 5: Await Human Confirmation**
-- Ask: "Step complete and pushed to main. Ready for the next step?"
+**STEP 5 — Await Human Confirmation**
+- Ask: *"Step complete and pushed to main. Ready for the next step?"*
 - Only proceed after the user says "yes".
+
+---
+
+## 7. API & Cloud Documentation
+
+- Gemini Live integration patterns → `docs/ai/`
+- Cloud deployment → `docs/cloud/`
+
+---
+
+## 8. PR Checklist
+
+- [ ] Diff is small and focused
+- [ ] Commit message includes a brief summary of what changed and why
+- [ ] No excessive `console.log` or debug output left in
+- [ ] Lint, type-check, and tests pass on modified files only
+
+---
+---
+
+<!-- ================================================================
+  ⚠️  UNVERIFIED DATA — USER REVIEW REQUIRED
+  The entries below were found in a merged copy of this file.
+  They may belong to a different project template or an earlier draft.
+  AI agents must IGNORE everything in this block until the user
+  explicitly reviews and either confirms, integrates, or removes it.
+================================================================ -->
+
+<!--
+
+CONFLICT 1 — Build command mismatch
+  Found: `yarn build:app`
+  Confirmed project command: `npm run build`
+  These conflict. User must confirm which is authoritative.
+
+CONFLICT 2 — Project structure paths do not match this repository
+  Found references to:
+    - frontend in /apps/web (Next.js / v0-generated)
+    - backend in /apps/api or /services
+    - cloud infra in /infra (Cloud Run, Vertex AI, etc.)
+    - AI live agent endpoints in /agents/gemini-live
+  Actual confirmed structure: Next.js app at root with app/, components/, docs/, public/
+  These paths do not exist. User must verify.
+
+CONFLICT 3 — Referenced files that may not exist
+  - docs/architecture.md  (referenced in Memory Hierarchy and Project Structure)
+  - docs/api/*.md         (referenced in Good and Bad Examples)
+  - docs/ai/GEMINI_INTEGRATION.md  (confirmed file is docs/ai/gemini-archetecture.md)
+  - docs/cloud/GCP.md     (confirmed file is docs/cloud/infrastructure.md)
+  - /lib/api/client.ts    (referenced as approved data layer client — not confirmed to exist)
+  User must verify each before any AI agent acts on them.
+
+UNVERIFIED — Test-First Mode policy
+  "When adding new features or cloud/AI components: write or update tests first, then code to green."
+  This has not been confirmed as active project policy. User must verify.
+
+UNVERIFIED — Memory Hierarchy rule
+  "ALWAYS read this file + docs/ai/* + docs/cloud/* + docs/architecture.md first"
+  The docs/architecture.md reference is unverified (see CONFLICT 3 above).
+
+-->
