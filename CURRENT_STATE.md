@@ -1,6 +1,6 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 4, 2026
+> Last updated: March 5, 2026
 
 ---
 
@@ -11,10 +11,28 @@
 | **Project** | Liminal Sin — FMV psychological horror experience |
 | **Contest** | Gemini Live Agent Challenge (Google / Devpost) |
 | **Deadline** | March 16, 2026 @ 5:00 PM PT |
-| **Days Remaining** | ~12 |
+| **Days Remaining** | ~11 |
 | **Repo** | `d:\DEV\liminal-sin-gemini` |
 | **Marketing Shell** | `myceliainteractive.com/ls` (separate repo: `myceliainteractive`) |
 | **Judge Backdoor URL** | `myceliainteractive.com/ls/judges` (see `myceliainteractive` repo) |
+
+---
+
+## March 5, 2026 — Session Summary
+
+### Marketing Shell (myceliainteractive repo) — FULLY COMPLETE
+- Landing page `myceliainteractive.com/ls` live with all sections: navbar, hero, lore, Trust System cards, What Awaits You, signup forms, footer
+- Judge backdoor `myceliainteractive.com/ls/judges` live
+- D1 database `liminal-sin-signups` provisioned with `signups` table (name, email, type, created_at, email1_sent, email2_sent) + `settings` table (game_live flag)
+- Cloudflare Worker (`workers/signup-api.ts`) handling `POST /api/signup`, `POST /api/set-game-live` (Bearer token protected), and cron every minute for Email 2
+- **Email system**: Brevo transactional API (free tier, 300/day). Email 1 fires instantly on signup. Email 2 fires when admin calls `/api/set-game-live`
+- `BREVO_API_KEY` and `ADMIN_TOKEN` stored as encrypted Cloudflare secrets
+- `npm run deploy` script chains `next build && wrangler deploy` — prevents stale asset deploys
+- `.gitignore` updated with `*.tsbuildinfo`
+- `AGENTS.md` + `copilot-instructions.md` updated: always `npm run build` before deploy rule added
+
+### Known Pending (marketing shell)
+- [ ] Test and confirm Email 1 delivers to `jrobards713@gmail.com` via Brevo (pending as of session end)
 
 ---
 
