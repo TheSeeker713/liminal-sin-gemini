@@ -21,6 +21,7 @@ Moving forward, whenever I ask you to build a feature, create a component, or in
 - Immediately after writing the code for the single step, run the relevant tests.
 - Execute `npm run lint`, `npm run prettier --write <file>`, and `npm run tsc --noEmit <file>` on the modified files.
 - If errors occur, stop and fix them. Do not move to the next step.
+- **Always run `npm run build` before any deploy when the project uses `output: "export"` (static export).** Never run `wrangler deploy` directly. Use `npm run deploy` which chains build + deploy.
 
 **STEP 4: Commit and Push**
 - Once the single step is coded and passes tests, you must commit and push the changes.

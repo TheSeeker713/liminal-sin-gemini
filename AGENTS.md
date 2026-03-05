@@ -54,6 +54,7 @@
 - Do **NOT** overwrite or replace existing functional code just to make it "cleaner" or "better". Modify only the exact lines required for the current objective.
 - Do **NOT** add new heavy dependencies without explicit approval.
 - Do **NOT** refactor code unless explicitly commanded. If it works, leave it alone.
+- **Always run `npm run build` before any deploy when the project uses `output: "export"` (static export).** Never run `wrangler deploy` or any deploy command directly without building first. Use `npm run deploy` (which chains build + deploy) rather than calling the deploy tool directly.
 - Maintain the dark, surreal, and tense tone of the Vegas Underground in all generated UI text and agent prompts.
 - **Hallucination / context-loss recovery** — If at any point you are about to overwrite existing code (due to loss of context, hallucination, or uncertainty), **do NOT delete the original**. Instead, comment it out in-place and add a brief inline explanation (e.g. `// [AI: replaced because X — original preserved below for user review]`). This ensures no working logic is silently lost and the user can always restore it.
 
