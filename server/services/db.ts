@@ -1,26 +1,21 @@
 import * as admin from 'firebase-admin';
 import { PlayerSession, TrustLevel } from '../types/state';
 
-// Initialize Firebase. Fallback to a mock/in-memory store if credentials are not present
-// to unblock local development without needing the actual GCP service account immediately.
 let db: admin.firestore.Firestore | null = null;
 const memoryStore = new Map<string, PlayerSession>();
 
 try {
   if (!admin.apps.length) {
-    // In production, GOOGLE_APPLICATION_CREDENTIALS should be set
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_CONFIG) {
-      admin.initializeApp();
-      db = admin.firestore();
-      console.log('[DB] Firestore initialized via Admin SDK.');
-    } else {
-      console.warn('[DB] No Firebase credentials found. Falling back to in-memory store for local dev.');
-    }
-  } else {
-    db = admin.firestore();
+    // Uses Application Default Credentials (ADC) — set up via `gcloud auth application-default login`
+    // No explicit key file needed; ADC auto-discovers credentials from the environment.
+    admin.initializeApp({
+      projectId: process.env.GOOGLE_CLOUD_PROJECT
+    });
   }
+  db = admin.firestore();
+  console.log('[DB] Firestore initialized via ADC (Application Default Credentials).');
 } catch (e) {
-  console.error('[DB] Failed to initialize Firestore:', e);
+  console.error('[DB] Failed to initialize Firestore. Falling back to in-memory store:', (e as Error).message);
 }
 
 export async function getOrCreateSession(sessionId: string): Promise<PlayerSession> {

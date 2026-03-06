@@ -3,13 +3,16 @@ import { WebSocketServer, WebSocket } from 'ws';
 import * as http from 'http';
 import * as dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: '.env.local' });
+
+// Initialize Firestore on startup
+import './services/db';
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3001;
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'liminal-sin-mock-ws' });

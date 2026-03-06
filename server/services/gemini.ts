@@ -1,16 +1,20 @@
 import { GoogleGenAI } from '@google/genai';
 import { TrustLevel } from '../types/state';
 
-// Ensure the API key exists, otherwise initialization will throw.
-const apiKey = process.env.GEMINI_API_KEY || '';
+const project = process.env.GOOGLE_CLOUD_PROJECT || '';
+const location = process.env.GOOGLE_CLOUD_REGION || 'us-west1';
 
-if (!apiKey) {
-  console.warn('[GEMINI] WARNING: GEMINI_API_KEY is not set in environment variables. Gemini calls will fail.');
+if (!project) {
+  console.warn('[GEMINI] WARNING: GOOGLE_CLOUD_PROJECT is not set. Gemini Vertex AI calls will fail.');
 }
 
-// Instantiate the SDK client
-// By default it looks for process.env.GEMINI_API_KEY, but passing explicitly is safer.
-export const ai = new GoogleGenAI({ apiKey });
+// Use Vertex AI mode — authenticates via Application Default Credentials (gcloud auth).
+// All usage bills against the GCP project ($300 contest credits).
+export const ai = new GoogleGenAI({
+  vertexai: true,
+  project,
+  location
+});
 
 /**
  * Constructs the core System Prompt for the Game Master / Overseer agent
