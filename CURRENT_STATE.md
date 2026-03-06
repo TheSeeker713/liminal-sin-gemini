@@ -1,6 +1,177 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 5, 2026
+> Last updated: March 6, 2026
+
+---
+
+## Active Project Identity
+
+| Field | Value |
+|---|---|
+| **Project** | Liminal Sin — FMV psychological horror experience |
+| **Contest** | Gemini Live Agent Challenge (Google / Devpost) |
+| **Hard Deadline** | March 16, 2026 @ 5:00 PM PDT |
+| **Internal Prototype Cutoff** | March 11, 2026 @ 11:11 PM MT |
+| **Days to Internal Cutoff** | 5 days |
+| **Days to Hard Deadline** | 10 days |
+| **Backend Repo** | `d:\DEV\liminal-sin-gemini` (Cloud Run Node.js server — NO frontend code) |
+| **Frontend Repo** | `myceliainteractive` (Cloudflare Pages) |
+| **Marketing Shell** | `https://myceliainteractive.com/ls` — LIVE |
+| **Judge Backdoor** | `https://myceliainteractive.com/ls/judges` — LIVE |
+| **Game Wrapper (pending)** | `https://myceliainteractive.com/ls/game` |
+| **Judge Game Wrapper (pending)** | `https://myceliainteractive.com/ls/judges/game` |
+
+---
+
+## GCP Infrastructure — PROVISIONED
+
+| Resource | Value |
+|---|---|
+| **GCP Project ID** | `project-c4c3ba57-5165-4e24-89e` |
+| **GCP Project Name** | Mycelia Interactive |
+| **Region** | `us-west1` |
+| **Auth method** | Application Default Credentials (ADC) — `gcloud auth application-default login` |
+| **Gemini SDK mode** | Vertex AI (`vertexai: true`) — bills against $300 GCP credits |
+| **Firestore** | Native mode, `us-west1` — CONNECTED |
+| **Firebase Web App** | `liminal-sin-web` — registered |
+| **Cloud Run** | NOT YET DEPLOYED — Dockerfile ready |
+| **GCP Account** | `digitalartifact11@gmail.com` |
+
+---
+
+## Backend Server — PHASES 1–4 COMPLETE
+
+### What Is Built (`liminal-sin-gemini` repo)
+
+| File | Status | Purpose |
+|---|---|---|
+| `server/server.ts` | ✅ Done | Express + WebSocket server on PORT 3001 (local) / 8080 (Cloud Run) |
+| `server/types/state.ts` | ✅ Done | TrustLevel enum, PlayerEmotion, PlayerSession, GmEvent types |
+| `server/services/db.ts` | ✅ Done | Firestore ADC adapter with in-memory fallback |
+| `server/services/gemini.ts` | ✅ Done | Vertex AI client + GM system prompts + 4 tool declarations |
+| `server/services/gameMaster.ts` | ✅ Done | GM function call router — persists state + broadcasts GmEvent over WS |
+| `server/tsconfig.build.json` | ✅ Done | Emits compiled JS to `dist/server/server.js` |
+| `Dockerfile` | ✅ Done | 2-stage build (node:20-alpine), Cloud Run ready |
+| `.gcloudignore` | ✅ Done | Strips docs/assets/public from Cloud Build upload |
+
+### What the Server Currently Does (Reality Check)
+- Accepts WebSocket connections
+- Routes `GM_FUNCTION_CALL` messages to `gameMaster.ts`
+- Echoes all other messages back (stub — not real gameplay)
+- **Gemini is NEVER called. No audio streams. No NPC speaks. GM does not perceive anything.**
+
+### What Does NOT Exist Yet
+- [ ] **Gemini Live session wiring** — BLOCKING EVERYTHING. No voice, no agents without this.
+- [ ] Webcam frame pipe (GM vision: 1 JPEG/sec → Gemini)
+- [ ] NPC character agent system prompts injected at session start
+- [ ] VAD / barge-in handler (player interrupts mid-NPC-sentence)
+- [ ] FMV scene switching (frontend reads SCENE_CHANGE event, swaps video)
+- [ ] Frontend game wrapper (`/ls/game`) — mic capture, webcam, video player
+- [ ] Cloud Run deployment (Dockerfile ready, just needs `gcloud run deploy`)
+
+---
+
+## Architecture Decision (March 6, 2026)
+
+**`liminal-sin-gemini` is a pure backend repo. Zero frontend code lives here.**
+- All UI, game wrappers, and marketing live in `myceliainteractive` (Cloudflare Pages)
+- `app/`, `components/`, Next.js, React, Tailwind, framer-motion, etc. are ALL deleted
+- 315 frontend npm packages removed
+- Remaining deps: `express`, `ws`, `firebase-admin`, `@google/genai`, `dotenv`
+
+---
+
+## Environment Variables (`.env.local` — never committed)
+
+```
+GOOGLE_CLOUD_PROJECT=project-c4c3ba57-5165-4e24-89e
+GOOGLE_CLOUD_REGION=us-west1
+NEXT_PUBLIC_FIREBASE_API_KEY=<from Firebase Console>
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=<from Firebase Console>
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=project-c4c3ba57-5165-4e24-89e
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=<from Firebase Console>
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=<from Firebase Console>
+NEXT_PUBLIC_FIREBASE_APP_ID=<from Firebase Console>
+PORT=3001
+```
+
+> No `GEMINI_API_KEY` — Vertex AI mode uses ADC exclusively.
+
+---
+
+## Next Priority Action
+
+**IMMEDIATE — Wire Gemini Live audio in `server/server.ts`**
+This is the single most critical unbuilt piece. The entire game depends on it.
+
+1. Open a Gemini Live session (`ai.live.connect()`) when a WS client connects
+2. Forward incoming binary audio from the browser to Gemini
+3. Stream Gemini's audio response back to the browser
+4. Intercept Gemini function calls → route to `gameMaster.ts`
+5. Handle VAD / barge-in (player speaks → truncate Gemini output)
+
+**After Gemini Live is wired:**
+- Inject NPC system prompts (Jason first) at session start
+- Build `/ls/game` frontend in `myceliainteractive`
+- Run `gcloud run deploy` (Dockerfile already ready)
+
+---
+
+## Marketing Shell Status (myceliainteractive repo)
+- Landing page `myceliainteractive.com/ls` — LIVE
+- Judge backdoor `myceliainteractive.com/ls/judges` — LIVE
+- D1 database `liminal-sin-signups` — provisioned
+- Cloudflare Worker signup API — LIVE
+- Brevo email system (Email 1 on signup, Email 2 on game-live flag) — LIVE
+- `BREVO_API_KEY` and `ADMIN_TOKEN` stored as encrypted Cloudflare secrets
+
+---
+
+## Character Agents — Quick Reference
+
+| Character | Model | Starting State | Trust Default |
+|---|---|---|---|
+| Jason | `gemini-2.5-flash-preview-tts` | Separated, POV via cracked smart glasses | Neutral |
+| Audrey | `gemini-2.5-flash-preview-09-2025` | Separated, voice-only echo | Neutral |
+| Josh | `gemini-2.5-flash-preview-09-2025` | Separated, voice-only echo | Neutral |
+| Slotsky | N/A (probability engine) | Environmental only — never speaks | N/A |
+| Game Master | `gemini-2.0-flash-exp` | Bimodal: webcam 1FPS + audio | N/A |
+
+---
+
+## Firestore Session State Shape
+
+```json
+{
+  "sessionId": "<uuid>",
+  "trustLevel": "Neutral",
+  "playerEmotion": "calm",
+  "fourthWallCount": 0,
+  "sceneKey": "",
+  "createdAt": 0,
+  "updatedAt": 0
+}
+```
+
+---
+
+## Competition Status (as of March 6, 2026)
+- 6,462+ participants in contest
+- No FMV horror + Gemini Live voice-narrative competitors found
+- **Liminal Sin has a clear, uncontested lane**
+
+---
+
+## Recent Commits
+| Hash | Message |
+|---|---|
+| `45b6ad8` | chore: strip all frontend deps and configs — 315 packages removed |
+| `09668fc` | chore: remove frontend artifacts — backend only |
+| `7f024fc` | feat: game master overseer engine — tools, function call handler, event broadcast |
+| `ae40793` | feat: Vertex AI ADC mode, Firestore connected, port 3001 |
+| `56b7526` | feat: add build tsconfig for Cloud Run compilation |
+| `6536f10` | feat: Dockerfile and .gcloudignore for Cloud Run |
+
 
 ---
 

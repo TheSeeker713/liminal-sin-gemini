@@ -4,7 +4,7 @@
 * **AI Backend (Google Cloud):** Vertex AI handles the heavy multimodal lifting and parses the Game Master's Trust logic. The Gemini Live API manages the real-time, interruptible voice streams.
 * **Web Hosting & Edge Routing (Cloudflare):** Cloudflare serves as our primary host and server for the web-facing application and DNS. It handles incoming player connections and securely routes API requests to GCP, keeping latency low so player interruptions hit the AI instantly.
 
-Note: When deployed to Clouflare Pages, The website will be ls.thes33k3r.com. 
+Note: Game is served at `myceliainteractive.com/ls/game` (public) and `myceliainteractive.com/ls/judges/game` (judge access). The backend API domain will be the Cloud Run service URL. 
 
 * **Asset Storage:** Google Cloud Storage (GCS) hosts the FMV video snippets and any dynamically warped visual assets the Game Master triggers.
 
@@ -18,5 +18,6 @@ Note: When deployed to Clouflare Pages, The website will be ls.thes33k3r.com.
 * **Trust State Syncing:** The Game Master's JSON outputs (updating Trust) must be written to a lightweight, low-latency database (like Firestore) so the active NPC's prompt is seamlessly updated the second the player interrupts or finishes speaking.
 
 ## 4. Environment & Deployment
-* **Project Targeting:** Ensure all automated deployment scripts and standard GCP CLI commands target the `myceliainteractive` project ID.
-* **Security:** Never commit `.env` files. API keys (`GEMINI_API_KEY`, Cloudflare tokens, etc.) stay strictly out of version control.
+* **Project Targeting:** All GCP CLI commands target project ID `project-c4c3ba57-5165-4e24-89e` (display name: Mycelia Interactive). Region: `us-west1`.
+* **Auth:** Application Default Credentials (ADC) via `gcloud auth application-default login`. No API key strings. Vertex AI mode bills against GCP project credits.
+* **Security:** Never commit `.env` files. No API keys in version control. Cloud Run pulls credentials from the attached service account via ADC automatically.

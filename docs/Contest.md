@@ -1,8 +1,8 @@
 # CONTEST.md — Gemini Live Agent Challenge
 ## Submission Strategy, Requirements & Scoring Intelligence
-### Version 1.1 | Day 3 — February 25, 2026
+### Version 1.2 | Day 12 — March 6, 2026
 ### Cross-reference: WORLD_BIBLE.md v1.1 | Characters.md v1.1
-### Status: ACTIVE — 19 days to internal deadline
+### Status: ACTIVE — 5 days to internal cutoff
 
 ---
 
@@ -17,7 +17,7 @@
 | **Internal prototype-ready** | March 11, 2026 | 11:11 PM MT | Our hard self-imposed cutoff |
 | **Internal completion target** | March 15, 2026 | EOD | Full vertical slice locked |
 | **Official contest deadline** | March 16, 2026 | 5:00 PM PDT | Google's hard cutoff — no exceptions |
-| **Today (Day 3)** | February 25, 2026 | — | 19 days to internal deadline |
+| **Today (Day 12)** | March 6, 2026 | — | 5 days to internal cutoff |
 
 ---
 
@@ -37,9 +37,9 @@ All of the following must be demonstrably integrated in the submission:
 
 | Requirement | Implementation in LIMINAL SIN | Status |
 |---|---|---|
-| **Gemini Live API** | Real-time bidirectional voice streaming for all character agents. Native barge-in for conversational interruption. | Pending cloud credits |
-| **Google GenAI SDK or ADK** | Agent Development Kit manages the full multi-agent hierarchy via AutoFlow delegation. | Pending cloud credits |
-| **At least one Google Cloud service** | Google Cloud Run (backend hosting) + Cloud Firestore (state management) | Pending cloud credits |
+| **Gemini Live API** | Real-time bidirectional voice streaming for all character agents. Native barge-in for conversational interruption. | 🔄 In progress — session wiring next |
+| **Google GenAI SDK or ADK** | `@google/genai` Vertex AI mode connected. GM tool declarations built. ADK AutoFlow TBD. | ✅ SDK connected |
+| **At least one Google Cloud service** | Firestore connected via ADC. Cloud Run Dockerfile ready, deploy pending game logic. | ✅ Firestore live |
 
 ---
 
@@ -115,7 +115,7 @@ Post to social with **#GeminiLiveAgentChallenge** for community bonus points and
 | **Phase 3: Live Integration** | 12–15 | Gemini Live API voice loop, ADK agent deployment, Next.js frontend | Requires credits |
 | **Phase 4: Polish & Demo** | 16–21 | End-to-end testing, latency optimization, 4-min demo recording, GCP deployment proof | Requires credits |
 
-**Current status (Day 3):** Executing Phase 1. Cloud credits pending. All documentation and prompt engineering is fully offline-capable and being completed now.
+**Current status (Day 12):** Phase 1 complete (backend skeleton, Firestore, GM tools). Phase 3 starting NOW (Gemini Live voice wiring). Phase 2 (FMV visual library) runs in parallel.
 
 ---
 
