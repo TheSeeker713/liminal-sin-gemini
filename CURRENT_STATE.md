@@ -18,8 +18,8 @@
 | **Frontend Repo** | `myceliainteractive` (Cloudflare Pages) |
 | **Marketing Shell** | `https://myceliainteractive.com/ls` — LIVE |
 | **Judge Backdoor** | `https://myceliainteractive.com/ls/judges` — LIVE |
-| **Game Wrapper (pending)** | `https://myceliainteractive.com/ls/game` |
-| **Judge Game Wrapper (pending)** | `https://myceliainteractive.com/ls/judges/game` |
+| **Game Wrapper** | `https://myceliainteractive.com/ls/game` — LIVE |
+| **Judge Game Wrapper** | `https://myceliainteractive.com/ls/judges/game` — LIVE |
 
 ---
 
@@ -66,7 +66,7 @@
 - [ ] NPC character agent system prompts injected at session start
 - [ ] VAD / barge-in handler (player interrupts mid-NPC-sentence)
 - [ ] FMV scene switching (frontend reads SCENE_CHANGE event, swaps video)
-- [ ] Frontend game wrapper (`/ls/game`) — mic capture, webcam, video player
+- [x] Frontend game wrapper (`/ls/game`) — DONE in myceliainteractive repo
 - [ ] Cloud Run deployment (Dockerfile ready, just needs `gcloud run deploy`)
 
 ---
@@ -120,10 +120,13 @@ This is the single most critical unbuilt piece. The entire game depends on it.
 ## Marketing Shell Status (myceliainteractive repo)
 - Landing page `myceliainteractive.com/ls` — LIVE
 - Judge backdoor `myceliainteractive.com/ls/judges` — LIVE
+- **Game wrapper `myceliainteractive.com/ls/game` — LIVE**
+- **Judge game wrapper `myceliainteractive.com/ls/judges/game` — LIVE**
 - D1 database `liminal-sin-signups` — provisioned
 - Cloudflare Worker signup API — LIVE
 - Brevo email system (Email 1 on signup, Email 2 on game-live flag) — LIVE
 - `BREVO_API_KEY` and `ADMIN_TOKEN` stored as encrypted Cloudflare secrets
+- Frontend and backend being developed in parallel
 
 ---
 
