@@ -22,6 +22,9 @@ export async function getOrCreateSession(sessionId: string): Promise<PlayerSessi
   const defaultSession: PlayerSession = {
     sessionId,
     trustLevel: TrustLevel.Neutral,
+    playerEmotion: 'calm',
+    fourthWallCount: 0,
+    sceneKey: '',
     createdAt: Date.now(),
     updatedAt: Date.now()
   };

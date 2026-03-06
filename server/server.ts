@@ -7,6 +7,7 @@ dotenv.config({ path: '.env.local' });
 
 // Initialize Firestore on startup
 import './services/db';
+import { handleGmFunctionCall } from './services/gameMaster';
 
 const app = express();
 const server = http.createServer(app);
@@ -23,15 +24,20 @@ wss.on('connection', (ws: WebSocket) => {
 
   ws.on('message', (message: Buffer) => {
     try {
-      // In the future this will parse event types (Audio chunk, interrupt, etc)
       const data = JSON.parse(message.toString());
       console.log(`[WS] Received:`, data);
-      
-      // Echo it back to confirm full duplex mapping
+
+      // Route Game Master function call events from the Gemini server
+      if (data.type === 'GM_FUNCTION_CALL' && data.sessionId && data.functionName) {
+        handleGmFunctionCall(data.sessionId, data.functionName, data.args ?? {}, ws);
+        return;
+      }
+
+      // Echo all other messages back (will be replaced by full Gemini Live stream wiring in Step 10)
       ws.send(JSON.stringify({ type: 'ECHO', payload: data }));
-    } catch (e) {
-      // It might be binary audio data. We will handle that later.
-      console.log(`[WS] Received raw buffer of length: ${message.length} (error parsing JSON: ${(e as Error).message})`);
+    } catch {
+      // Binary audio data — will be handled when Gemini Live audio streaming is wired in
+      console.log(`[WS] Received raw buffer of length: ${message.length}`);
     }
   });
 
@@ -41,6 +47,6 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[SERVER] Mock WebSocket & Express server running on ws://localhost:${PORT}`);
+  console.log(`[SERVER] WebSocket & Express server running on ws://localhost:${PORT}`);
   console.log(`[SERVER] Healthcheck at http://localhost:${PORT}/health`);
 });

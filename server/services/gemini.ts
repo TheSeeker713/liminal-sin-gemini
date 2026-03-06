@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Tool, Type } from '@google/genai';
 import { TrustLevel } from '../types/state';
 
 const project = process.env.GOOGLE_CLOUD_PROJECT || '';
@@ -15,6 +15,87 @@ export const ai = new GoogleGenAI({
   project,
   location
 });
+
+/**
+ * Function tool declarations for the Game Master Overseer.
+ * When Gemini calls one of these, the server intercepts, persists
+ * the state change to Firestore, and broadcasts the event over WebSocket
+ * to the frontend so the UI can react (glitches, FMV swaps, etc).
+ */
+export const gameMasterTools: Tool[] = [
+  {
+    functionDeclarations: [
+      {
+        name: 'triggerTrustChange',
+        description: 'Update the Trust Level for the current player session based on their behavior. Call this whenever the player is demonstrably honest (raises trust) or dishonest/manipulative (lowers trust).',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            newTrustLevel: {
+              type: Type.STRING,
+              enum: ['Neutral', 'High', 'Low'],
+              description: 'The new trust level to assign to the player.'
+            },
+            reason: {
+              type: Type.STRING,
+              description: 'A brief internal reason for why trust changed. Not shown to player.'
+            }
+          },
+          required: ['newTrustLevel', 'reason']
+        }
+      },
+      {
+        name: 'triggerGlitchEvent',
+        description: 'Trigger a visual or audio glitch on the frontend. Use this when the player is aggressive, breaks immersion, or when escalating dread is needed.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            intensity: {
+              type: Type.STRING,
+              enum: ['low', 'medium', 'high'],
+              description: 'Severity of the glitch effect.'
+            },
+            type: {
+              type: Type.STRING,
+              enum: ['visual', 'audio', 'both'],
+              description: 'Which kind of glitch to fire.'
+            }
+          },
+          required: ['intensity', 'type']
+        }
+      },
+      {
+        name: 'triggerSceneChange',
+        description: 'Switch the active FMV scene key. The frontend reads this from Firestore and loads the corresponding video clip.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            sceneKey: {
+              type: Type.STRING,
+              description: 'The scene key that maps to a pre-generated FMV clip (e.g. "jason_entry_loop", "waterpark_flood_reveal").'
+            }
+          },
+          required: ['sceneKey']
+        }
+      },
+      {
+        name: 'triggerSlotsky',
+        description: 'Trigger a Slotsky anomaly event. Use when boredom is detected for 2+ consecutive reads, or when fourth_wall_count >= 3.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            anomalyType: {
+              type: Type.STRING,
+              enum: ['audio_bleed', 'frame_stutter', 'text_corrupt', 'reality_fracture'],
+              description: 'The type of Slotsky environmental anomaly to fire.'
+            }
+          },
+          required: ['anomalyType']
+        }
+      }
+    ]
+  }
+];
 
 /**
  * Constructs the core System Prompt for the Game Master / Overseer agent
