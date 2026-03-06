@@ -159,7 +159,7 @@ This is the single most critical unbuilt piece. The entire game depends on it.
 ---
 
 ## Competition Status (as of March 6, 2026)
-- 6,462+ participants in contest
+- 7,126 participants in contest
 - No FMV horror + Gemini Live voice-narrative competitors found
 - **Liminal Sin has a clear, uncontested lane**
 
