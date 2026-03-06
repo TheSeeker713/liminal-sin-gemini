@@ -1,0 +1,19 @@
+# Everything not needed to build the Docker image on Cloud Build
+.git/
+.gitignore
+node_modules/
+dist/
+assets/
+docs/
+prompts/
+public/
+.env
+.env.local
+.env*.local
+*.log
+.DS_Store
+*.tsbuildinfo
+AGENTS.md
+README.md
+CURRENT_STATE.md
+PRIVACY_POLICY.md
