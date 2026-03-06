@@ -20,7 +20,7 @@
 
 ## March 5, 2026 — Session Summary
 
-### Marketing Shell (myceliainteractive repo) — FULLY COMPLETE
+### Marketing Shell (myceliainteractive repo) — IN PROGRESS
 - Landing page `myceliainteractive.com/ls` live with all sections: navbar, hero, lore, Trust System cards, What Awaits You, signup forms, footer
 - Judge backdoor `myceliainteractive.com/ls/judges` live
 - D1 database `liminal-sin-signups` provisioned with `signups` table (name, email, type, created_at, email1_sent, email2_sent) + `settings` table (game_live flag)
@@ -32,7 +32,7 @@
 - `AGENTS.md` + `copilot-instructions.md` updated: always `npm run build` before deploy rule added
 
 ### Known Pending (marketing shell)
-- [ ] Test and confirm Email 1 delivers to `jrobards713@gmail.com` via Brevo (pending as of session end)
+- [ ] Test and confirm Email 1 delivers to `[redacted]@email.com` via Brevo (pending as of session end)
 
 ---
 
