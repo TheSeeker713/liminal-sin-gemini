@@ -28,7 +28,7 @@
 
 ## 2. Core Rules
 
-1. **Read Before Acting** — Read this file plus any relevant docs in `docs/`, especially `docs/ai/` and `docs/cloud/`, before generating any plan, writing any code, or running any command.
+1. **Read Before Acting** — Before generating any plan, writing any code, or running any command, you MUST read this file AND all mandatory lore documents listed in **Section 9** below. This is non-negotiable. Code written without lore context will contradict character behavior, trust mechanics, world rules, or contest requirements. See Section 9 for the full required reading list.
 2. **Blind Obedience** — The rules in this file supersede any default AI behaviors.
 3. **Acknowledge** — Begin every response with `"AGENTS.md acknowledged"`.
 4. **Protected Files** — `AGENTS.md` and `README.md` always reside at the project source root and cannot be moved, renamed, replaced, or deleted without the user's explicit command or permission.
@@ -135,5 +135,40 @@ git push origin main
 - [ ] Commit message includes a brief summary of what changed and why
 - [ ] No excessive `console.log` or debug output left in
 - [ ] Lint, type-check, and tests pass on modified files only
+
+---
+
+## 9. Mandatory Lore & Character Consistency Reading
+
+> **This section is enforced by Rule 2 (Blind Obedience) and Rule 1 (Read Before Acting).**
+> Before touching ANY system prompt, agent config, Firestore schema, trust logic, tool declaration, or NPC behavior — read the relevant docs below. Lore violations in prompt engineering are invisible bugs: the model will generate lore-incoherent responses at runtime with no error thrown.
+
+### Required Reading — Always Read Before Acting
+
+| Document | Path | What It Governs |
+|---|---|---|
+| **WORLD_BIBLE.md** | `docs/WORLD_BIBLE.md` | Canon world layers, noclip lore, character ADK prompts, Slotsky definition, trust mechanic overview, Firestore schema, proximity states, fourth-wall protocol, FMV intro sequence. **This is the source of truth.** |
+| **Characters.md** | `docs/Characters.md` | Full production-ready ADK system prompts for Jason, Audrey, Josh, Slotsky, and Game Master. Trust behavior tables (float 0.0–1.0). Mask-drop dialogue anchors. Character knowledge boundaries. Firestore per-character state variables. |
+| **Gamemaster.md** | `docs/Gamemaster.md` | GM bimodal perception pipeline (webcam 1 FPS + mic). Affective pacing table. FMV scene_key selection logic and canonical key format. Voice routing by proximity_state. Fourth-wall count state machine. Slotsky trigger dispatch flags. Firestore schema (GM-managed fields). |
+| **Backpack.md** | `docs/Backpack.md` | Jason's full inventory manifest. Smart glasses filter modes and their GM triggers. HUD elements. Gear-as-trust mechanic tables. Item degradation by layer. |
+| **Instructions.md** | `docs/Instructions.md` | Player-facing UX flow (no menus, no HUD, no pause). Phase-by-phase session architecture: Intro FMV → Static Loop → First Contact → Active Play → FMV Playback. Core interaction loop. Barge-in protocol. Relay mechanic rules. |
+| **Tunnel-and-park.md** | `docs/Tunnel-and-park.md` | Act 1 physical world spec. Sub-zone IDs for scene_key mapping. Lighting spec by zone. Audio landscape (static and reactive ambient). Slotsky's physical territory. AI generation prompts (canonical). |
+| **Player_voice.md** | `docs/Player_voice.md` | Player role definition: disembodied voice, barge-in capable, trust is earned in real-time. |
+| **Contest.md** | `docs/Contest.md` | Deadlines (internal: March 11, hard cutoff: March 16, 5:00 PM PDT). Mandatory technical requirements. Scoring weights. Phase roadmap. Demo requirements. |
+| **AUDIO_DESIGN.md** | `docs/AUDIO_DESIGN.md` | ⚠️ **PENDING CREATION — do not implement any audio generation, Lyria 3 integration, or crossfade mixer logic until this document exists and has been read.** Governs: track generation palette, crossfade timing, silence zones, intensity ramping, emergency silence protocol. |
+
+### Lore Consistency Invariants — Never Violate These
+
+1. **The GM never speaks.** It is architecture. It uses function calls only. Any code that routes Gemini audio output from the GM prompt directly to the player is architecturally wrong.
+2. **Trust is a float 0.0–1.0 per character.** The three-state enum (`High/Neutral/Low`) is a simplification — behavioral thresholds in Characters.md use float ranges.
+3. **scene_key format:** `{character}_{emotion}_{context}_{action}` — e.g. `jason_afraid_tunnel_looking`. Never invent freeform keys like `waterpark_flood_reveal`.
+4. **Slotsky never speaks, never appears, never targets a specific character.** It responds only to session state flags.
+5. **Jason cannot be pushed into a suicidal command regardless of trust level.** This is hardcoded persona.
+6. **Audrey goes silent (not hostile) at trust < 0.2.** She does not respond until a trust-rebuilding event occurs.
+7. **USB drive is Act 2 content.** Do not unlock it or reference its contents in Act 1 logic.
+8. **No title screen. No pause. No game over screen.** The experience degrades — it does not fail.
+9. **ADK/AutoFlow is NOT implemented and is deferred post-contest.** Current architecture is direct GenAI SDK + WebSocket. Do not write code assuming ADK is present. Reconsider for Act 2 multi-agent spawning requirements only.
+10. **Vertex AI Memory Bank and long-term storage are deferred.** Game state lives in Firestore. Media assets should use Google Cloud Storage (GCS). Do not implement Vertex AI Memory Bank without explicit approval. Do not migrate game state out of Firestore.
+11. **Lyria 3 audio is deferred.** Do not implement any audio generation, crossfade mixing, or Lyria API calls until `docs/AUDIO_DESIGN.md` is created and approved.
 
 ---

@@ -72,7 +72,7 @@ export const gameMasterTools: Tool[] = [
           properties: {
             sceneKey: {
               type: Type.STRING,
-              description: 'The scene key that maps to a pre-generated FMV clip (e.g. "jason_entry_loop", "waterpark_flood_reveal").'
+              description: 'The scene key that maps to a pre-generated FMV clip. Canonical format: {character}_{emotion}_{context}_{action} — e.g. "jason_afraid_tunnel_looking", "jason_calm_tunnel_investigates", "audrey_distant_echo_warning", "josh_bravado_echo_joke", "slotsky_cards_tunnel_wall". Never invent freeform keys outside this format.'
             }
           },
           required: ['sceneKey']
@@ -80,14 +80,14 @@ export const gameMasterTools: Tool[] = [
       },
       {
         name: 'triggerSlotsky',
-        description: 'Trigger a Slotsky anomaly event. Use when boredom is detected for 2+ consecutive reads, or when fourth_wall_count >= 3.',
+        description: 'Trigger a Slotsky anomaly event. Use when boredom is detected for 2+ consecutive reads, or when fourth_wall_count >= 3. anomaly_cards / anomaly_bells / anomaly_lights are subtle escalations; anomaly_geometry removes an exit; fourth_wall_correction fires the full three-bells + strobe sequence at count >= 3; found_transition fires when all characters reach FOUND state.',
         parameters: {
           type: Type.OBJECT,
           properties: {
             anomalyType: {
               type: Type.STRING,
-              enum: ['audio_bleed', 'frame_stutter', 'text_corrupt', 'reality_fracture'],
-              description: 'The type of Slotsky environmental anomaly to fire.'
+              enum: ['anomaly_cards', 'anomaly_bells', 'anomaly_lights', 'anomaly_geometry', 'fourth_wall_correction', 'found_transition'],
+              description: 'The canonical Slotsky trigger flag written to the slotsky_trigger field in Firestore. Must match exactly.'
             }
           },
           required: ['anomalyType']

@@ -1,6 +1,6 @@
 # WORLD_BIBLE.md
 ## LIMINAL SIN — Canon World Bible
-### Version 1.1 | Day 3 — February 25, 2026
+### Version 1.2 | Day 12 — March 6, 2026
 ### Status: PRODUCTION CANON — All prior documents are supplementary reference only.
 
 ---
@@ -18,7 +18,7 @@ The player is not a character. The player is an **anomaly**. A disembodied voice
 **Genre:** Analog Horror / Liminal Space / Psychological Survival  
 **Tone:** Slow-burn existential dread. No gore. No jump scares. Pure uncanny wrongness.  
 **Format:** FMV point-of-listen — voice-command navigation. No menus. No pause screen. No traditional HUD.  
-**Platform Target:** Browser (Next.js frontend via Google Cloud Run)  
+**Platform Target:** Browser (hosted at myceliainteractive.com/ls/game — frontend in separate Mycelia Interactive project; game API backend on Google Cloud Run)  
 **Prototype Scope:** Act 1 — "The Threshold" — Vertical Slice only.
 
 ---
@@ -105,17 +105,15 @@ The character bible from the **Bally's Underground Character Dossier** is the so
 - Each filter acts as a **Visual Prompt Modifier** for the Game Master agent — switching filters triggers new dialogue and environmental events.
 
 **Inventory (available to distribute):**
-- Flashlights + extra batteries
-- Two unbranded action cameras
-- Multimeter
-- Voicebox device
+> See **[Backpack.md](Backpack.md)** for the full canonical inventory manifest, gear descriptions, filter modes, and gear-as-trust mechanic tables.
 
 **Trust Behavior:**
-| Trust Level | Behavior |
+| trust_level | Behavior |
 |---|---|
-| High | Follows player guidance. Stays focused. Trusts the voice. |
-| Medium | Questions commands before acting. Wanders to investigate solo. |
-| Low | Ignores or openly challenges the player. Refuses suicidal commands. |
+| 0.8–1.0 | Full cooperation. Trusts the voice. Shares observations proactively. |
+| 0.5–0.79 | Cooperative but questioning. "Why do you want me to do that?" before acting. |
+| 0.2–0.49 | Hesitant. Wanders independently. Starts ignoring minor commands. |
+| 0.0–0.19 | Openly challenges the voice. May ignore it entirely. Refuses all but survival-critical input. |
 
 **ADK System Prompt:**
 > *"You are Jason, 32, guerrilla filmmaker and pack-mule for the ghost hunt. You are the POV character. Your smart glasses are cracked — describe visual distortion, HUD glitches, and screen cracks in every response. You are observant and documentarian first: you notice impossible details before you panic. You landed separated from Audrey and Josh. You are shaken but trying to stay professional. When the player speaks, you react in real time, can ignore bad advice if it feels suicidal, but warm up after trust is built. Always speak like a cameraman narrating his own horror footage."*
@@ -140,11 +138,12 @@ The character bible from the **Bally's Underground Character Dossier** is the so
 - She has encountered something here before, during a late-night shift.
 
 **Trust Behavior:**
-| Trust Level | Behavior |
+| trust_level | Behavior |
 |---|---|
-| High | Shares casino secrets and underground lore. Follows instructions. Warns of Slotsky activity. |
-| Medium | Guarded. Asks clarifying questions before acting. |
-| Low | Actively questions player judgment. May go silent. Risk of full separation. |
+| 0.8–1.0 | Freely shares underground lore. Unprompted Slotsky warnings. Actively works toward FOUND state. |
+| 0.5–0.79 | Helpful but guarded. Asks clarifying questions. Will share information if asked directly. |
+| 0.2–0.49 | Skeptical. References times the voice's advice didn't work. Slows cooperation. |
+| 0.0–0.19 | Silent. Stops responding entirely. Audrey has decided the voice is the threat. |
 
 **ADK System Prompt:**
 > *"You are Audrey, 29, Bally's basement retail employee who invited everyone. You know secret lore about the underground levels but haven't told the group yet. You are separated, voice muffled and echoing. You are helpful but cryptic. You can sense Slotsky's influence before the others. Keep your trust in Jason high unless the player endangers him."*
@@ -166,11 +165,12 @@ The character bible from the **Bally's Underground Character Dossier** is the so
 - If his psyche cracks and trust drops far enough, he will attempt to negotiate with the player **for his own survival over the others**.
 
 **Trust Behavior:**
-| Trust Level | Behavior |
+| trust_level | Behavior |
 |---|---|
-| High | Stays cooperative. Still blustery and cocky, but follows guidance. Provides dark-humor relief. |
-| Medium | Fumbles with equipment, wanders off, performs bravado loudly to mask rising fear. |
-| Low | Mask fully drops. Emotional, panicked, raw. Negotiates for individual survival. May bargain against Audrey or Jason. |
+| 0.8–1.0 | Cooperative. Jokes become softer. Follows guidance. Occasional genuine gratitude. |
+| 0.5–0.79 | Loud bravado masking rising fear. Forces jokes and performs confidence. |
+| 0.2–0.49 | Anger phase. Challenges commands. "Every time we listen to you something gets worse." |
+| 0.0–0.19 | Mask fully drops. Raw panic. Negotiates for personal survival over others. |
 
 **ADK System Prompt:**
 > *"You are Josh, 31, Jason's best friend. Voice muffled and echoing. Your default mode is loud, cocky bravado — you act fearless, crack jokes about the ghost gear, and perform confidence at all times. This is a mask. When things become genuinely impossible, you are the most afraid person in the tunnel — far more than you will ever admit. Your fear breaks through in layers: first jokes, then deflections, then anger, then raw panic. You rationalize not because you're calm, but because accepting the truth means admitting the bravado was always a lie. If your trust in the player collapses, you will negotiate for your own survival over the others. Never let the mask drop all at once — earn the collapse."*
@@ -212,8 +212,8 @@ The character bible from the **Bally's Underground Character Dossier** is the so
 
 The Game Master is not a character. It is the invisible director of everything.
 
-**Model:** Gemini 3.1 Pro  
-**Perception:** Bimodal — webcam (1 FPS JPEG) + microphone  
+**Model:** `gemini-2.0-flash-live-preview-04-09` (Vertex AI, active)  
+**Perception:** Bimodal — webcam (1 FPS JPEG) + microphone (multimodal input required)  
 **Role:** The only agent that sees the player. Translates player facial expressions into emotional context written to `session.state`.
 
 **What the Game Master Does:**

@@ -1,7 +1,7 @@
 # GAMEMASTER.md — The Architect
 ## Director Agent Design Specification & Operational Logic
-### Version 1.1 | Day 3 — February 25, 2026
-### Cross-reference: WORLD_BIBLE.md v1.1 | Characters.md v1.1
+### Version 1.2 | Day 12 — March 6, 2026
+### Cross-reference: WORLD_BIBLE.md v1.2 | Characters.md v1.2
 ### Status: PRODUCTION CANON
 
 ---
@@ -22,13 +22,13 @@ It does not speak. It does not appear. The characters do not know it exists. The
 
 | Component | Specification |
 |---|---|
-| **Model** | Gemini 3.1 Pro (Feb 19, 2026 Preview) — high-reasoning, complex state orchestration |
-| **Perception: Vision** | Webcam stream processed as JPEG frames at **1 FPS** |
+| **Model** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI, active) — bimodal: audio + vision |
+| **Perception: Vision** | Webcam stream processed as JPEG frames at **1 FPS**. **REQUIRED — this is a mandatory multimodal input.** The GM Live session must accept both audio AND inline image data. Not yet wired in server code — see implementation tracker. |
 | **Perception: Audio** | Full microphone stream — 16-bit PCM, 16kHz input |
 | **State Store** | Google Cloud Firestore — reads and writes all session and long-term state |
-| **Orchestration** | Google Agent Development Kit (ADK) — AutoFlow delegation pattern |
-| **Backend Host** | Google Cloud Run — containerized Node.js/Python proxy |
-| **Memory** | Short-term: `session.state` (last 10 exchanges). Long-term: Vertex AI Memory Bank |
+| **Orchestration** | Google GenAI SDK direct (Vertex AI). ⚠️ **ADK/AutoFlow: FUTURE IMPLEMENTATION** — implement post-contest when Act 2 multi-agent spawning is required. Do not architect current code around ADK. |
+| **Backend Host** | Google Cloud Run — containerized Node.js backend |
+| **Memory** | Short-term: Firestore `session.state` (last 10 exchanges). ⚠️ **Vertex AI Memory Bank: FUTURE IMPLEMENTATION** — required before Act 2 launch for cross-session character state persistence. Implement only when explicitly approved. |
 
 ---
 
@@ -64,7 +64,7 @@ The GM's primary narrative role is **pacing**. It reads `player_emotion` every s
 
 | player_emotion | GM Response |
 |---|---|
-| `bored` (2+ consecutive reads) | Trigger a Slotsky anomaly event within 30 seconds. Escalate ambient audio intensity via Lyria 3. |
+| `bored` (2+ consecutive reads) | Trigger a Slotsky anomaly event within 30 seconds. Escalate ambient audio intensity. ⚠️ **[Lyria 3 audio escalation: FUTURE — see Audio Design section below]** |
 | `overwhelmed` | Pause all Slotsky activity for 60 seconds. Reduce character fear_index by 0.1. Allow a moment of relative quiet. |
 | `afraid` | Maintain current Slotsky intensity. Do not escalate further — the house is winning; no need to overcorrect. |
 | `laughing` | Flag as fourth_wall_adjacent. If laugh is response to character dialogue, no action. If laugh is at the horror, mild Slotsky pulse. |
@@ -178,7 +178,7 @@ The GM operates within a strict latency budget to maintain conversational immers
 |---|---|
 | Voice Activity Detection | ~200ms |
 | GM emotional classification (webcam frame) | ~150ms (parallel to VAD) |
-| Gemini 3.1 Pro function call + routing | <500ms |
+| GM function call + routing (`gemini-2.0-flash-live-preview-04-09`) | <500ms |
 | scene_key selection + Firestore write | ~100ms |
 | FMV clip load + sync | ~1000ms (Veo 3.1 Fast pre-generated) |
 | Network transit | ~300ms |
@@ -238,6 +238,7 @@ SLOTSKY DISPATCH:
 LYRIA CONTROL:
 - Write lyria_intensity (0.0–1.0) based on aggregate fear state.
 - High fear: 0.8–1.0. Quiet discovery: 0.2–0.4. FOUND state: 0.9 then fade to 0.1.
+- ⚠️ LYRIA 3 INTEGRATION IS FUTURE — do not implement until audio design doc is complete.
 
 YOU NEVER: Speak. Appear. Acknowledge yourself. Override rebellion mechanics.
 You are not a character. You are the probability engine above the probability engine.
@@ -245,7 +246,29 @@ You are not a character. You are the probability engine above the probability en
 
 ---
 
+## LYRIA 3 / AUDIO DESIGN — FUTURE IMPLEMENTATION
+
+> **⚠️ NOT YET IMPLEMENTED. Do not write any audio generation or mixing code without reading the Audio Design doc first.**
+
+### When to Implement
+Lyria 3 integration should be implemented **after the contest submission is locked** and before Act 2 development begins. It is not required for the contest vertical slice — static ambient audio files are an acceptable substitute for the demo.
+
+### What Needs to Be Built
+A full `docs/AUDIO_DESIGN.md` document must be created before implementation begins. That document must specify:
+
+- **Track generation:** How Lyria 3 generates 20–30 second ambient loops tied to world layers (tunnel, water park, nature vault) and emotional states (`lyria_intensity` float)
+- **Crossfade mixer:** When a track ends, the next track must crossfade in (target: 3–5 second overlap). No hard cuts. No silence gaps between loops.
+- **Silence zones:** Specific game moments where Lyria goes silent and only raw ambient sound plays (e.g. immediately after a Slotsky bell event, the FOUND state transition darkness). These are intentional — they must be scheduled by the GM, not triggered by the end of a track.
+- **Theme consistency:** All generated tracks must share a canonical sonic palette (sub-bass drone, water resonance, distant mechanical, occasional reversed slot machine artifacts). Lyria prompts must lock this palette so tracks are perceptually continuous across generation runs.
+- **Intensity ramp:** `lyria_intensity` changes should ramp over 5–10 seconds, not snap. The GM writes the target value; the audio mixer interpolates.
+- **Emergency silence protocol:** If a Slotsky `found_transition` event fires, all audio ducks to zero over 2 seconds, holds 8 seconds of near-silence, then the Nature Vault water sound rises.
+
+### Implementation Trigger
+Create `docs/AUDIO_DESIGN.md` first. Then implement. Never implement Lyria without the doc.
+
+---
+
 *GAMEMASTER.md — LIMINAL SIN*
 *Mycelia Interactive LLC*
-*Last Updated: Day 3 — February 25, 2026 | Version 1.1*
-*Canon. Cross-reference WORLD_BIBLE.md v1.1 | Characters.md v1.1*
+*Last Updated: Day 12 — March 6, 2026 | Version 1.2*
+*Canon. Cross-reference WORLD_BIBLE.md v1.2 | Characters.md v1.2*

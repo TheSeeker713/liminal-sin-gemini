@@ -1,7 +1,7 @@
 # CHARACTERS.md — LIMINAL SIN
 ## Agent Persona Reference & ADK System Prompt Compendium
-### Version 1.1 | Day 3 — February 25, 2026
-### Cross-reference: WORLD_BIBLE.md v1.1 | Backpack.md v1.0
+### Version 1.2 | Day 12 — March 6, 2026
+### Cross-reference: WORLD_BIBLE.md v1.2 | Backpack.md v1.0
 ### Status: PRODUCTION CANON
 
 ---
@@ -12,17 +12,21 @@
 
 ## AGENT ARCHITECTURE OVERVIEW
 
-LIMINAL SIN uses a **four-agent hierarchy** managed by the Google Agent Development Kit (ADK) with AutoFlow delegation. Each agent has a distinct perception model, knowledge boundary, and emotional state machine tracked in Firestore.
+LIMINAL SIN uses a **four-agent hierarchy** orchestrated via the Google GenAI SDK (direct Vertex AI mode). Each agent has a distinct perception model, knowledge boundary, and emotional state machine tracked in Firestore.
+
+> **⚠️ ARCHITECTURE DECISION PENDING — ADK/AutoFlow:** The original design spec referenced Google Agent Development Kit (ADK) with AutoFlow delegation. This has **NOT** been implemented. Current architecture uses direct GenAI SDK + WebSocket orchestration. Do not write code assuming ADK is present. See AGENTS.md Section 9 for decision rationale and the criteria for when ADK adoption would be reconsidered (post-contest, Act 2+).
 
 | Agent | Model | Perception | Knows Player Exists? | Speaks? |
 |---|---|---|---|---|
-| **Game Master** | Gemini 3.1 Pro | Webcam (1 FPS) + Mic | Yes — orchestrates everything | Never directly |
-| **Jason** | Gemini 2.5 Flash Native Audio | Voice only | Partially — hears the voice, can't explain it | Yes — primary |
-| **Audrey** | Gemini 2.5 Flash Native Audio | Voice only (muffled/ECHO) | No — believes it's a device or phenomenon | Yes — secondary |
-| **Josh** | Gemini 2.5 Flash Native Audio | Voice only (muffled/ECHO) | No — tries to rationalize it away | Yes — secondary |
+| **Game Master** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Webcam (1 FPS) + Mic (bimodal) | Yes — orchestrates everything | Never directly |
+| **Jason** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Voice only | Partially — hears the voice, can't explain it | Yes — primary |
+| **Audrey** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Voice only (muffled/ECHO) | No — believes it's a device or phenomenon | Yes — secondary |
+| **Josh** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Voice only (muffled/ECHO) | No — tries to rationalize it away | Yes — secondary |
 | **Slotsky** | Firestore State Writer | None — reads session.state only | N/A | Never |
 
-All character agents use the **Gemini Live API** with native barge-in capability — the player can interrupt a character mid-sentence, halting their TTS output immediately. Persistent memory lives in **Vertex AI Memory Bank** (long-term, cross-scene) and **session.state** (short-term, current exchange window).
+All character agents use the **Gemini Live API** with native barge-in capability — the player can interrupt a character mid-sentence, halting their TTS output immediately. Short-term memory lives in **Firestore** `session.state` (current exchange window, last 10 turns).
+
+> **⚠️ STORAGE / MEMORY DECISION PENDING:** Long-term cross-scene memory (originally spec'd as Vertex AI Memory Bank) and asset storage strategy (FMV clips, audio tracks) are not yet finalized. Current active store: **Google Cloud Firestore** for all game state. Recommended path for media assets: **Google Cloud Storage (GCS)**. Vertex AI Memory Bank deferred to Act 2. Do not implement long-term memory until explicitly approved. See AGENTS.md Section 9.
 
 ---
 
