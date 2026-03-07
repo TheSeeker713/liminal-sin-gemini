@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import * as http from 'http';
 import * as dotenv from 'dotenv';
@@ -7,9 +7,8 @@ import { randomUUID } from 'crypto';
 dotenv.config({ path: '.env.local' });
 
 import { getOrCreateSession } from './services/db';
-import { getGameMasterSystemPrompt } from './services/gemini';
+import { getGameMasterSystemPrompt, LiveSessionManager } from './services/gemini';
 import { handleGmFunctionCall } from './services/gameMaster';
-import { openLiveSession, LiveSessionHandle } from './services/liveSession';
 
 const app = express();
 const server = http.createServer(app);
@@ -23,7 +22,7 @@ app.get('/health', (req, res) => {
 
 wss.on('connection', (ws: WebSocket) => {
   const sessionId = randomUUID();
-  let liveHandle: LiveSessionHandle | null = null;
+  const liveManager = new LiveSessionManager();
 
   console.log(`[WS] Client connected — session ${sessionId}`);
 
@@ -34,7 +33,31 @@ wss.on('connection', (ws: WebSocket) => {
     try {
       const sessionData = await getOrCreateSession(sessionId);
       const systemPrompt = getGameMasterSystemPrompt(sessionData.trustLevel);
-      liveHandle = await openLiveSession(sessionId, systemPrompt, ws);
+      await liveManager.connect(systemPrompt);
+
+      // Wire output hooks back to frontend
+      liveManager.onAgentAudio((base64Audio) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'agent_speech',
+            agent: 'jason', // Dynamically map in Phase 3/4
+            audio: base64Audio
+          }));
+        }
+      });
+
+      liveManager.onAgentInterrupt(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'agent_interrupt', agent: 'jason' }));
+        }
+      });
+      
+      liveManager.onFunctionCall((name, args) => {
+        if (ws.readyState === WebSocket.OPEN) {
+           handleGmFunctionCall(sessionId, name, args as any, ws);
+        }
+      });
+
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'SESSION_READY', sessionId }));
       }
@@ -43,30 +66,30 @@ wss.on('connection', (ws: WebSocket) => {
       ws.close();
     }
   })();
-
   ws.on('message', (message: Buffer) => {
     try {
       const data = JSON.parse(message.toString());
-      console.log(`[WS] Received:`, data);
 
       // Route Game Master function call events
       if (data.type === 'GM_FUNCTION_CALL' && data.sessionId && data.functionName) {
         handleGmFunctionCall(data.sessionId, data.functionName, data.args ?? {}, ws);
         return;
       }
-    } catch {
-      // Binary PCM audio from the browser — forward to Gemini Live
-      if (liveHandle) {
-        liveHandle.sendAudio(message);
-      } else {
-        console.warn(`[WS] Audio received before Live session ready — dropping buffer (${message.length} bytes)`);
+
+      // Player speech — base64 PCM audio from the browser → Gemini Live
+      if (data.type === 'player_speech' && data.audio) {
+        liveManager.sendAudio(data.audio);
+        return;
       }
+    } catch {
+      // Raw binary fallback — forward to Gemini Live
+      liveManager.sendAudio(message.toString('base64'));
     }
   });
 
   ws.on('close', () => {
     console.log(`[WS] Client disconnected — session ${sessionId}`);
-    liveHandle?.close();
+    liveManager.disconnect();
   });
 });
 
@@ -74,3 +97,5 @@ server.listen(PORT, () => {
   console.log(`[SERVER] WebSocket & Express server running on ws://localhost:${PORT}`);
   console.log(`[SERVER] Healthcheck at http://localhost:${PORT}/health`);
 });
+
+

@@ -147,6 +147,7 @@ export class LiveSessionManager {
   private session: any = null; // The active live session from @google/genai
   private onAudioCallback: ((base64Audio: string) => void) | null = null;
   private onInterruptCallback: (() => void) | null = null;
+  private onFunctionCallCallback: ((name: string, args: Record<string, unknown>) => void) | null = null;
   private readonly modelName = 'gemini-3.1-pro'; // Following the 2026 Liminal Sin spec
   
   constructor() {}
@@ -235,6 +236,12 @@ export class LiveSessionManager {
   /**
    * Handle incoming streaming events from Gemini
    */
+  /**
+   * Hook for Game Master tools execution
+   */
+  onFunctionCall(callback: (name: string, args: Record<string, unknown>) => void) {
+    this.onFunctionCallCallback = callback;
+  }
   private async listen() {
     if (!this.session) return;
     
@@ -251,6 +258,14 @@ export class LiveSessionManager {
         if (message.interruption && this.onInterruptCallback) {
             this.onInterruptCallback();
         }
+
+        // Map any function calls back to the Game Master
+        const toolCalls = message.toolCall?.functionCalls ?? [];
+        for (const call of toolCalls) {
+          if (call.name && this.onFunctionCallCallback) {
+             this.onFunctionCallCallback(call.name, call.args as Record<string, unknown>);
+          }
+        }
       }
     } catch (err) {
       console.error('[LiveSessionManager] Read loop error:', err);
@@ -265,3 +280,6 @@ export class LiveSessionManager {
     }
   }
 }
+
+
+

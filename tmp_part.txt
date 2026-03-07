@@ -1,0 +1,24 @@
+wss.on('connection', (ws: WebSocket) => {
+  const sessionId = randomUUID();
+  let liveHandle: LiveSessionHandle | null = null;
+
+  console.log(`[WS] Client connected — session ${sessionId}`);
+
+  // Init Firestore session + Gemini Live session asynchronously.
+  // Send SESSION_READY once both are established so the client
+  // knows its sessionId and can begin sending audio.
+  (async () => {
+    try {
+      const sessionData = await getOrCreateSession(sessionId);
+      const systemPrompt = getGameMasterSystemPrompt(sessionData.trustLevel);
+      liveHandle = await openLiveSession(sessionId, systemPrompt, ws);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'SESSION_READY', sessionId }));
+      }
+    } catch (err) {
+      console.error(`[WS] Failed to init Live session for ${sessionId}:`, err);
+      ws.close();
+    }
+  })();
+
+  
