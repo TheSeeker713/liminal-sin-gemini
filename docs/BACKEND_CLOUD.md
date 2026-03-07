@@ -1,6 +1,6 @@
 # BACKEND_CLOUD.md — Liminal Sin Backend Architecture
 ## Cloud Infrastructure, Agent System & API Contract
-### Version 1.0 | March 5, 2026
+### Version 1.1 | March 7, 2026
 ### Cross-reference: WORLD_BIBLE.md | AGENTS.md | TEAM_CONTRACT.md
 
 ---
@@ -22,10 +22,15 @@ The frontend (`myceliainteractive`) is a **dumb terminal** — it sends player i
 | Component | Service | Purpose |
 |---|---|---|
 | **Backend host** | Google Cloud Run | Containerized Node.js/Python proxy server |
+<!-- DEPRECATED BLOCK: ADK and Vertex AI Memory Bank are NOT used per AGENTS.md rules.
 | **Agent orchestration** | Google Agent Development Kit (ADK) | AutoFlow multi-agent delegation |
 | **AI models** | Gemini Live API (via ADK) | Real-time bidirectional voice + vision |
 | **State store (short-term)** | `session.state` / Firestore | Per-session trust, fear, proximity |
 | **State store (long-term)** | Vertex AI Memory Bank | Cross-scene persistent character memory |
+-->
+| **Agent orchestration** | Custom WebSocket Server | WebSockets routing to Google GenAI SDK |
+| **AI models** | Gemini Live API (@google/genai) | Real-time bidirectional voice + vision |
+| **State store** | Firestore | Per-session trust, fear, proximity |
 | **Game Master vision** | Webcam JPEG @ 1 FPS | Emotion classification written to Firestore |
 | **CI/CD** | GitHub Actions → Cloud Run | On push to `main` |
 
@@ -40,7 +45,7 @@ The frontend (`myceliainteractive`) is a **dumb terminal** — it sends player i
 │  Reads all Firestore state                  │
 │  Controls pacing, dread escalation, glitch  │
 └──────────┬──────────────────────────────────┘
-           │ ADK AutoFlow delegation
+           │ Custom WebSocket message routing
     ┌──────┴────────────────────────────────┐
     │               │               │       │
  JASON           AUDREY           JOSH   SLOTSKY
@@ -145,7 +150,7 @@ gcloud run deploy liminal-sin-backend \
 | `GEMINI_API_KEY` | Gemini Live API key |
 | `GOOGLE_CLOUD_PROJECT` | GCP project ID |
 | `FIRESTORE_DATABASE` | Firestore database name |
-| `VERTEX_MEMORY_STORE` | Vertex AI Memory Bank ID |
+<!-- DEPRECATED: | `VERTEX_MEMORY_STORE` | Vertex AI Memory Bank ID | -->
 
 ---
 
@@ -184,8 +189,10 @@ gcloud run deploy liminal-sin-backend \
 # Install dependencies
 npm install
 
-# Run ADK dev server (exposes mock WebSocket for frontend)
-npx adk dev
+<!-- DEPRECATED: # Run ADK dev server (exposes mock WebSocket for frontend)
+npx adk dev -->
+# Run dev server
+npm run dev
 
 # Type-check
 npx tsc --noEmit
@@ -201,8 +208,13 @@ npx eslint --fix src/
 Before submission, verify all of the following are demonstrably active:
 
 - [ ] Gemini Live API — real-time bidirectional voice streaming (Jason, Audrey, Josh)
+<!-- DEPRECATED: 
 - [ ] Google ADK — AutoFlow multi-agent delegation (GM → characters)
+-->
+- [ ] Custom WebSocket server for audio routing
 - [ ] Google Cloud Run — active deployment, not localhost
 - [ ] Cloud Firestore — trust/fear state reads and writes visible in GCP console
+<!-- DEPRECATED:
 - [ ] Vertex AI Memory Bank — long-term character memory persisting across scenes
+-->
 - [ ] GCP proof screenshots in `/docs/` for submission

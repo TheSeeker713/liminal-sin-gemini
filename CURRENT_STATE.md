@@ -161,7 +161,7 @@ This is the single most critical unbuilt piece. The entire game depends on it.
 ## Competition Status (as of March 6, 2026)
 - 7,126 participants in contest
 - No FMV horror + Gemini Live voice-narrative competitors found
-- **Liminal Sin has a clear, uncontested lane**
+- **Liminal Sin has a clear, uncontested lane (as far as we know)**
 
 ---
 
@@ -185,7 +185,7 @@ This is the single most critical unbuilt piece. The entire game depends on it.
 | **Project** | Liminal Sin — FMV psychological horror experience |
 | **Contest** | Gemini Live Agent Challenge (Google / Devpost) |
 | **Deadline** | March 16, 2026 @ 5:00 PM PT |
-| **Days Remaining** | ~11 |
+| **Days Remaining** | ~10 |
 | **Repo** | `d:\DEV\liminal-sin-gemini` |
 | **Marketing Shell** | `myceliainteractive.com/ls` (separate repo: `myceliainteractive`) |
 | **Judge Backdoor URL** | `myceliainteractive.com/ls/judges` (see `myceliainteractive` repo) |
@@ -206,7 +206,7 @@ This is the single most critical unbuilt piece. The entire game depends on it.
 - `AGENTS.md` + `copilot-instructions.md` updated: always `npm run build` before deploy rule added
 
 ### Known Pending (marketing shell)
-- [ ] Test and confirm Email 1 delivers to `[redacted]@email.com` via Brevo (pending as of session end)
+- [X] Test and confirm Email 1 delivers to `[redacted]@email.com` via Brevo (pending as of session end)
 
 ---
 

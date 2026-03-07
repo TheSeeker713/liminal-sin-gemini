@@ -1,4 +1,5 @@
 # Cloud Infrastructure & Budget Management
+*Modified: March 7, 2026*
 
 ## 1. Architecture Overview
 * **AI Backend (Google Cloud):** Vertex AI handles the heavy multimodal lifting and parses the Game Master's Trust logic. The Gemini Live API manages the real-time, interruptible voice streams.
@@ -15,7 +16,10 @@ Note: Game is served at `myceliainteractive.com/ls/game` (public) and `myceliain
 
 ## 3. Real-Time State & Latency Management
 * **The Interruption Imperative:** Because the core mechanic relies on the player physically interrupting the emotional (but rational) NPCs, the handshake between the client, Cloudflare, and the Gemini Live API must be damn near instantaneous. 
+<!-- DEPRECATED: Turn-based updating is not used with the Live API.
 * **Trust State Syncing:** The Game Master's JSON outputs (updating Trust) must be written to a lightweight, low-latency database (like Firestore) so the active NPC's prompt is seamlessly updated the second the player interrupts or finishes speaking.
+-->
+* **Trust State Syncing:** The Game Master's JSON outputs (updating Trust) must be written to a lightweight, low-latency database (like Firestore). Because Gemini Live uses persistent WebSockets instead of turn-based prompts, state changes trigger functional updates dynamically rather than hot-swapping the actual NPC system prompt mid-stream.
 
 ## 4. Environment & Deployment
 * **Project Targeting:** All GCP CLI commands target project ID `project-c4c3ba57-5165-4e24-89e` (display name: Mycelia Interactive). Region: `us-west1`.
