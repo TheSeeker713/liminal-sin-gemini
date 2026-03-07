@@ -42,7 +42,7 @@ Liminal Sin runs on a sophisticated multi-agent hierarchy orchestrated through G
 
 * **VEO 3 and Kling 3.0**: These models handle high-fidelity, temporal-consistent video generation to create the core FMV sequences. The use of generative video allows for a non-Euclidean environment where spaces can rearrange themselves without the constraints of physical filming.  
 * **Morphic Studio**: Used to maintain character consistency across generative video clips, ensuring that Jason, Audrey, and Josh maintain their visual identity throughout the narrative.  
-* **Grok Imagine**: Employed for initial environment plates and conceptual stills to define the aesthetic of each underworld layer before they are animated into living, breathing FMV segments.
+
 
 ## **📜 Vertical Slice: "The Sunken Oasis"**
 
@@ -63,11 +63,11 @@ The level is set within a massive intersection where a segment of the **Boring C
 
 This "majestic" water park serves as a trap for the characters' senses. While the Boring Tunnel feels like a prison, the Sunken Oasis feels like a sanctuary, yet its perfection is what makes it anomalous. The clear, flowing water becomes a primary source of dread; Jason may see reflections of Audrey and Josh that are not actually there, or hear the sound of their laughter echoing through the slides when the player remains silent. The majestic beauty is the house's primary weapon.
 
-### **The Antagonist: Slotsky**
+### **The Antagonist: [redacted]**
 
-Slotsky is not a person or a monster. It is a **Probability Engine**  that governs the logic of the underworld. It is the manifestation of the Vegas philosophy: "The House Always Wins." The engine calculates the likelihood of character survival based on the player's interactions.
+[Redacted] is not a person or a monster. It is a **Probability Engine**  that governs the logic of the underworld. It is the manifestation of the Vegas philosophy: "The House Always Wins." The engine calculates the likelihood of character survival based on the player's interactions.
 
-When the player speaks, the model interprets the intent. If the player lies to Jason or leads him toward the false echoes of his friends in the "majestic" water, the "Slotsky Engine" increases the intensity of the horror. The engine treats the survivors like chips on a table: once the player runs out of "Trust," the house collects its debt, and the character is lost to the static.
+When the player speaks, the model interprets the intent. If the player lies to Jason or leads him toward the false echoes of his friends in the "majestic" water, the "[Redacted] Engine" increases the intensity of the horror. The engine treats the survivors like chips on a table: once the player runs out of "Trust," the house collects its debt, and the character is lost to the static.
 
 ## **🛠️ The 21-Day Vertical Slice Roadmap**
 
