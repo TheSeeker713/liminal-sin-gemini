@@ -139,3 +139,129 @@ RULES:
 
   return `${baseInstruction}\n\n${trustModifiers}\n\n${guidelines}`;
 }
+
+/**
+ * Manages the persistent WebSocket connection to the Gemini Live API for a given frontend client.
+ */
+export class LiveSessionManager {
+  private session: any = null; // The active live session from @google/genai
+  private onAudioCallback: ((base64Audio: string) => void) | null = null;
+  private onInterruptCallback: (() => void) | null = null;
+  private readonly modelName = 'gemini-3.1-pro'; // Following the 2026 Liminal Sin spec
+  
+  constructor() {}
+
+  /**
+   * Connects to the Gemini Live stream with the provided character system prompt.
+   */
+  async connect(systemPrompt: string) {
+    try {
+      console.log(`[LiveSessionManager] Opening Vertex AI Live session to ${this.modelName}...`);
+      
+      // Attempt connection to the real-time endpoint
+      // Using generic setup for version @google/genai 1.44.0 (2026 specs)
+      this.session = await (ai as any).live.connect({
+        model: this.modelName,
+        generationConfig: {
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          tools: gameMasterTools,
+        }
+      });
+      
+      console.log('[LiveSessionManager] Session connected.');
+      this.listen();
+      
+    } catch (error) {
+      console.error('[LiveSessionManager] Connection error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sends audio chunks/frames to the active Gemini Live stream
+   */
+  sendAudio(base64Chunk: string) {
+    if (!this.session) return;
+    
+    // Convert base64 to buffer and send
+    this.session.send({
+      realtimeInput: {
+        mediaChunks: [
+          {
+            mimeType: 'audio/pcm;rate=16000',
+            data: base64Chunk
+          }
+        ]
+      }
+    }).catch((err: any) => {
+      console.error('[LiveSessionManager] Failed to send audio to Gemini', err);
+    });
+  }
+
+  /**
+   * Sends a webcam frame to the Gemini Live stream for Game Master vision
+   */
+  sendFrame(base64Jpeg: string) {
+    if (!this.session) return;
+    
+    this.session.send({
+      realtimeInput: {
+        mediaChunks: [
+          {
+            mimeType: 'image/jpeg',
+            data: base64Jpeg
+          }
+        ]
+      }
+    }).catch((err: any) => {
+      console.error('[LiveSessionManager] Failed to send visual frame to Gemini', err);
+    });
+  }
+
+  /**
+   * Hook for sending audio back to the client WS
+   */
+  onAgentAudio(callback: (base64Audio: string) => void) {
+    this.onAudioCallback = callback;
+  }
+
+  /**
+   * Hook for signaling the client to halt TTS on barge-in
+   */
+  onAgentInterrupt(callback: () => void) {
+    this.onInterruptCallback = callback;
+  }
+
+  /**
+   * Handle incoming streaming events from Gemini
+   */
+  private async listen() {
+    if (!this.session) return;
+    
+    try {
+      // Stream iterator structure based on the Live API
+      for await (const message of this.session) {
+        // Handle incoming chunks mapped to audio/PCM
+        if (message.output?.audio && this.onAudioCallback) {
+            // Buffer to base64
+            const base64Chunk = Buffer.from(message.output.audio).toString('base64');
+            this.onAudioCallback(base64Chunk);
+        }
+        
+        if (message.interruption && this.onInterruptCallback) {
+            this.onInterruptCallback();
+        }
+      }
+    } catch (err) {
+      console.error('[LiveSessionManager] Read loop error:', err);
+    }
+  }
+
+  disconnect() {
+    if (this.session) {
+      console.log('[LiveSessionManager] Disconnecting session');
+      // this.session.close() or let the stream exit
+      this.session = null;
+    }
+  }
+}
