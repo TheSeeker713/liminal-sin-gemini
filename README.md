@@ -10,7 +10,7 @@ A first-person, multi-agent FMV psychological horror experience built for the **
 
 **Liminal Sin** is not just a game: it is a "live" anomalous event. It leverages the **Gemini Live API** to create a world where autonomous AI characters do not just follow scripts; they exist within a fractured reality beneath the Las Vegas Strip. The experience aims to bridge the gap between cinema and agency, using the latest advancements in large language models to create a "Director" that watches you as closely as you watch the screen.
 
-You play as a disembodied presence, a "voice from the static," communicating with a filmmaker named **Jason**. Your goal is to guide Jason through the maze to find his lost companions, but the system is designed to test your ethics. If you are feeling particularly cruel, you can watch the "Slotsky" probability engine tear their sanity apart by feeding their paranoias and manipulating their surroundings in real time.
+You play as a disembodied presence, a "voice from the static," communicating with a filmmaker named **Jason**. Your goal is to guide Jason through the maze to find his lost companions, but the system is designed to test your ethics. If you are feeling particularly cruel, you can watch the [redacted] probability engine tear their sanity apart by feeding their paranoias and manipulating their surroundings in real time.
 
 **⚠️ Content & Safety Disclosure**: This project is a strictly **psychological horror** experience. There is no gore, blood, or extreme physical violence. The tension is derived entirely from spatial disorientation, isolation, and the unpredictable behavior of the AI agents. We prioritize atmospheric dread, the "uncanny valley," and existential weight over visceral shock.
 
