@@ -31,7 +31,7 @@ You play as a disembodied presence, a "voice from the static." Communicating thr
 - [x] **Week 1 (Feb 23 - Feb 28):** Research, planning, narrative design, and world-building constraints defined.
 - [x] **Feb 28:** Implemented an initial lightweight wrapper for ideation and concept testing.
 - [x] **Mar 1 - Present:** Actual active development of multi-agent real-time logic.
-- [x] **Foundation:** Deployed Firestore and initialized Gemini Live API with the correct persistent WebSocket streaming backend structure.
+- [x] **Foundation:** Deployed Firestore, initialized Gemini Live API with persistent WebSocket streaming backend structure, and configured automated CI/CD to Google Cloud Run via GitHub Actions (Workload Identity Federation).
 - [ ] **Voice Interruption:** Finalizing the seamless "Barge-in" API stream for natural human conversational thresholds (~2 seconds latency budget).
 - [ ] **Game Master Logic:** Connecting real-time player sentiment analysis to trigger [Redacted] anomalous visual events.
 - [ ] **Demo Validation:** Verifying end-to-end Google Cloud infrastructure. Recording the final 4-minute continuous submission video.
