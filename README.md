@@ -4,7 +4,7 @@
 
 **"The House Always Wins. Even in the Unreality."**
 
-A first-person, multi-agent FMV psychological horror prototype built for the **Gemini Live Agent Challenge**. Developed by **Mycelia Interactive**, with a focus on pushing the boundaries of real-time AI-driven narrative, bidirectional voice architecture, and multimodal player agency.
+A first-person, multi-agent FMV psychological horror prototype built for the **Gemini Live Agent Challenge**. Developed by **Mycelia Interactive** (**J.W. or Jeremy w. Robards**), with a focus on pushing the boundaries of real-time AI-driven narrative, bidirectional voice architecture, and multimodal player agency.
 
 ## **👁️ The Vision**
 
