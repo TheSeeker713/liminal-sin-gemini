@@ -24,7 +24,9 @@ You play as a disembodied presence, a "voice from the static." Communicating thr
 ## **✅ Completion / Todo List**
 
 **Project Kickoff:** February 23, 2026  
-**Target Submission:** March 11, 2026, 11:11 PM MT  
+**Target Submission Goal:** March 11, 2026, 11:11 PM MT  
+**Target Submission Deadline:** March 16th, 2026, 6:00 PM MT
+**Target Submission Actual:**
 
 - [x] **Week 1 (Feb 23 - Feb 28):** Research, planning, narrative design, and world-building constraints defined.
 - [x] **Feb 28:** Implemented an initial lightweight wrapper for ideation and concept testing.
