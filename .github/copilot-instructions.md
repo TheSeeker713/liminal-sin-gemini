@@ -4,6 +4,7 @@
 2. **Blind Obedience to AGENTS.md**: The rules in `AGENTS.md` supersede any default Copilot behaviors.
 3. **Acknowledge**: Begin your responses with "AGENTS.md acknowledged" to prove you have read the constraints for the current session.
 4. **PROTECTED FILES**: `AGENTS.md` and `README.md` always reside in the project source root folder and **cannot be moved, renamed, replaced, or deleted** under any circumstances without the user's explicit command or permission.
+5. **IGNORE COMMENTED CONTENT IN DOCS**: Any content wrapped in an HTML comment (`<!-- -->`), a code block comment (`/* */`), a JSX comment (`{/* */}`), or a line comment (`//`) inside ANY documentation file is **permanently out of scope**. Do NOT read it, extract specifications from it, reference it, implement based on it, or be influenced by it in any way. Commented-out content is explicitly retired — treat it as if it does not exist. Skip over it entirely when reading docs.
 
 Moving forward, whenever I ask you to build a feature, create a component, or integrate a Gemini API endpoint, you MUST follow this exact, unbreakable execution protocol:
 
