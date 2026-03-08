@@ -1,24 +1,37 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 8, 2026 (morning — end of session)
+> Last updated: March 8, 2026 (afternoon — Jason prompt + deploy fix session)
 
 ---
 
 ## ⚠️ NEXT AI SESSION — READ THIS FIRST
 
-### What was completed this session (commit `66d719b` on `main`):
+### What was completed this session (commit `bf11a07` on `main`):
 1. **Gemini Live model fixed** — `gemini-live-2.5-flash-native-audio` (GA as of March 2026) replaces the old non-existent `gemini-2.0-flash-live-preview-04-09` / `gemini-2.0-flash-live-001`
 2. **Live API region fixed** — separate `liveAi` client targeting `us-central1` (only region supporting Live API on Vertex AI)
 3. **Both smoke tests now PASS:**
    - `npm run test:audio` → `✅ SESSION_READY` + 14 `agent_speech` chunks
    - `npm run save-audio` → `scripts/output/jason_response.wav` (8.3s of Jason's Fenrir voice)
+4. **Jason demo prompt v2** — upgraded `server/services/npc/jason.ts`:
+   - Richer framing: "pack-mule for tonight's ghost hunt" (from Characters.md)
+   - Added `fearIndex` parameter (float 0.0–1.0) — behavior table injected into prompt at runtime
+   - Added fear-driven speech fragmentation table (whispering at 0.8–1.0)
+   - Tighter VOICE & TONE guidance + radio brevity rule (1–3 sentences)
+   - `prompts/jason.demo.md` synced — removed `{{TRUST_LEVEL}}` placeholder
+5. **Opening monologue trigger** — `server.ts` calls `jasonManager.sendText()` immediately after `SESSION_READY` so Jason speaks first (voicebox activates on its own)
+6. **Deploy fix** — `deploy.yml` fixed:
+   - Replaced `flags: '--allow-unauthenticated'` with separate IAM binding step (fixes `PERMISSION_DENIED` / `run.services.setIamPolicy` error)
+   - Added `env_vars` block: `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_REGION` now explicitly set on every Cloud Run revision
+7. **Lint fix** — removed pre-existing `as any` cast in `server.ts` (args already `Record<string, unknown>`)
 
-### ⚡ NEXT SESSION FIRST TASK — Phase 4 (Game Master function calling)
+### ⚡ NEXT SESSION FIRST TASK — Imagen 3 Scene Generation (Day 3 of sprint)
 
-The pipeline is proven. Next work is **Steps 11–13** from the backend plan:
-- **Step 11:** GM tools wired (`triggerTrustChange`, `triggerGlitchEvent`, `triggerSceneChange`, `triggerSlotsky`) — declarations exist in `gemini.ts`, but handler in `gameMaster.ts` needs implementing
-- **Step 12:** `handleGmFunctionCall` in `server/services/gameMaster.ts` — persist to Firestore + broadcast to frontend WS
-- **Step 13:** Player interruption (barge-in) — `agent_interrupt` event already emitted; frontend needs to handle it
+Pipeline is proven. Jason prompt + opening monologue are live. Next work:
+- **Step A:** On GM `triggerSceneChange` function call → call Vertex AI Imagen 3 with the matching zone prompt from `docs/Tunnel-and-park.md`
+- **Step B:** Broadcast result as `{ type: 'scene_image', agent: 'gm', data: base64 }` WebSocket message
+- **Step C:** Frontend CSS background updates with the generated image (Day 3 is frontend integration day in myceliainteractive repo)
+
+After Imagen 3, next priority is the webcam frame pipe (GM vision loop, 1 JPEG/sec) → unlocks 40% Innovation scoring.
 
 ### Server startup (always do this first):
 ```powershell
@@ -78,6 +91,7 @@ npm run test:audio
 | `server/services/db.ts` | ✅ Done | Firestore ADC adapter with in-memory fallback |
 | `server/services/gemini.ts` | ✅ Done | Vertex AI client + GM system prompts + 4 tool declarations + `LiveSessionManager` class |
 | `server/services/gameMaster.ts` | ✅ Done | GM function call router — persists state + broadcasts GmEvent over WS |
+| `server/services/npc/jason.ts` | ✅ Done | Jason demo system prompt v2 — fearIndex + trust injected at runtime, opening monologue trigger |
 | `server/tsconfig.build.json` | ✅ Done | Emits compiled JS to `dist/server/server.js` |
 | `Dockerfile` | ✅ Done | 2-stage build (node:20-alpine), Cloud Run ready |
 | `.gcloudignore` | ✅ Done | Strips docs/assets/public from Cloud Build upload |
@@ -101,7 +115,8 @@ npm run test:audio
 - [x] Frontend game wrapper (`/ls/game`) — DONE in myceliainteractive repo
 - [x] Cloud Run deployment — LIVE at `https://liminal-sin-server-1071754889104.us-west1.run.app`
 - [ ] **End-to-end audio test** — `player_speech` → Gemini → `agent_speech` loop not validated with a real browser client yet
-- [ ] Jason’s demo system prompt + `voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } }` injected
+- [x] Jason's demo system prompt + `voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } }` injected
+- [x] Opening monologue trigger (Jason speaks first on session start)
 - [ ] Webcam frame pipe (GM vision: 1 JPEG/sec → `sendFrame()`)
 - [ ] Imagen 3 scene generation — server calls Vertex AI Imagen 3 when `scene_key` changes
 - [ ] Trust float injection — Jason’s prompt updated with current `trust_level` value
@@ -161,9 +176,16 @@ PORT=3001
 
 ## Next Priority Actions (next session start)
 
-**IMMEDIATE — Run Test 1 and Test 2 (see instructions at top of this file)**
+**IMMEDIATE — Restart server and run test to verify opening monologue**
+```powershell
+Get-Process | Where-Object { $_.ProcessName -like "*node*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+npm run server
+# In second terminal:
+npm run test:audio
+# Expect: SESSION_READY, then Jason speaks his opening line BEFORE player speaks
+```
 
-**After tests pass — Imagen 3 Scene Generation**
+**After test passes — Imagen 3 Scene Generation**
 - On GM `triggerSceneChange` function call → call Vertex AI Imagen 3 with matching zone prompt
 - Broadcast result as `{ type: 'scene_image', data: base64 }` WebSocket message
 - Frontend CSS background updates with the image
@@ -230,12 +252,12 @@ PORT=3001
 ## Recent Commits
 | Hash | Message |
 |---|---|
+| `bf11a07` | feat: Jason demo prompt v2 + opening monologue + deploy fix |
+| `3f01276` | docs: update CURRENT_STATE.md |
 | `45b6ad8` | chore: strip all frontend deps and configs — 315 packages removed |
 | `09668fc` | chore: remove frontend artifacts — backend only |
 | `7f024fc` | feat: game master overseer engine — tools, function call handler, event broadcast |
 | `ae40793` | feat: Vertex AI ADC mode, Firestore connected, port 3001 |
-| `56b7526` | feat: add build tsconfig for Cloud Run compilation |
-| `6536f10` | feat: Dockerfile and .gcloudignore for Cloud Run |
 
 
 ---
