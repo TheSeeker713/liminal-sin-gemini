@@ -58,9 +58,11 @@ wss.on('connection', (ws: WebSocket) => {
       const gmPrompt = getGameMasterSystemPrompt(sessionData.trustLevel);
       await gmManager.connect(gmPrompt, 'gm');
 
-      gmManager.onFunctionCall((name, args) => {
+      gmManager.onFunctionCall((id, name, args) => {
         if (ws.readyState === WebSocket.OPEN) {
-          handleGmFunctionCall(sessionId, name, args, ws);
+          handleGmFunctionCall(sessionId, name, args, ws).finally(() => {
+            gmManager.sendToolResponse(id, name);
+          });
         }
       });
 

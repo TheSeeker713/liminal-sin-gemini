@@ -150,7 +150,7 @@ export class LiveSessionManager {
   private session: Session | null = null;
   private onAudioCallback: ((base64Audio: string) => void) | null = null;
   private onInterruptCallback: (() => void) | null = null;
-  private onFunctionCallCallback: ((name: string, args: Record<string, unknown>) => void) | null = null;
+  private onFunctionCallCallback: ((id: string, name: string, args: Record<string, unknown>) => void) | null = null;
   private readonly modelName = 'gemini-live-2.5-flash-native-audio';
   
   constructor() {}
@@ -178,7 +178,7 @@ export class LiveSessionManager {
       : {
           systemInstruction: systemPrompt,
           tools: gameMasterTools,
-          responseModalities: [Modality.TEXT]
+          responseModalities: [Modality.AUDIO]
         };
 
     this.session = await liveAi.live.connect({
@@ -202,7 +202,7 @@ export class LiveSessionManager {
           const calls = msg.toolCall?.functionCalls ?? [];
           for (const call of calls) {
             if (call.name && this.onFunctionCallCallback) {
-              this.onFunctionCallCallback(call.name, call.args ?? {});
+              this.onFunctionCallCallback(call.id ?? '', call.name, call.args ?? {});
             }
           }
         },
@@ -210,7 +210,8 @@ export class LiveSessionManager {
           console.error('[LiveSessionManager] WebSocket error:', JSON.stringify(e));
         },
         onclose: (e) => {
-          console.log(`[LiveSessionManager] Connection closed — code: ${e.code}, reason: "${(e as any).reason ?? ''}", wasClean: ${(e as any).wasClean ?? '?'} — ${new Date().toISOString()}`);
+          const ev = e as { code?: number; reason?: string; wasClean?: boolean };
+          console.log(`[LiveSessionManager] Connection closed — code: ${ev.code}, reason: "${ev.reason ?? ''}", wasClean: ${ev.wasClean ?? '?'} — ${new Date().toISOString()}`);
         },
       },
     });
@@ -262,8 +263,19 @@ export class LiveSessionManager {
   /**
    * Hook for Game Master tools execution
    */
-  onFunctionCall(callback: (name: string, args: Record<string, unknown>) => void) {
+  onFunctionCall(callback: (id: string, name: string, args: Record<string, unknown>) => void) {
     this.onFunctionCallCallback = callback;
+  }
+
+  /**
+   * ACKs a Gemini function call. Must be called after handling every toolCall
+   * or Gemini will hang waiting for the response.
+   */
+  sendToolResponse(callId: string, functionName: string, result: Record<string, unknown> = { status: 'ok' }) {
+    if (!this.session) return;
+    this.session.sendToolResponse({
+      functionResponses: [{ id: callId, name: functionName, response: result }]
+    });
   }
 
   disconnect() {

@@ -19,8 +19,9 @@ export async function handleGmFunctionCall(
 
   switch (functionName) {
     case 'triggerTrustChange': {
-      const newLevel = parseFloat(args.newTrustLevel as string);
-      await updateTrustLevel(sessionId, isNaN(newLevel) ? 0.5 : newLevel);
+      const levelMap: Record<string, number> = { High: 0.8, Neutral: 0.5, Low: 0.2 };
+      const newLevel = levelMap[args.newTrustLevel as string] ?? 0.5;
+      await updateTrustLevel(sessionId, newLevel);
       event = {
         type: 'TRUST_CHANGE',
         sessionId,
