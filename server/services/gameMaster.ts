@@ -54,7 +54,7 @@ export async function handleGmFunctionCall(
       void generateSceneImage(sceneKey).then((base64) => {
         if (base64 && clientWs.readyState === WebSocket.OPEN) {
           clientWs.send(JSON.stringify({
-            type: 'SCENE_IMAGE',
+            type: 'scene_image',
             agent: 'gm',
             sessionId,
             payload: { sceneKey, data: base64 },
