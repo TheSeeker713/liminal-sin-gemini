@@ -1,6 +1,56 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 7, 2026
+> Last updated: March 7, 2026 (evening — end of session)
+
+---
+
+## ⚠️ NEXT AI SESSION — READ THIS FIRST
+
+### What was completed this session (commit `3d1df02` on `main`):
+1. **Dead End Protocol** added to `AGENTS.md` (Section 3a) and `.github/copilot-instructions.md`
+2. **Jason NPC dual-session architecture** — full implementation:
+   - `prompts/jason.demo.md` — human-editable source of truth for Jason's prompt
+   - `server/services/npc/jason.ts` — `getJasonSystemPrompt(trustLevel: number)`
+   - `server/types/state.ts` — `TrustLevel` enum removed, replaced with float `0.0–1.0`; added `fearIndex`, `ProximityState`, `privateKnowledgeUnlocked`
+   - `server/services/db.ts` — float trust default `0.5`, new session fields
+   - `server/services/gemini.ts` — `LiveSessionManager.connect(prompt, mode)` — `'npc'` = audio+Fenrir voice, `'gm'` = text/silent+tools
+   - `server/server.ts` — two managers per connection: `jasonManager` (speaks) + `gmManager` (silent, function calls only)
+   - `scripts/test-audio.ts` — existing smoke test, labels updated for Jason
+   - `scripts/save-audio.ts` — NEW: collects Jason's PCM audio and writes `scripts/output/jason_response.wav` so you can hear Fenrir voice
+3. **npm scripts added:** `npm run test:audio`, `npm run save-audio`
+
+### What failed THIS session and WHY:
+- **Test 1 (`npm run test:audio`) failed** — NOT a code error. Port 3001 was already occupied by a background server process from an earlier session. The error was `EADDRINUSE: address already in use :::3001`.
+
+### ⚡ NEXT SESSION FIRST TASK — Run Test 1 yourself:
+
+```powershell
+# Step 1: Kill whatever is on port 3001
+npx kill-port 3001
+# If that fails, use:
+Get-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess | Stop-Process -Force
+
+# Step 2: Start the server fresh
+npm run server
+
+# Step 3: In a second terminal, run the smoke test
+npm run test:audio
+
+# Step 4: If Session_READY fires and agent_speech chunks arrive → Test 1 PASSES
+# Step 5: Run save-audio to hear Jason's actual voice
+npm run save-audio
+# Then open: scripts/output/jason_response.wav
+```
+
+**Pass condition for Test 1:** Console shows `✅ SESSION_READY` followed by `✅ agent_speech received`.
+**Pass condition for Test 2:** `jason_response.wav` opens and a voice is audible.
+
+### If Test 1 FAILS (1008 or connection error from Gemini):
+**STOP. Do NOT iterate.** Report the exact error verbatim. The Dead End Protocol applies.
+The most likely causes are:
+- `GOOGLE_CLOUD_PROJECT` env var not set in `.env.local`
+- ADC credentials expired (`gcloud auth application-default login`)
+- Model name `gemini-2.0-flash-live-preview-04-09` not available in Vertex AI `us-west1`
 
 ---
 
@@ -15,7 +65,7 @@
 | **Days to Internal Cutoff** | 4 days |
 | **Days to Hard Deadline** | 9 days |
 | **Backend Repo** | `d:\DEV\liminal-sin-gemini` (Cloud Run Node.js server — NO frontend code) |
-| **Frontend Repo** | `myceliainteractive` (Cloudflare Pages) |
+| **Frontend Repo** | `myceliainteractive` (Cloudflare Pages — SEPARATE REPO, not in this workspace) |
 | **Marketing Shell** | `https://myceliainteractive.com/ls` — LIVE |
 | **Judge Backdoor** | `https://myceliainteractive.com/ls/judges` — LIVE |
 | **Game Wrapper** | `https://myceliainteractive.com/ls/game` — LIVE |
@@ -133,21 +183,11 @@ PORT=3001
 
 ---
 
-## Next Priority Actions (March 7, 2026)
+## Next Priority Actions (next session start)
 
-**Phase 2 Step 3 — Validate end-to-end audio (IMMEDIATE)**
-The transport layer is wired. The blocking question is: does audio actually flow?
-1. Write a minimal WebSocket test client that sends a `player_speech` chunk
-2. Confirm `agent_speech` comes back with Gemini audio
-3. Confirm GM function calls fire and write to Firestore
+**IMMEDIATE — Run Test 1 and Test 2 (see instructions at top of this file)**
 
-**Phase 3 — NPC Character Prompts + Voice Config**
-- Inject Jason’s DEMO prompt (from `docs/Characters.md` DEMO PROMPT section) at session start
-- Add `voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } }` to Jason’s Live session
-- Update model to `gemini-2.0-flash-live-preview-04-09` in `gemini.ts` (currently says `gemini-3.1-pro` — fix this)
-- Validate Jason speaks in-character
-
-**Phase 3 — Imagen 3 Scene Generation**
+**After tests pass — Imagen 3 Scene Generation**
 - On GM `triggerSceneChange` function call → call Vertex AI Imagen 3 with matching zone prompt
 - Broadcast result as `{ type: 'scene_image', data: base64 }` WebSocket message
 - Frontend CSS background updates with the image
