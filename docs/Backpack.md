@@ -20,18 +20,22 @@
 
 Jason's backpack is the **only inventory system in the game**. There are no menus, no item wheels, no UI overlays. Items exist narratively — the player must verbally ask Jason to use, check, or distribute gear. Jason will describe what he finds, what condition it's in, and what it does. The backpack is also a **trust-building mechanism**: asking Jason to share gear with Audrey or Josh is one of the primary ways to increase character trust.
 
+<!-- [AI: cracked smart-glasses HUD overlay deferred — no time for cracked screen implementation in contest build. Front end will use a semi-transparent smart glasses CSS overlay instead. Original text preserved for post-contest restoration.]
 The backpack contents are physically visible in the **cracked smart-glasses HUD overlay** — items appear as flickering inventory icons in the lower-right corner of the screen, glitching in and out based on HUD damage state.
+-->
 
 ---
 
 ## THE SMART GLASSES — PRIMARY POV DEVICE
 
-**Status:** Cracked. Partially functional. HUD flickering.  
+**Status:** Partially functional. HUD flickering.  
 **Narrative function:** The player's eyes. The game's entire visual perspective runs through these.
 
 ### Physical Description
 - Prototype hardware — not a consumer product. Chunky frame, matte black, with a thin heads-up display strip across the right lens.
+<!-- [AI: cracked lens / spiderweb fracture deferred — no cracked screen effect in contest build. Semi-transparent smart glasses CSS overlay used instead. Original text preserved:
 - The right lens took the impact of the fall. There is a spiderweb crack across the lower-right quadrant. This crack is a **permanent visual element** — a vignette that never fully goes away.
+-->
 - The left lens is intact but occasionally flickers, producing brief total-blackout frames.
 
 ### Filter Modes (Visual Prompt Modifiers)
@@ -39,7 +43,8 @@ Switching filters changes what the Game Master agent "sees" and triggers new env
 
 | Filter | Command | What It Reveals | Narrative Purpose |
 |---|---|---|---|
-| **Standard** | *"Switch to normal"* | Default 4K visual feed, cracked overlay | Baseline reality |
+<!-- [AI: 'cracked overlay' deferred — semi-transparent smart glasses CSS overlay used instead in contest build. Original: Default 4K visual feed, cracked overlay] -->
+| **Standard** | *"Switch to normal"* | Default visual feed, smart glasses overlay | Baseline reality |
 | **Infrared (IR)** | *"Switch to infrared"* | Heat signatures, thermal anomalies in dark water | Detect living things — or things that produce heat and shouldn't |
 | **Night Vision** | *"Switch to night vision"* | Illuminates pitch-black tunnels and submerged slides | Navigate without a flashlight; reveals what's in the water |
 | **Full Spectrum** | *"Switch to full spectrum"* | Hidden Slotsky signals, invisible environmental writing, anomalies the naked eye misses | The deepest truth layer — use sparingly; triggers Slotsky awareness |

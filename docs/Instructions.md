@@ -34,7 +34,7 @@ LIMINAL SIN breaks every convention of traditional game UI deliberately:
 - **No title screen.** The experience begins immediately.
 - **No menu.** There are no options to select before play begins.
 - **No pause.** The world does not stop because you stepped away.
-- **No HUD** in the traditional sense — the only UI elements are organic to the fiction (flickering hint text, the voicebox waveform). The CSS atmosphere layer provides glitch + vignette effects. ⚠️ **DEMO NOTE:** Jason’s cracked smart-glasses overlay requires a glasses HUD frontend implementation — deferred to roadmap.
+- **No HUD** in the traditional sense — the only UI elements are organic to the fiction (flickering hint text, the voicebox waveform). The CSS atmosphere layer provides glitch + vignette effects. The frontend uses a semi-transparent smart glasses CSS overlay for the POV aesthetic. <!-- [AI: 'Jason's cracked smart-glasses overlay' deferred — no cracked screen effect in contest build. Original: "Jason's cracked smart-glasses overlay requires a glasses HUD frontend implementation — deferred to roadmap."] -->
 - **No game over screen.** The experience degrades, shifts, or ends — it does not fail.
 
 This is not an oversight. This is the design. The absence of menus is the first horror.
@@ -70,7 +70,7 @@ A scripted cinematic sequence covering:
 2. Exterior Bally's — late-night quiet, formally-dressed couple visible
 3. Interior basement mall — Audrey's kiosk, flickering fluorescents, dead arcades
 4. Escalators — the couple passes through the sealed gate. The group chases. The floor gives way.
-5. The fall — screen crack overlay begins mid-fall, spiderweb fracture blooms across lower-right
+5. The fall — <!-- [AI: 'screen crack overlay begins mid-fall, spiderweb fracture blooms across lower-right' — cracked screen deferred. Semi-transparent CSS overlay used instead. Original preserved.] --> lights flicker, disorientation, the floor gives way
 6. The landing — Jason on concrete. Flood lights. Dark still water. Slides half-submerged. HUD flickers on.
 
 **Transition:** Hard cut to black on landing impact. One beat of silence. Then: the static loop begins.
@@ -106,7 +106,7 @@ Same aesthetic: thin lo-fi monospace font, corrupted system message look.
 
 **Duration:** Indefinite — loops until player speaks  
 **Player input:** Mic active. Webcam active. Game Master begins reading immediately.  
-**Overlay:** Two hint texts fade in and out. Jason's cracked-glasses vignette active.
+**Overlay:** Two hint texts fade in and out. Smart glasses CSS vignette active. <!-- [AI: 'Jason's cracked-glasses vignette active' — cracked screen deferred. Semi-transparent CSS overlay used instead. Original: "Jason's cracked-glasses vignette active."] -->
 
 ### What Plays
 A looping 8–12 second FMV clip:

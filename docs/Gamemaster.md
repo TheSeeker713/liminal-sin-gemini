@@ -217,7 +217,7 @@ The GM operates within a strict latency budget to maintain conversational immers
 | **DEMO Total target (blocking path)** | **~2.5 seconds** |
 | **ROADMAP Total target** | **~2.0 seconds** |
 
-**Fallback protocol:** If `t_vid > 1500ms` (clip not found or generation in progress), GM writes `fmv_fallback_active: true` and Jason plays a **stall behavior** — looking around the chamber, adjusting the cracked glasses, asking the voice a question. This buys 10–15 seconds while the background generation queue processes.
+**Fallback protocol:** If `t_vid > 1500ms` (clip not found or generation in progress), GM writes `fmv_fallback_active: true` and Jason plays a **stall behavior** — looking around the chamber, asking the voice a question. This buys 10–15 seconds while the background generation queue processes. <!-- [AI: 'adjusting the cracked glasses' stall behavior deferred — no cracked screen in contest build. Original: 'looking around the chamber, adjusting the cracked glasses, asking the voice a question.'] -->
 
 ---
 

@@ -97,7 +97,8 @@ Environment variable in frontend: `NEXT_PUBLIC_GAME_WS_URL`
 | `trust_update` | `{ agent: string, trust_level: number, fear_index: number }` | HUD trust/fear indicator update |
 | `fmv_trigger` | `{ sequence_id: string, loop: boolean }` | Play a specific FMV video clip |
 | `fmv_stop` | `{}` | Stop current FMV, return to live state |
-| `hud_glitch` | `{ intensity: "low"\|"med"\|"high", duration_ms: number }` | Trigger cracked glasses glitch effect |
+<!-- [AI: hud_glitch 'cracked glasses glitch effect' deferred — no cracked screen effect in contest build. Semi-transparent CSS overlay used instead. Event preserved for post-contest restoration. Original: `hud_glitch` | `{ intensity: "low"|"med"|"high", duration_ms: number }` | Trigger cracked glasses glitch effect] -->
+| `hud_glitch` | `{ intensity: "low"\|"med"\|"high", duration_ms: number }` | Trigger smart glasses visual glitch effect |
 | `gm_emotion_update` | `{ player_emotion: string }` | GM detected player emotion (internal, for debug HUD) |
 | `session_ready` | `{ session_id: string }` | Session initialized, game can begin |
 | `session_error` | `{ code: string, message: string }` | Unrecoverable error |

@@ -29,7 +29,7 @@ For AI prompt context: all image and video generation referencing the above-grou
 - *"Aerial drone shot, Las Vegas Strip at night, neon light bleed on wet pavement, slow push-in toward Bally's/Horseshoe Las Vegas illuminated sign, overcast dark sky, empty street, cinematic lo-fi grain"*
 - Reference: Bally's exterior illuminated signage, colorful escalators visible in exterior shots.
 
-**Cracked-glasses overlay:** NOT applied here. Pre-fall footage is clean. The vignette activates only after the noclip event.
+<!-- [AI: cracked-glasses overlay deferred — no cracked screen effect in contest build. Semi-transparent smart glasses CSS overlay used instead on frontend. Original: "Cracked-glasses overlay: NOT applied here. Pre-fall footage is clean. The vignette activates only after the noclip event."] -->
 
 ---
 
@@ -50,7 +50,7 @@ For AI prompt context: all image and video generation referencing the above-grou
 **AI prompt language:**
 - *"Interior of abandoned Las Vegas casino mall, basement level, half-shuttered storefronts, flickering fluorescent overhead lighting, reflective tile floor, empty corridors, late night, no people, nostalgic decay, analog horror aesthetic, lo-fi grain"*
 
-**Cracked-glasses overlay:** NOT applied. Still pre-fall.
+<!-- [AI: cracked-glasses overlay deferred — still pre-fall, moot point for contest build. Original: "Cracked-glasses overlay: NOT applied. Still pre-fall."] -->
 
 ---
 
@@ -69,7 +69,8 @@ For AI prompt context: all image and video generation referencing the above-grou
 **AI prompt language:**
 - *"Interior escalator of Bally's Las Vegas, colorful illuminated handrails, late night, empty, a formally dressed couple passing through a closed gate that should block them, motion blur on the couple, three people in background watching in shock, lo-fi analog horror grain"*
 
-**Cracked-glasses overlay:** BEGINS applying here — immediately after the gate passes. The crack appears mid-fall. From this point forward, all Jason POV footage has the spiderweb fracture in the lower-right quadrant.
+<!-- [AI: cracked-glasses overlay deferred — no cracked screen effect in contest build. Semi-transparent smart glasses CSS overlay used on frontend instead. The narrative beat (crack appears mid-fall) is preserved for post-contest production. Original:
+"Cracked-glasses overlay: BEGINS applying here — immediately after the gate passes. The crack appears mid-fall. From this point forward, all Jason POV footage has the spiderweb fracture in the lower-right quadrant."] -->
 
 ---
 
@@ -106,11 +107,13 @@ A critical narrative anchor for the AI agents' context:
 - Final AI generation: Morphic-seeded characters placed into Grok Imagine-generated Bally's interior stills, then animated via Veo 3.1.
 - Color temperature: cool fluorescent white. Not warm. The warmth is gone from this place.
 
+<!-- [AI: Cracked-Glasses Overlay Protocol section deferred — no cracked screen effect in contest build. Full post-processing overlay spec preserved here for post-contest restoration.]
 ### Cracked-Glasses Overlay Protocol
 - The crack vignette is a **post-processing overlay** applied to all Jason POV footage from the moment of noclip onward.
 - It is NOT a filter in the smart-glasses UI — it is the physical state of the hardware after impact.
 - The Smart Glasses filter modes (IR, NV, Full Spectrum) operate underneath the crack overlay. The crack is always visible regardless of which filter is active.
 - In Layer 4 (The Machine), the crack has spread — the vignette covers more of the frame.
+-->
 
 ---
 

@@ -143,29 +143,39 @@ Through the still dark water of the deep pool section, **with Night Vision or Fu
 > These were the canonical AI generation reference and remain authoritative — the only change is that they now drive live Imagen 3 calls instead of a pre-generated FMV library.
 
 ### For Tunnel Entry Zone (zone_tunnel_entry)
+<!-- [AI: 'cracked smart-glasses POV overlay' removed from prompt — smart glasses CSS overlay is handled on frontend. Prompt rewritten to first-person POV anchored to brutalist concrete aesthetic. Original: 'cracked smart-glasses POV overlay, analog horror lo-fi grain, no people visible except character'] -->
 ```
-Interior of an unfinished Boring Company tunnel, white smooth concrete cylinder,
-circular cross-section, cold white LED strip lighting along ceiling (some flickering),
-concrete dust on floor, tire tracks in dust leading toward solid wall and stopping,
-lone figure in foreground on ground, cracked smart-glasses POV overlay,
-analog horror lo-fi grain, no people visible except character
+First-person POV standing inside an unfinished Boring Company tunnel, looking ahead
+down the white smooth-concrete cylinder, precast segmented ring walls with diagonal
+bolt-plate seams, cold LED strip lighting along ceiling (flickering), concrete dust
+on floor, tire tracks pressed into the dust leading into the far wall and stopping,
+no people, photorealistic architectural photography, wide angle 16mm, brutalist
+concrete, desaturated cool palette, mist in mid-air, cinematic horror, 8K
 ```
 
 ### For Water Park Shore Zone (zone_park_shore)
+<!-- [AI: 'cracked smart-glasses POV overlay' removed from prompt — smart glasses CSS overlay is handled on frontend. Prompt rewritten to first-person POV anchored to brutalist concrete aesthetic, consistent with reference images. Original: 'cracked smart-glasses POV overlay, analog horror grain'] -->
 ```
-Underground abandoned water park, vast concrete chamber, warm orange flood
-construction lights on tripod stands, still dark water covering floor,
-half-submerged fiberglass water slides in faded primary colors (red yellow blue),
-perfect mirror reflection in water creating doubled downward space, reflections
-slightly geometrically wrong, cracked smart-glasses POV overlay, analog horror grain
+First-person POV standing at the edge of an underground abandoned water park,
+looking out across a vast subterranean chamber, brutalist exposed concrete arched
+ribbed ceiling rising to 40 feet, warm orange flood construction lights on tripod
+stands casting pools of amber glow, still dark water covering the concrete floor,
+half-submerged fiberglass water slides in faded primary colors (red, yellow, blue)
+receding into the dark water, perfect mirror reflection in still water creating
+a doubled downward space, reflections geometrically wrong, no people,
+photorealistic architectural photography, wide angle 16mm, desaturated cool-warm
+contrast palette, cinematic horror, 8K
 ```
 
 ### For Slotsky Card Anomaly
+<!-- [AI: 'POV cracked-glasses overlay' removed from prompt — smart glasses CSS overlay is handled on frontend. Prompt rewritten to first-person POV. Original: 'POV cracked-glasses overlay, stillness'] -->
 ```
-Underground water park floor, shallow dark water, three playing cards arranged in
-a deliberate pattern on the wet concrete (queen of spades, jack of clubs, ace of hearts),
-no one near them, flood light casting hard shadow, the cards were not there before,
-analog horror grain, POV cracked-glasses overlay, stillness
+First-person POV looking down at an underground water park floor, shallow dark water
+over wet concrete, three playing cards arranged in a deliberate triangular pattern
+(queen of spades, jack of clubs, ace of hearts) lying flat on the floor, no one near
+them, single warm flood construction light casting a hard shadow from the right,
+the cards were not there before, photorealistic, wide angle 24mm, brutalist concrete
+and still water, desaturated with amber light accent, cinematic horror, 8K
 ```
 
 ---
