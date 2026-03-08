@@ -97,6 +97,12 @@ wss.on('connection', (ws: WebSocket) => {
         return;
       }
 
+      // Player webcam frame — base64 JPEG from browser → Game Master (1 FPS, GM vision)
+      if (data.type === 'player_frame' && data.jpeg) {
+        gmManager.sendFrame(data.jpeg);
+        return;
+      }
+
       // Player text — direct text message (used for testing / GM commands)
       if (data.type === 'player_text' && data.text) {
         jasonManager.sendText(data.text);
