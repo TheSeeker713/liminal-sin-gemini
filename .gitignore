@@ -9,4 +9,5 @@ dist
 .DS_Store
 *.tsbuildinfo
 /assets/screen-records/*.mp4
+scripts/output/
 

@@ -8,7 +8,8 @@
     "start": "node dist/server/server.js",
     "lint": "eslint server/",
     "typecheck": "tsc --noEmit",
-    "test:audio": "tsx scripts/test-audio.ts"
+    "test:audio": "tsx scripts/test-audio.ts",
+    "save-audio": "tsx scripts/save-audio.ts"
   },
   "dependencies": {
     "@google-cloud/firestore": "^8.3.0",
