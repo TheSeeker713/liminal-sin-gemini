@@ -15,6 +15,15 @@ export const ai = new GoogleGenAI({
   location
 });
 
+// Gemini Live API is only available in us-central1 on Vertex AI.
+// We use a separate client for Live sessions so the rest of the infra stays on us-west1.
+const LIVE_LOCATION = 'us-central1';
+export const liveAi = new GoogleGenAI({
+  vertexai: true,
+  project,
+  location: LIVE_LOCATION
+});
+
 /**
  * Function tool declarations for the Game Master Overseer.
  * When Gemini calls one of these, the server intercepts, persists
@@ -142,7 +151,7 @@ export class LiveSessionManager {
   private onAudioCallback: ((base64Audio: string) => void) | null = null;
   private onInterruptCallback: (() => void) | null = null;
   private onFunctionCallCallback: ((name: string, args: Record<string, unknown>) => void) | null = null;
-  private readonly modelName = 'gemini-2.0-flash-live-preview-04-09';
+  private readonly modelName = 'gemini-live-2.5-flash-native-audio';
   
   constructor() {}
 
@@ -172,7 +181,7 @@ export class LiveSessionManager {
           responseModalities: [Modality.TEXT]
         };
 
-    this.session = await ai.live.connect({
+    this.session = await liveAi.live.connect({
       model: this.modelName,
       config,
       callbacks: {
@@ -198,10 +207,10 @@ export class LiveSessionManager {
           }
         },
         onerror: (e) => {
-          console.error('[LiveSessionManager] WebSocket error:', e);
+          console.error('[LiveSessionManager] WebSocket error:', JSON.stringify(e));
         },
         onclose: (e) => {
-          console.log(`[LiveSessionManager] Connection closed — code: ${e.code} — ${new Date().toISOString()}`);
+          console.log(`[LiveSessionManager] Connection closed — code: ${e.code}, reason: "${(e as any).reason ?? ''}", wasClean: ${(e as any).wasClean ?? '?'} — ${new Date().toISOString()}`);
         },
       },
     });
