@@ -1,37 +1,47 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 8, 2026 (afternoon — Jason prompt + deploy fix session)
+> Last updated: March 8, 2026 (evening — GM fix + doc revisions + FMV strategy pivot)
 
 ---
 
 ## ⚠️ NEXT AI SESSION — READ THIS FIRST
 
-### What was completed this session (commit `bf11a07` on `main`):
+### What was completed — March 8 session (commit `7cfef79` on `main`):
 1. **Gemini Live model fixed** — `gemini-live-2.5-flash-native-audio` (GA as of March 2026) replaces the old non-existent `gemini-2.0-flash-live-preview-04-09` / `gemini-2.0-flash-live-001`
 2. **Live API region fixed** — separate `liveAi` client targeting `us-central1` (only region supporting Live API on Vertex AI)
-3. **Both smoke tests now PASS:**
-   - `npm run test:audio` → `✅ SESSION_READY` + 14 `agent_speech` chunks
-   - `npm run save-audio` → `scripts/output/jason_response.wav` (8.3s of Jason's Fenrir voice)
-4. **Jason demo prompt v2** — upgraded `server/services/npc/jason.ts`:
-   - Richer framing: "pack-mule for tonight's ghost hunt" (from Characters.md)
-   - Added `fearIndex` parameter (float 0.0–1.0) — behavior table injected into prompt at runtime
-   - Added fear-driven speech fragmentation table (whispering at 0.8–1.0)
-   - Tighter VOICE & TONE guidance + radio brevity rule (1–3 sentences)
-   - `prompts/jason.demo.md` synced — removed `{{TRUST_LEVEL}}` placeholder
-5. **Opening monologue trigger** — `server.ts` calls `jasonManager.sendText()` immediately after `SESSION_READY` so Jason speaks first (voicebox activates on its own)
-6. **Deploy fix** — `deploy.yml` fixed:
-   - Replaced `flags: '--allow-unauthenticated'` with separate IAM binding step (fixes `PERMISSION_DENIED` / `run.services.setIamPolicy` error)
-   - Added `env_vars` block: `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_REGION` now explicitly set on every Cloud Run revision
-7. **Lint fix** — removed pre-existing `as any` cast in `server.ts` (args already `Record<string, unknown>`)
+3. **Both smoke tests PASS:**
+   - `npm run test:audio` → `✅ SESSION_READY` + 43 `agent_speech` chunks
+   - `npm run save-audio` → `scripts/output/jason_response.wav` (Jason's Fenrir voice confirmed) [***note: The developer does not like the Fenrir voice. If time allows, we will experiment with other Gemini Live prebuilt voices before finalizing the demo.***]
+4. **Jason demo prompt v2** — `server/services/npc/jason.ts`: `fearIndex` param, fear behavior table, radio brevity rule, opening monologue trigger
+5. **Opening monologue** — `server.ts` calls `jasonManager.sendText()` immediately after `SESSION_READY`
+6. **Deploy fix** — `deploy.yml`: WIF IAM binding step added, `env_vars` block added (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_REGION`)
+7. **GM session fixed** — `gemini.ts` / `gameMaster.ts` / `server.ts`:
+   - GM now uses **AUDIO modality** (not TEXT — entire game is voice-driven, no text anywhere)
+   - `sendToolResponse()` method added to `LiveSessionManager`
+   - `callId` now passed through callback chain
+   - Trust enum mapping fixed
+8. **"Ignore commented content" rule** added as Rule 5 to `AGENTS.md` and `.github/copilot-instructions.md`
+9. **Doc revisions (backend)** — cracked screen refs in `docs/` commented out with HTML comment + explanation (nothing deleted)
 
-### ⚡ NEXT SESSION FIRST TASK — Imagen 3 Scene Generation (Day 3 of sprint)
+### ⚠️ OUTSTANDING: Server fails to start locally
+`npm run server` exits with code 1. Port 3001 is clear. Root cause not yet diagnosed. Cloud Run deployment is unaffected. Next session must diagnose this before doing any local testing.
+```powershell
+# Diagnose first:
+npx ts-node --transpile-only server/server.ts 2>&1
+# or:
+npx tsc --noEmit 2>&1
+```
 
-Pipeline is proven. Jason prompt + opening monologue are live. Next work:
-- **Step A:** On GM `triggerSceneChange` function call → call Vertex AI Imagen 3 with the matching zone prompt from `docs/Tunnel-and-park.md`
-- **Step B:** Broadcast result as `{ type: 'scene_image', agent: 'gm', data: base64 }` WebSocket message
-- **Step C:** Frontend CSS background updates with the generated image (Day 3 is frontend integration day in myceliainteractive repo)
+### ⚡ NEXT SESSION — Step B: Imagen 4 POV Scene Generation
 
-After Imagen 3, next priority is the webcam frame pipe (GM vision loop, 1 JPEG/sec) → unlocks 40% Innovation scoring.
+FMV strategy is clarified — see DEMO STRATEGY below. Immediate next work:
+- **Step B:** Wire `triggerSceneChange` GM function call → Vertex AI **Imagen 4** (`imagen-4.0-generate-001`) → broadcast `{ type: 'scene_image', data: base64 }` over WebSocket
+  - All prompts must be **first-person POV framing** — "you are looking at...", not "Jason sees..."
+  - Never use "Smart Glasses" in any Imagen prompt text
+  - Reference aesthetic: brutalist underground concrete, cold clinical lighting, no human figures
+  - Prompt source: `docs/Tunnel-and-park.md` zone definitions (unread: read before writing prompts)
+- **Step C:** Frontend receives `scene_image` event → sets it as CSS background of game container
+- **Step D:** Webcam frame pipe (GM vision: 1 JPEG/sec → `sendFrame()`) — unlocks 40% Innovation scoring
 
 ### Server startup (always do this first):
 ```powershell
@@ -176,28 +186,26 @@ PORT=3001
 
 ## Next Priority Actions (next session start)
 
-**IMMEDIATE — Restart server and run test to verify opening monologue**
+**IMMEDIATE — Diagnose local server startup failure**
 ```powershell
-Get-Process | Where-Object { $_.ProcessName -like "*node*" } | Stop-Process -Force -ErrorAction SilentlyContinue
-npm run server
-# In second terminal:
-npm run test:audio
-# Expect: SESSION_READY, then Jason speaks his opening line BEFORE player speaks
+# Step 1: see actual TypeScript error
+npx tsc --noEmit 2>&1
+# Step 2: if no TS error, try transpile-only
+npx ts-node --transpile-only server/server.ts 2>&1
 ```
 
-**After test passes — Imagen 3 Scene Generation**
-- On GM `triggerSceneChange` function call → call Vertex AI Imagen 3 with matching zone prompt
+**Step B — Imagen 4 Scene Generation**
+- On GM `triggerSceneChange` function call → call `imagen-4.0-generate-001` with first-person POV prompt
 - Broadcast result as `{ type: 'scene_image', data: base64 }` WebSocket message
-- Frontend CSS background updates with the image
+- Read `docs/Tunnel-and-park.md` zone definitions before writing any prompts
 
-**Phase 4 — GM Vision Loop**
+**Step C — Frontend `scene_image` rendering** (myceliainteractive repo)
+- Receive `scene_image` WS event → set as CSS `background-image` on game container div
+
+**Step D — GM Vision Loop**
 - Accept `player_frame` WebSocket message (base64 JPEG from frontend webcam)
 - Pipe to `liveManager.sendFrame()` at 1 FPS
-- This alone unlocks the 40% Innovation scoring criterion
-
-**Infrastructure**
-- Add `--set-env-vars` to `deploy.yml` so GitHub Actions CI/CD deploys correctly
-- Create architecture diagram (mandatory submission deliverable)
+- Unlocks 40% Innovation scoring criterion
 
 ---
 
