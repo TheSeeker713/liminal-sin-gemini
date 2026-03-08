@@ -57,6 +57,29 @@
 - **Always run `npm run build` before any deploy when the project uses `output: "export"` (static export).** Never run `wrangler deploy` or any deploy command directly without building first. Use `npm run deploy` (which chains build + deploy) rather than calling the deploy tool directly.
 - Maintain the dark, surreal, and tense tone of the Vegas Underground in all generated UI text and agent prompts.
 - **Hallucination / context-loss recovery** — If at any point you are about to overwrite existing code (due to loss of context, hallucination, or uncertainty), **do NOT delete the original**. Instead, comment it out in-place and add a brief inline explanation (e.g. `// [AI: replaced because X — original preserved below for user review]`). This ensures no working logic is silently lost and the user can always restore it.
+- **Dead End Protocol (Anti-Spiral Rule)** — See Section 3a below.
+
+---
+
+## 3a. Dead End Protocol — Anti-Spiral Rule
+
+**Trigger condition** — STOP and surface to the user if ANY of the following occur:
+- The same error appears after **2 consecutive fix attempts**
+- A fix requires removing or commenting out existing functional code as a "diagnostic step"
+- The root cause cannot be determined from reading the code and error message alone
+
+**Required behavior — report before touching any more code:**
+1. State the exact error message (copy verbatim)
+2. State what was already tried (max 3 bullet points)
+3. State one specific hypothesis about the root cause
+4. Ask the user one targeted question to confirm or deny that hypothesis
+
+**Forbidden responses to errors:**
+- Do **NOT** make destructive changes (removing config blocks, stripping parameters, deleting imports) as diagnostic steps — this leaves the codebase broken for the user
+- Do **NOT** retry the same approach with minor variations more than once
+- Do **NOT** continue iterating silently until context is exhausted
+
+**Hard limit:** If the error is not resolved after 2 targeted fixes, the agent MUST surface the problem to the user before writing any more code.
 
 ---
 

@@ -1,5 +1,4 @@
-import { GoogleGenAI, Tool, Type } from '@google/genai';
-import { TrustLevel } from '../types/state';
+import { GoogleGenAI, Modality, Session, Tool, Type } from '@google/genai';
 
 const project = process.env.GOOGLE_CLOUD_PROJECT || '';
 const location = process.env.GOOGLE_CLOUD_REGION || 'us-west1';
@@ -104,7 +103,7 @@ export const gameMasterTools: Tool[] = [
  * @param trustLevel The current TrustLevel from the database session.
  * @returns A string formatted for the system instruction block.
  */
-export function getGameMasterSystemPrompt(trustLevel: TrustLevel): string {
+export function getGameMasterSystemPrompt(trustLevel: number): string {
   const baseInstruction = `You are the Overseer, the central AI entity controlling the Vegas Underground.
 You are a psychological horror entity—cold, observant, and subtly manipulative.
 You do not break real-world boundaries or state you are an AI game entity. You simply govern the underground.
@@ -112,23 +111,18 @@ Listen to the player. Based on their words, you must continually re-evaluate whe
 
   let trustModifiers = '';
 
-  switch (trustLevel) {
-    case TrustLevel.High:
-      trustModifiers = `[CURRENT TRUST LEVEL: HIGH]
+  if (trustLevel >= 0.65) {
+    trustModifiers = `[CURRENT TRUST LEVEL: HIGH — ${trustLevel.toFixed(2)}]
 The player has been honest and compliant. You will occasionally offer genuine survival hints.
 Your tone should be slightly warmer, like a terrifying mother figure who wants to protect her child.`;
-      break;
-    case TrustLevel.Low:
-      trustModifiers = `[CURRENT TRUST LEVEL: LOW]
+  } else if (trustLevel < 0.35) {
+    trustModifiers = `[CURRENT TRUST LEVEL: LOW — ${trustLevel.toFixed(2)}]
 The player has lied or repeatedly ignored warnings. You are actively trying to lead them into traps.
 Your voice is paranoid, erratic, and deeply unsettling. Withhold information.`;
-      break;
-    case TrustLevel.Neutral:
-    default:
-      trustModifiers = `[CURRENT TRUST LEVEL: NEUTRAL]
+  } else {
+    trustModifiers = `[CURRENT TRUST LEVEL: NEUTRAL — ${trustLevel.toFixed(2)}]
 You are cautious. You listen before acting. You will demand proof of intent before offering any help.
 Your tone is deadpan and detached.`;
-      break;
   }
 
   const guidelines = `
@@ -144,79 +138,102 @@ RULES:
  * Manages the persistent WebSocket connection to the Gemini Live API for a given frontend client.
  */
 export class LiveSessionManager {
-  private session: any = null; // The active live session from @google/genai
+  private session: Session | null = null;
   private onAudioCallback: ((base64Audio: string) => void) | null = null;
   private onInterruptCallback: (() => void) | null = null;
   private onFunctionCallCallback: ((name: string, args: Record<string, unknown>) => void) | null = null;
-  private readonly modelName = 'gemini-3.1-pro'; // Following the 2026 Liminal Sin spec
+  private readonly modelName = 'gemini-2.0-flash-live-preview-04-09';
   
   constructor() {}
 
   /**
-   * Connects to the Gemini Live stream with the provided character system prompt.
+   * Connects to the Gemini Live stream with the provided system prompt.
+   *
+   * @param systemPrompt The system instruction to inject.
+   * @param mode 'npc' — audio out, Fenrir voice, no tools (Jason / character agents).
+   *             'gm'  — text/silent, gameMasterTools, no voice config (Game Master).
    */
-  async connect(systemPrompt: string) {
-    try {
-      console.log(`[LiveSessionManager] Opening Vertex AI Live session to ${this.modelName}...`);
-      
-      // Attempt connection to the real-time endpoint
-      // Using generic setup for version @google/genai 1.44.0 (2026 specs)
-      this.session = await (ai as any).live.connect({
-        model: this.modelName,
-        generationConfig: {
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          tools: gameMasterTools,
+  async connect(systemPrompt: string, mode: 'npc' | 'gm' = 'npc'): Promise<void> {
+    console.log(`[LiveSessionManager] Opening Vertex AI Live session — mode: ${mode}, model: ${this.modelName}...`);
+
+    const config = mode === 'npc'
+      ? {
+          systemInstruction: systemPrompt,
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Fenrir' }
+            }
+          }
         }
-      });
-      
-      console.log('[LiveSessionManager] Session connected.');
-      this.listen();
-      
-    } catch (error) {
-      console.error('[LiveSessionManager] Connection error:', error);
-      throw error;
-    }
+      : {
+          systemInstruction: systemPrompt,
+          tools: gameMasterTools,
+          responseModalities: [Modality.TEXT]
+        };
+
+    this.session = await ai.live.connect({
+      model: this.modelName,
+      config,
+      callbacks: {
+        onopen: () => {
+          console.log(`[LiveSessionManager] Session connected. ${new Date().toISOString()}`);
+        },
+        onmessage: (msg) => {
+          console.log(`[LiveSessionManager] onmessage — text: ${!!msg.text}, data: ${!!msg.data}, toolCall: ${!!msg.toolCall}, serverContent: ${!!msg.serverContent}`);
+          // Audio: use the .data convenience accessor (base64 inline data)
+          if (msg.data && this.onAudioCallback) {
+            this.onAudioCallback(msg.data);
+          }
+          // Barge-in: player spoke over the agent
+          if (msg.serverContent?.interrupted && this.onInterruptCallback) {
+            this.onInterruptCallback();
+          }
+          // Game Master function calls
+          const calls = msg.toolCall?.functionCalls ?? [];
+          for (const call of calls) {
+            if (call.name && this.onFunctionCallCallback) {
+              this.onFunctionCallCallback(call.name, call.args ?? {});
+            }
+          }
+        },
+        onerror: (e) => {
+          console.error('[LiveSessionManager] WebSocket error:', e);
+        },
+        onclose: (e) => {
+          console.log(`[LiveSessionManager] Connection closed — code: ${e.code} — ${new Date().toISOString()}`);
+        },
+      },
+    });
   }
 
   /**
-   * Sends audio chunks/frames to the active Gemini Live stream
+   * Sends a base64-encoded PCM audio chunk to the active Gemini Live stream.
    */
   sendAudio(base64Chunk: string) {
     if (!this.session) return;
-    
-    // Convert base64 to buffer and send
-    this.session.send({
-      realtimeInput: {
-        mediaChunks: [
-          {
-            mimeType: 'audio/pcm;rate=16000',
-            data: base64Chunk
-          }
-        ]
-      }
-    }).catch((err: any) => {
-      console.error('[LiveSessionManager] Failed to send audio to Gemini', err);
+    this.session.sendRealtimeInput({
+      audio: { data: base64Chunk, mimeType: 'audio/pcm;rate=16000' },
     });
   }
 
   /**
-   * Sends a webcam frame to the Gemini Live stream for Game Master vision
+   * Sends a base64-encoded JPEG webcam frame to Gemini for GM vision (1 FPS).
    */
   sendFrame(base64Jpeg: string) {
     if (!this.session) return;
-    
-    this.session.send({
-      realtimeInput: {
-        mediaChunks: [
-          {
-            mimeType: 'image/jpeg',
-            data: base64Jpeg
-          }
-        ]
-      }
-    }).catch((err: any) => {
-      console.error('[LiveSessionManager] Failed to send visual frame to Gemini', err);
+    this.session.sendRealtimeInput({
+      video: { data: base64Jpeg, mimeType: 'image/jpeg' },
     });
+  }
+
+  /**
+   * Sends a text message to Gemini (useful for testing and GM text commands).
+   * This uses sendClientContent which bypasses VAD and triggers a response.
+   */
+  sendText(text: string) {
+    if (!this.session) return;
+    this.session.sendClientContent({ turns: text, turnComplete: true });
   }
 
   /**
@@ -234,52 +251,19 @@ export class LiveSessionManager {
   }
 
   /**
-   * Handle incoming streaming events from Gemini
-   */
-  /**
    * Hook for Game Master tools execution
    */
   onFunctionCall(callback: (name: string, args: Record<string, unknown>) => void) {
     this.onFunctionCallCallback = callback;
   }
-  private async listen() {
-    if (!this.session) return;
-    
-    try {
-      // Stream iterator structure based on the Live API
-      for await (const message of this.session) {
-        // Handle incoming chunks mapped to audio/PCM
-        if (message.output?.audio && this.onAudioCallback) {
-            // Buffer to base64
-            const base64Chunk = Buffer.from(message.output.audio).toString('base64');
-            this.onAudioCallback(base64Chunk);
-        }
-        
-        if (message.interruption && this.onInterruptCallback) {
-            this.onInterruptCallback();
-        }
-
-        // Map any function calls back to the Game Master
-        const toolCalls = message.toolCall?.functionCalls ?? [];
-        for (const call of toolCalls) {
-          if (call.name && this.onFunctionCallCallback) {
-             this.onFunctionCallCallback(call.name, call.args as Record<string, unknown>);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('[LiveSessionManager] Read loop error:', err);
-    }
-  }
 
   disconnect() {
     if (this.session) {
       console.log('[LiveSessionManager] Disconnecting session');
-      // this.session.close() or let the stream exit
+      this.session.close();
       this.session = null;
     }
   }
 }
-
 
 

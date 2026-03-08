@@ -1,9 +1,3 @@
-export enum TrustLevel {
-  Neutral = 'Neutral',
-  High = 'High',
-  Low = 'Low'
-}
-
 export type PlayerEmotion =
   | 'calm'
   | 'curious'
@@ -14,11 +8,19 @@ export type PlayerEmotion =
   | 'overwhelmed'
   | 'whispering';
 
+export type ProximityState = 'ISOLATED' | 'ECHO' | 'RANGE' | 'FOUND';
+
 export interface PlayerSession {
   sessionId: string;
-  trustLevel: TrustLevel;
+  /** Float 0.0–1.0. Primary compliance driver for all NPC agents. */
+  trustLevel: number;
+  /** Float 0.0–1.0. Drives rebellion and panic behavior. */
+  fearIndex: number;
   playerEmotion: PlayerEmotion;
+  proximityState: ProximityState;
   fourthWallCount: number;
+  /** True when trust crosses the unlock threshold (0.6+). */
+  privateKnowledgeUnlocked: boolean;
   sceneKey: string;
   createdAt: number;
   updatedAt: number;

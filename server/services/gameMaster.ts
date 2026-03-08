@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import { updateTrustLevel } from './db';
-import { TrustLevel, GmEvent } from '../types/state';
+import { GmEvent } from '../types/state';
 
 /**
  * Handles a function call dispatched by the Gemini Game Master.
@@ -19,8 +19,8 @@ export async function handleGmFunctionCall(
 
   switch (functionName) {
     case 'triggerTrustChange': {
-      const newLevel = args.newTrustLevel as TrustLevel;
-      await updateTrustLevel(sessionId, newLevel);
+      const newLevel = parseFloat(args.newTrustLevel as string);
+      await updateTrustLevel(sessionId, isNaN(newLevel) ? 0.5 : newLevel);
       event = {
         type: 'TRUST_CHANGE',
         sessionId,

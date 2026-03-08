@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { PlayerSession, TrustLevel } from '../types/state';
+import { PlayerSession } from '../types/state';
 
 let db: admin.firestore.Firestore | null = null;
 const memoryStore = new Map<string, PlayerSession>();
@@ -21,9 +21,12 @@ try {
 export async function getOrCreateSession(sessionId: string): Promise<PlayerSession> {
   const defaultSession: PlayerSession = {
     sessionId,
-    trustLevel: TrustLevel.Neutral,
+    trustLevel: 0.5,
+    fearIndex: 0.0,
     playerEmotion: 'calm',
+    proximityState: 'ISOLATED',
     fourthWallCount: 0,
+    privateKnowledgeUnlocked: false,
     sceneKey: '',
     createdAt: Date.now(),
     updatedAt: Date.now()
@@ -47,7 +50,7 @@ export async function getOrCreateSession(sessionId: string): Promise<PlayerSessi
   }
 }
 
-export async function updateTrustLevel(sessionId: string, newLevel: TrustLevel): Promise<void> {
+export async function updateTrustLevel(sessionId: string, newLevel: number): Promise<void> {
   if (db) {
     await db.collection('sessions').doc(sessionId).update({
       trustLevel: newLevel,

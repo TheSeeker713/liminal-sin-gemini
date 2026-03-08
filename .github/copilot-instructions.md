@@ -23,6 +23,16 @@ Moving forward, whenever I ask you to build a feature, create a component, or in
 - If errors occur, stop and fix them. Do not move to the next step.
 - **Always run `npm run build` before any deploy when the project uses `output: "export"` (static export).** Never run `wrangler deploy` directly. Use `npm run deploy` which chains build + deploy.
 
+**DEAD END PROTOCOL (Anti-Spiral Rule) — applies during Step 3 and any debugging:**
+- **Trigger:** Same error after 2 fix attempts, OR fix requires removing existing functional code, OR root cause unknown from code + error alone.
+- **Required action — STOP. Report to user:**
+  1. Exact error message (verbatim)
+  2. What was tried (max 3 bullets)
+  3. One specific root-cause hypothesis
+  4. One targeted question to confirm or deny it
+- **Never:** make destructive diagnostic changes (stripping config, removing params), retry the same fix with minor tweaks, or iterate silently until context runs out.
+- **Hard limit:** Unresolved after 2 targeted fixes → surface to user before writing any more code.
+
 **STEP 4: Commit and Push**
 - Once the single step is coded and passes tests, you must commit and push the changes.
 - Execute the following terminal commands:

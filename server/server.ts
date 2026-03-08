@@ -8,6 +8,7 @@ dotenv.config({ path: '.env.local' });
 
 import { getOrCreateSession } from './services/db';
 import { getGameMasterSystemPrompt, LiveSessionManager } from './services/gemini';
+import { getJasonSystemPrompt } from './services/npc/jason';
 import { handleGmFunctionCall } from './services/gameMaster';
 
 const app = express();
@@ -22,39 +23,44 @@ app.get('/health', (req, res) => {
 
 wss.on('connection', (ws: WebSocket) => {
   const sessionId = randomUUID();
-  const liveManager = new LiveSessionManager();
+  const jasonManager = new LiveSessionManager(); // NPC — speaks, audio out, Fenrir voice
+  const gmManager = new LiveSessionManager();    // GM — silent, function calls only
 
   console.log(`[WS] Client connected — session ${sessionId}`);
 
-  // Init Firestore session + Gemini Live session asynchronously.
-  // Send SESSION_READY once both are established so the client
-  // knows its sessionId and can begin sending audio.
+  // Init Firestore session + both Gemini Live sessions asynchronously.
+  // Send SESSION_READY once all are established.
   (async () => {
     try {
       const sessionData = await getOrCreateSession(sessionId);
-      const systemPrompt = getGameMasterSystemPrompt(sessionData.trustLevel);
-      await liveManager.connect(systemPrompt);
 
-      // Wire output hooks back to frontend
-      liveManager.onAgentAudio((base64Audio) => {
+      // Jason NPC session — audio out to player
+      const jasonPrompt = getJasonSystemPrompt(sessionData.trustLevel);
+      await jasonManager.connect(jasonPrompt, 'npc');
+
+      jasonManager.onAgentAudio((base64Audio) => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({
             type: 'agent_speech',
-            agent: 'jason', // Dynamically map in Phase 3/4
+            agent: 'jason',
             audio: base64Audio
           }));
         }
       });
 
-      liveManager.onAgentInterrupt(() => {
+      jasonManager.onAgentInterrupt(() => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'agent_interrupt', agent: 'jason' }));
         }
       });
-      
-      liveManager.onFunctionCall((name, args) => {
+
+      // GM session — silent, function calls only, no audio back to player
+      const gmPrompt = getGameMasterSystemPrompt(sessionData.trustLevel);
+      await gmManager.connect(gmPrompt, 'gm');
+
+      gmManager.onFunctionCall((name, args) => {
         if (ws.readyState === WebSocket.OPEN) {
-           handleGmFunctionCall(sessionId, name, args as any, ws);
+          handleGmFunctionCall(sessionId, name, args as any, ws);
         }
       });
 
@@ -62,7 +68,7 @@ wss.on('connection', (ws: WebSocket) => {
         ws.send(JSON.stringify({ type: 'SESSION_READY', sessionId }));
       }
     } catch (err) {
-      console.error(`[WS] Failed to init Live session for ${sessionId}:`, err);
+      console.error(`[WS] Failed to init sessions for ${sessionId}:`, err);
       ws.close();
     }
   })();
@@ -76,20 +82,27 @@ wss.on('connection', (ws: WebSocket) => {
         return;
       }
 
-      // Player speech — base64 PCM audio from the browser → Gemini Live
+      // Player speech — base64 PCM audio from the browser → Jason NPC
       if (data.type === 'player_speech' && data.audio) {
-        liveManager.sendAudio(data.audio);
+        jasonManager.sendAudio(data.audio);
+        return;
+      }
+
+      // Player text — direct text message (used for testing / GM commands)
+      if (data.type === 'player_text' && data.text) {
+        jasonManager.sendText(data.text);
         return;
       }
     } catch {
-      // Raw binary fallback — forward to Gemini Live
-      liveManager.sendAudio(message.toString('base64'));
+      // Raw binary fallback — forward to Jason NPC
+      jasonManager.sendAudio(message.toString('base64'));
     }
   });
 
   ws.on('close', () => {
     console.log(`[WS] Client disconnected — session ${sessionId}`);
-    liveManager.disconnect();
+    jasonManager.disconnect();
+    gmManager.disconnect();
   });
 });
 
