@@ -11,6 +11,13 @@
 
 ## OVERVIEW
 
+> ⛔ **ENTIRE DOCUMENT DEFERRED TO ROADMAP (March 7, 2026)**
+> The backpack inventory system, smart glasses filter modes, and HUD overlay are not implemented in the contest demo.
+> Jason’s demo system prompt contains no backpack or glasses references.
+> All content below is preserved in full for Act 1.5+ development.
+> Do not implement any of this for the contest submission build.
+> See ROADMAP section at end of this document for explanation.
+
 Jason's backpack is the **only inventory system in the game**. There are no menus, no item wheels, no UI overlays. Items exist narratively — the player must verbally ask Jason to use, check, or distribute gear. Jason will describe what he finds, what condition it's in, and what it does. The backpack is also a **trust-building mechanism**: asking Jason to share gear with Audrey or Josh is one of the primary ways to increase character trust.
 
 The backpack contents are physically visible in the **cracked smart-glasses HUD overlay** — items appear as flickering inventory icons in the lower-right corner of the screen, glitching in and out based on HUD damage state.
@@ -155,4 +162,36 @@ The backpack is not a static inventory. As the game progresses through deeper la
 *BACKPACK.md — LIMINAL SIN*  
 *Cross-reference: WORLD_BIBLE.md v1.1, The Bally's Underground Character Dossier*  
 *Paradigm Evolution Productions / Mycelia Interactive LLC*  
-*Last Updated: Day 3 — February 25, 2026*
+*Last Updated: March 7, 2026 — Demo Scope Revision*
+
+---
+
+## ─── ROADMAP / DEPRECATED — Preserved for Future Development ───
+
+> All content in this document is **deferred from the contest demo scope** as of March 7, 2026.
+> Preserved in full for Act 1.5+ development.
+
+<!-- DEPRECATED [GLASSES/BACKPACK]: Entire Backpack.md system
+     Reason: The backpack inventory and smart glasses system requires:
+     1. A frontend HUD overlay with filter modes (Standard/IR/NV/FullSpectrum)
+        and inventory ghost icons in the lower-right of the screen
+     2. Jason’s production ADK prompt referencing glasses and backpack items
+     3. WebSocket events for gear distribution (give_item, check_bag)
+     4. Firestore backpack state fields per item
+     5. The action camera cameras POV FMV clip sets (requires pre-generated clips)
+     None of this can be built in 4 days alongside core audio wiring.
+     All gear, filter mode specs, HUD element specs, and item mechanics are canon
+     and preserved above.
+
+     RESTORATION PATH:
+     - Build the glasses HUD overlay in myceliainteractive (React component)
+     - Wire webcam filter state to WebSocket → Firestore (filter_mode field)
+     - Switch Jason’s session to use the production ADK prompt (Characters.md)
+       instead of the simplified demo prompt
+     - Add backpack Firestore fields and gear distribution WebSocket events
+     - Implement multimeter Slotsky detection readings
+     - Unlock USB drive content when `trust_level >= 0.75` (Act 2 content)
+
+     SPECIAL NOTE: USB drive (item 8, ghost-hunting pouch) is Act 2 content.
+     Do not implement USB drive content unlock under any circumstances until
+     Act 2 development begins. Audrey recognizes it. This is a major story beat. -->

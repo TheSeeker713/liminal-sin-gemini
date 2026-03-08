@@ -10,6 +10,25 @@
 
 ---
 
+## DEMO SCOPE — ACTIVE (March 7–11, 2026)
+
+> ⚠️ **4 days to internal cutoff. The following defines active GM behavior for the contest demo.**
+
+| System | Demo Status | Notes |
+|---|---|---|
+| **Emotional pacing (webcam)** | ✅ ACTIVE | 1 FPS webcam classification → Firestore `player_emotion` |
+| **Jason trust routing** | ✅ ACTIVE | Trust float written to Firestore → injected into Jason’s prompt |
+| **Scene visualization** | ✅ ACTIVE — IMAGEN 3 | `scene_key` triggers Imagen 3 live generation. No pre-generated FMV. |
+| **Voice routing (proximity)** | ✅ ACTIVE (Jason only) | Demo runs `proximity_state: ISOLATED` — Jason primary |
+| **Fourth-wall protocol** | ✅ ACTIVE | Count state machine + Slotsky dispatch |
+| **Slotsky event dispatch** | ✅ ACTIVE | Firestore flag writes → frontend CSS events |
+| **Josh routing** | ⛔ DEFERRED | Josh agent not present in demo |
+| **Audrey routing** | 🟡 ECHO PROMPT ONLY | Single-paragraph echo prompt. Audrey is not an interactive agent. |
+| **Lyria 3 audio** | ⛔ DEFERRED | Not implemented — see ROADMAP section at end of document |
+| **ADK / AutoFlow** | ⛔ DEFERRED | Post-contest. Direct GenAI SDK only for demo. |
+
+---
+
 ## ROLE SUMMARY
 
 The Game Master (GM) is the **invisible coordinator agent** at the top of LIMINAL SIN's multi-agent hierarchy. It is the only agent with bimodal perception — it sees the player via webcam and hears them via microphone. The character agents (Jason, Audrey, Josh) perceive only the player's voice, as a disembodied echo. The GM uses what it observes to quietly shape everything around them.
@@ -71,7 +90,18 @@ The GM's primary narrative role is **pacing**. It reads `player_emotion` every s
 | `whispering` | Write `player_whisper: true` to state. Character agents adjust to match — lower voices, lean into intimacy of the moment. |
 | `calm` | Normal operations. Maintain baseline tension. |
 
-### 2. FMV Clip Selection (scene_key Management)
+### 2. Scene Visualization — DEMO: Imagen 3 / ROADMAP: FMV Clip Pipeline
+
+> ✅ **DEMO SCOPE (March 2026): Pre-generated FMV clips are replaced by Imagen 3 live image generation.**
+> When the GM writes a `scene_key` to Firestore, the server calls Vertex AI Imagen 3 with the matching canonical prompt from `docs/Tunnel-and-park.md`. The result is a single static background image broadcast to the frontend via WebSocket as a `scene_image` message.
+>
+> **Imagen 3 call pattern:**
+> `GM writes scene_key → server detects Firestore change → calls Vertex AI Imagen 3 with canonical prompt → receives base64 PNG → broadcasts { type: 'scene_image', data: base64 } to frontend → frontend renders as CSS background`
+>
+> **Fallback:** If generation > 3 seconds, Jason stalls naturally. No flag needed. GM does not write `fmv_fallback_active`.
+
+> 🗕️ **ROADMAP: FMV Clip Selection (Preserved Below)** — Original pre-generated clip architecture is preserved for Act 2+. The `scene_key` format and Firestore write pattern are identical — only the frontend consumption changes.
+
 The GM selects `scene_key` values in Firestore to trigger the correct pre-generated FMV clip from the library. The frontend reads `scene_key` and loads the corresponding clip.
 
 **Clip selection logic:**
@@ -163,8 +193,9 @@ slotsky_trigger: found_transition    // FOUND state — all lights fail, water s
       "private_knowledge_unlocked": false
     }
   },
-  "lyria_intensity": 0.3,
-  "fmv_fallback_active": false
+  "lyria_intensity": 0.3,       // ⛔ DEFERRED — Lyria 3 not implemented for demo
+  "fmv_fallback_active": false, // ⛔ DEFERRED — FMV pipeline replaced by Imagen 3
+  "imagen3_scene_active": false  // ✅ DEMO — true while Imagen 3 generation is in-flight
 }
 ```
 
@@ -180,9 +211,11 @@ The GM operates within a strict latency budget to maintain conversational immers
 | GM emotional classification (webcam frame) | ~150ms (parallel to VAD) |
 | GM function call + routing (`gemini-2.0-flash-live-preview-04-09`) | <500ms |
 | scene_key selection + Firestore write | ~100ms |
-| FMV clip load + sync | ~1000ms (Veo 3.1 Fast pre-generated) |
+| **DEMO:** Imagen 3 generation (async, non-blocking) | ~2000ms — Jason stalls naturally; frontend shows previous image until new one arrives |
+| **ROADMAP:** FMV clip load + sync | ~1000ms (pre-generated — deferred to Act 2) |
 | Network transit | ~300ms |
-| **Total target** | **~2.0 seconds** |
+| **DEMO Total target (blocking path)** | **~2.5 seconds** |
+| **ROADMAP Total target** | **~2.0 seconds** |
 
 **Fallback protocol:** If `t_vid > 1500ms` (clip not found or generation in progress), GM writes `fmv_fallback_active: true` and Jason plays a **stall behavior** — looking around the chamber, adjusting the cracked glasses, asking the voice a question. This buys 10–15 seconds while the background generation queue processes.
 
@@ -215,10 +248,17 @@ EMOTIONAL PACING:
 - If overwhelmed: pause all Slotsky triggers for 60 seconds. Reduce tension.
 - If whispering: write player_whisper: true. Characters will match the register.
 
-FMV SELECTION:
+SCENE VISUALIZATION (DEMO — Imagen 3):
 - Read current_context + player_intent + character state.
 - Write the most appropriate scene_key to Firestore.
-- If no matching key: write fmv_fallback_active: true. Jason stalls naturally.
+  Format: {character}_{emotion}_{context}_{action}
+  Example: jason_afraid_tunnel_looking
+- Server detects the Firestore write and calls Imagen 3 asynchronously.
+- Do not write any fallback flags. If generation takes >3s, Jason stalls naturally.
+
+// ROADMAP: FMV SELECTION (preserved for Act 2):
+// - Write scene_key. Frontend loads matching pre-generated clip from library.
+// - If no matching key: write fmv_fallback_active: true.
 
 VOICE ROUTING:
 - Route player audio to character agents based on proximity_state.
@@ -235,10 +275,10 @@ SLOTSKY DISPATCH:
 - Write slotsky_trigger flags to Firestore. Never execute Slotsky events directly.
 - The Slotsky Presence Agent reads these flags and executes.
 
-LYRIA CONTROL:
-- Write lyria_intensity (0.0–1.0) based on aggregate fear state.
-- High fear: 0.8–1.0. Quiet discovery: 0.2–0.4. FOUND state: 0.9 then fade to 0.1.
-- ⚠️ LYRIA 3 INTEGRATION IS FUTURE — do not implement until audio design doc is complete.
+// LYRIA CONTROL (DEFERRED — DO NOT IMPLEMENT FOR DEMO):
+// lyria_intensity writes are preserved in the schema for Act 2.
+// Static ambient audio files are used for the contest demo.
+// Do not implement Lyria 3 until docs/AUDIO_DESIGN.md is created and approved.
 
 YOU NEVER: Speak. Appear. Acknowledge yourself. Override rebellion mechanics.
 You are not a character. You are the probability engine above the probability engine.
@@ -270,5 +310,44 @@ Create `docs/AUDIO_DESIGN.md` first. Then implement. Never implement Lyria witho
 
 *GAMEMASTER.md — LIMINAL SIN*
 *Mycelia Interactive LLC*
-*Last Updated: Day 12 — March 6, 2026 | Version 1.2*
-*Canon. Cross-reference WORLD_BIBLE.md v1.2 | Characters.md v1.2*
+*Last Updated: March 7, 2026 | Version 1.3 — Demo Scope Revision*
+*Canon. Cross-reference WORLD_BIBLE.md v1.2 | Characters.md v1.3*
+
+---
+
+## ─── ROADMAP / DEPRECATED — Preserved for Future Development ───
+
+> All content below is **deprecated from the demo scope** as of March 7, 2026.
+> Preserved in full for Act 2+ development. Do not implement for the contest build.
+
+<!-- DEPRECATED [LYRIA3]: Lyria 3 audio integration
+     Reason: `docs/AUDIO_DESIGN.md` has not been created. Implementation cannot begin
+     without that document per AGENTS.md Section 9 (Lyria 3 invariant).
+     The contest demo uses static ambient audio files as a substitute.
+     The `lyria_intensity` Firestore field is preserved in the schema for Act 2.
+     The LYRIA 3 / AUDIO DESIGN section above contains the full implementation spec.
+     Restore: Create docs/AUDIO_DESIGN.md first, then implement per that spec. -->
+
+### Lyria 3 / Audio Design (Full Spec — Roadmap)
+See the `## LYRIA 3 / AUDIO DESIGN — FUTURE IMPLEMENTATION` section above for the
+complete implementation specification including track generation, crossfade mixer,
+silence zones, intensity ramp behavior, and emergency silence protocol.
+Do not implement until `docs/AUDIO_DESIGN.md` is created.
+
+---
+
+<!-- DEPRECATED [FMV]: Pre-generated FMV clip pipeline
+     Reason: Demo replaces this with Imagen 3 live generation.
+     The FMV pipeline required:
+     - A library of 30-50 pre-generated clips (Veo 3.1 Fast)
+     - A scene manifest mapping scene_keys to clip filenames
+     - Frontend video player synced to scene_key changes
+     - Fallback loop clips for each zone
+     The `scene_key` Firestore field format is IDENTICAL between FMV and Imagen 3.
+     Only the frontend consumption changes. Restore: Build clip library + video player
+     in myceliainteractive frontend, switch server from Imagen 3 call to manifest lookup. -->
+
+### FMV Clip Pipeline (Full Spec — Roadmap)
+The FMV architecture spec is preserved in the `### 2. Scene Visualization` section above,
+under the `ROADMAP: FMV Clip Selection (Preserved Below)` callout.
+`scene_key` format and Firestore write pattern are identical to the Imagen 3 demo path.

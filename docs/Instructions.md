@@ -6,6 +6,23 @@
 
 ---
 
+## DEMO SCOPE — ACTIVE (March 7–11, 2026)
+
+> ⚠️ **Contest demo uses a simplified phase flow. The full FMV pipeline is deferred to roadmap.**
+
+| Phase | Demo Status | Notes |
+|---|---|---|
+| **Phase 1: Intro FMV** | ⛔ REPLACED | Demo uses Imagen 3 static background + ambient audio. No 90s FMV cinematic. |
+| **Phase 2: Static Loop** | ⛔ REPLACED | Demo uses Imagen 3 background + Jason echo audio loop (Gemini Live). |
+| **Phase 3: First Contact** | ✅ ACTIVE | Unchanged. `"...who is this?"` — perfect as-is. |
+| **Phase 4: Active Play** | ✅ ACTIVE (modified) | Core loop active. FMV clip load replaced by Imagen 3 background generation. |
+| **Phase 5: FMV Playback** | ⛔ DEFERRED | Entire clip library approach deferred. See ROADMAP section at end of document. |
+| **Phase 6: Session End** | ✅ ACTIVE (modified) | HUD/glasses overlay deferred; CSS glitch effect used instead. |
+| **Smart glasses HUD** | ⛔ DEFERRED | Frontend overlay layer not built for demo. |
+| **Backpack / gear** | ⛔ DEFERRED | All gear distribution dialogue deferred. Not in Jason’s demo prompt. |
+
+---
+
 > *"There is no menu. There is no pause. There is no game over screen. There is only the tunnel, the voices, and you."*
 
 ---
@@ -17,12 +34,29 @@ LIMINAL SIN breaks every convention of traditional game UI deliberately:
 - **No title screen.** The experience begins immediately.
 - **No menu.** There are no options to select before play begins.
 - **No pause.** The world does not stop because you stepped away.
-- **No HUD** in the traditional sense — the only UI elements are organic to the fiction (Jason's cracked smart-glasses overlay, flickering hint text, the voicebox waveform).
+- **No HUD** in the traditional sense — the only UI elements are organic to the fiction (flickering hint text, the voicebox waveform). The CSS atmosphere layer provides glitch + vignette effects. ⚠️ **DEMO NOTE:** Jason’s cracked smart-glasses overlay requires a glasses HUD frontend implementation — deferred to roadmap.
 - **No game over screen.** The experience degrades, shifts, or ends — it does not fail.
 
 This is not an oversight. This is the design. The absence of menus is the first horror.
 
 ---
+
+## DEMO: PHASE 1 — ATMOSPHERIC COLD OPEN
+
+**Duration:** 5–10 seconds (immediate)
+**Player input:** Disabled. Mic and webcam initialized but not active.
+**Visual:** Imagen 3-generated background loads — canonical tunnel+waterpark composite (see `docs/Tunnel-and-park.md` prompt set). CSS vignette + grain overlay active.
+**Audio:** Ambient loop begins — distant dripping, low construction hum, barely-audible distorted slot machine echo.
+
+The experience opens directly into the chamber. No preamble. The first frame is the horror.
+
+**Transition:** 2-second fade-in from black, then Phase 2 begins.
+
+---
+
+## ⛔ ROADMAP: PHASE 1 — INTRO FMV (Full Cinematic — Deferred)
+
+> **DEFERRED — Requires pre-generated 90-second FMV cinematic clip. See ROADMAP section at end of document.**
 
 ## PHASE 1: THE INTRO FMV (No Interaction — Pure Cinema)
 
@@ -42,6 +76,31 @@ A scripted cinematic sequence covering:
 **Transition:** Hard cut to black on landing impact. One beat of silence. Then: the static loop begins.
 
 ---
+
+## DEMO: PHASE 2 — STATIC ATMOSPHERE (Jason ambient echo)
+
+**Duration:** Indefinite — loops until player speaks
+**Player input:** Mic active. Webcam active. Game Master begins reading immediately.
+**Visual:** Imagen 3 static background remains from Phase 1 (or GM triggers a new `scene_key` based on initial webcam read). CSS grain + vignette + subtle flicker loop.
+**Audio (Gemini Live, ambient):** Jason talks quietly to himself. Not to the player. Not yet.
+
+**Jason’s self-talk (generated, not scripted):** 
+Jason is alone. He’s just landed. He’s looking around the chamber. He is narrating quietly to himself — observational, shaken but not broken. Audrey’s voice echoes distantly (Aoede voice, barely audible, different spatial position).
+
+**Hint Overlay (same as original spec):**
+```
+Hint 1: "Talk to Jason with your voice"        // Lower-center
+Hint 2: "Mic + webcam ON for full immersion"   // Lower-right
+```
+Same aesthetic: thin lo-fi monospace font, corrupted system message look.
+
+**Game Master during loop:** Identical to original spec — reading player_emotion from webcam, calibrating baseline, no events triggered yet. 90-second timeout extends loop naturally.
+
+---
+
+## ⛔ ROADMAP: PHASE 2 — STATIC LOOP FMV (Looping Clip — Deferred)
+
+> **DEFERRED — Requires pre-generated 8–12 second looping FMV clip + glasses HUD overlay. See ROADMAP section at end of document.**
 
 ## PHASE 2: THE STATIC LOOP (Passive Interaction — Trust Initialization)
 
@@ -110,8 +169,8 @@ Player speaks
     → GM classifies player_intent (audio content)
     → GM routes voice to correct character agent(s) via proximity_state
     → Character agent generates response (Gemini 2.5 Flash Native Audio)
-    → GM selects scene_key → FMV clip loads
-    → Character audio plays synchronized with FMV
+    → GM selects scene_key → Imagen 3 generates background image (async, non-blocking)
+    → Character audio plays; background image updates within ~2 seconds
     → GM updates Firestore state
     → Loop waits for next player input
 ```
@@ -140,6 +199,13 @@ Items from Jason's backpack are accessible through natural dialogue:
 - *"Turn on the multimeter"* — Jason activates it, describes readings, potentially triggers Slotsky detection
 
 ---
+
+## ⛔ DEFERRED TO ROADMAP: PHASE 5 — FMV PLAYBACK ARCHITECTURE
+
+> **DEFERRED (March 2026)** — The entire pre-generated clip library approach is deferred.
+> Demo uses Imagen 3 live generation for all scene visualization.
+> Full spec preserved below and in the ROADMAP section at end of this document.
+> Do not implement this for the contest build.
 
 ## PHASE 5: FMV PLAYBACK ARCHITECTURE
 
@@ -172,7 +238,7 @@ If no matching clip exists and on-demand generation is in progress:
 Triggered when `proximity_state: FOUND` for all three characters.
 
 1. All lights in the chamber cut out simultaneously — 8 seconds of near-total darkness
-2. Jason's cracked HUD is the only light source — the inventory ghost icons pulse one final time
+2. A deep amber bioluminescence seems to rise from below the water line — the only remaining visible source. *(Demo note: glitch CSS effect + flicker animation. Full spec: Jason’s cracked HUD is the only light source — inventory ghost icons pulse one final time. Requires glasses HUD frontend implementation — deferred.)*
 3. A sound rises from far below — water. Moving. Coming from the Nature Vault beneath them.
 4. The three characters are together. They are quiet.
 5. Fade to black.
@@ -212,5 +278,40 @@ You will not be recorded. No footage is stored.
 
 *INSTRUCTIONS.md — LIMINAL SIN*
 *Mycelia Interactive LLC*
-*Last Updated: Day 3 — February 25, 2026 | Version 1.1*
-*Canon. Cross-reference WORLD_BIBLE.md v1.1 | Gamemaster.md v1.1*
+*Last Updated: March 7, 2026 | Version 1.3 — Demo Scope Revision*
+*Canon. Cross-reference WORLD_BIBLE.md v1.2 | Gamemaster.md v1.3 | Characters.md v1.3*
+
+---
+
+## ─── ROADMAP / DEPRECATED — Preserved for Future Development ───
+
+> All content below is **deprecated from the contest demo scope** as of March 7, 2026.
+> Preserved in full for Act 2+ development. Do not implement for the contest build.
+
+<!-- DEPRECATED [FMV/GLASSES]: Phase 1 — 90-second Intro FMV cinematic
+     Reason: Requires a pre-generated 90-second FMV clip (Veo 3.1 Fast pipeline),
+     synchronized audio mix, and the cracked glasses overlay/HUD frontend.
+     Demo replaces this with an immediate Imagen 3 cold open.
+     Full spec preserved in the ⛔ ROADMAP: PHASE 1 section above.
+     Restore: Build clip library + video player in myceliainteractive,
+     implement glasses HUD overlay, wire to scene_key Firestore listener. -->
+
+<!-- DEPRECATED [FMV]: Phase 2 — Static Loop FMV clip
+     Reason: Requires pre-generated 8–12 second looping clip + glasses HUD overlay.
+     Demo replaces with Imagen 3 static background + Gemini Live atmospheric ambient.
+     Full spec preserved in the ⛔ ROADMAP: PHASE 2 section above. -->
+
+<!-- DEPRECATED [FMV]: Phase 5 — FMV Playback Architecture (30–50 clip library)
+     Reason: Building a 30–50 clip library in Veo 3.1 Fast is not feasible in 4 days.
+     The scene_key format is IDENTICAL between FMV and Imagen 3.
+     Only the frontend consumption layer changes.
+     Full clip library spec preserved in the ⛔ DEFERRED: PHASE 5 section above.
+     Restore: Generate clip library, build frontend video player,
+     swap server-side scene_key handler from Imagen 3 call to manifest lookup. -->
+
+<!-- DEPRECATED [BACKPACK]: Phase 4 — Gear Distribution (voice commands)
+     Reason: Backpack system deferred entirely. Not referenced in Jason’s demo prompt.
+     The “Gear Distribution (Voice Commands)” subsection in Phase 4 above is deferred.
+     Full spec preserved in docs/Backpack.md.
+     Restore: Implement backpack Firestore state, wire Jason’s full prompt,
+     add gear transfer WebSocket events. -->

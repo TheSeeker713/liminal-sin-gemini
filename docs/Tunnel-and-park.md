@@ -2,7 +2,24 @@
 ## Act 1 Environment Bible: The Boring Tunnel / Water Park Merge
 ### Version 1.1 | Day 3 — February 25, 2026
 ### Cross-reference: WORLD_BIBLE.md v1.1 Section 2 (Layer 1) | Backpack.md v1.0
-### Status: PRODUCTION CANON — AI generation reference + atmosphere specification
+### Status: PRODUCTION CANON — AI generation prompts ACTIVE for Imagen 3 | Atmosphere specification
+
+---
+
+## DEMO SCOPE — ACTIVE (March 7–11, 2026)
+
+> ⚠️ **The following defines what’s active in the contest demo vs. what requires deferred systems.**
+
+| Feature | Demo Status | Notes |
+|---|---|---|
+| **Physical space description** | ✅ ACTIVE | All zone specs, sub-zone IDs, scene_key format |
+| **AI generation prompts** | ✅ ACTIVE — IMAGEN 3 | Used directly as Imagen 3 inputs per scene_key trigger |
+| **Static ambient audio** | ✅ ACTIVE | Drip, hum, voicebox static, echoing voices |
+| **Slotsky reactive events** | ✅ ACTIVE | Bell event, card materialization, water disturbance, FOUND transition |
+| **Lyria 3 procedural soundtrack** | ⛔ DEFERRED | Requires `docs/AUDIO_DESIGN.md`. Static files for demo. |
+| **Smart glasses filter modes** | ⛔ DEFERRED | NV/IR/FS views require glasses HUD frontend. |
+| **Deep pool Night Vision view** | ⛔ DEFERRED | Requires glasses NV filter. Act 2 seed not visible in demo. |
+| **Multimeter Slotsky readings** | ⛔ DEFERRED | Requires backpack system and Jason’s production prompt. |
 
 ---
 
@@ -76,7 +93,10 @@ Lighting in the chamber is not consistent. It is a patchwork of different source
 
 ## AUDIO LANDSCAPE — CANONICAL AMBIENT SOUND
 
-The chamber has a defined audio environment that the Lyria 3 procedural soundtrack layers over:
+The chamber has a defined audio environment. ⛔ **NOTE: Lyria 3 procedural soundtrack is deferred to roadmap (see AGENTS.md Section 9 invariant). Static ambient audio files are used for the contest demo.**
+
+> **ACTIVE FOR DEMO:** Static ambient sounds (drip, hum, voicebox static, distant voices) + all Slotsky reactive event triggers
+> **DEFERRED TO ROADMAP:** Lyria 3 dynamic track generation, crossfade mixer, intensity ramp — see ROADMAP section at end of document
 
 ### Static Ambient (always present)
 - **Water drip** — slow, irregular, from multiple points in the ceiling. The baseline safe sound.
@@ -106,7 +126,7 @@ The chamber is Slotsky's primary territory in Act 1. Its influence is felt rathe
 
 ## WHAT IS VISIBLE FROM THE DEEP POOL (ACT 2 SEED)
 
-Through the still dark water of the deep pool section, with Night Vision or Full Spectrum active, the player can glimpse what is below:
+Through the still dark water of the deep pool section, **with Night Vision or Full Spectrum active** (⛔ **DEFERRED — requires smart glasses HUD frontend implementation**), the player can glimpse what is below:
 
 - Continuation of the water park infrastructure — more slides, a deeper pool basin
 - And below that: **not concrete**. Something natural. Stone. Wide. Opening downward.
@@ -116,7 +136,11 @@ Through the still dark water of the deep pool section, with Night Vision or Full
 
 ---
 
-## AI GENERATION PROMPTS — CANONICAL REFERENCE
+## AI GENERATION PROMPTS — ACTIVE FOR IMAGEN 3 (Contest Demo, March 2026)
+
+> ✅ These prompts are **active for the contest demo**. They are used directly as Imagen 3 generation inputs when the Game Master writes a matching `scene_key` to Firestore.
+> Use these prompts verbatim. Do not modify without updating Gamemaster.md scene routing.
+> These were the canonical AI generation reference and remain authoritative — the only change is that they now drive live Imagen 3 calls instead of a pre-generated FMV library.
 
 ### For Tunnel Entry Zone (zone_tunnel_entry)
 ```
@@ -158,5 +182,49 @@ analog horror grain, POV cracked-glasses overlay, stillness
 
 *TUNNEL-AND-PARK.md — LIMINAL SIN*
 *Mycelia Interactive LLC*
-*Last Updated: Day 3 — February 25, 2026 | Version 1.1*
-*Canon. Cross-reference WORLD_BIBLE.md v1.1 | Backpack.md v1.0*
+*Last Updated: March 7, 2026 | Version 1.2 — Demo Scope Revision*
+*Canon. Cross-reference WORLD_BIBLE.md v1.2 | Gamemaster.md v1.3*
+
+---
+
+## ─── ROADMAP / DEPRECATED — Preserved for Future Development ───
+
+> All content below is **deprecated from the contest demo scope** as of March 7, 2026.
+> Preserved for Act 2+ development. Do not implement for contest build.
+
+<!-- DEPRECATED [LYRIA3]: Lyria 3 procedural soundtrack
+     Reason: `docs/AUDIO_DESIGN.md` has not been created. Implementation cannot
+     begin without that document (AGENTS.md Section 9 invariant).
+     The audio landscape spec above (drip, hum, reactive triggers) describes the
+     static ambient baseline that IS active in the demo.
+     Lyria 3 layers ON TOP of that baseline with dynamic intensity ramps.
+     Restore: Create docs/AUDIO_DESIGN.md. Implement per that spec only.
+     Do not implement Lyria 3 even after contest without the AUDIO_DESIGN doc. -->
+
+### Lyria 3 Audio Integration (Roadmap)
+The audio landscape section above defines the full ambient sound spec.
+Lyria 3 adds dynamic intensity ramp behavior on top of the static baseline.
+Implement only after `docs/AUDIO_DESIGN.md` is created and approved.
+
+---
+
+<!-- DEPRECATED [GLASSES]: Night Vision / Full Spectrum deep pool visibility
+     Reason: NV and FS filter modes require smart glasses HUD frontend.
+     The deep pool Act 2 seed (glimpse of Nature Vault through NV/FS active)
+     is an important story beat that sets up Layer 3 content.
+     In the contest demo, the deep pool is simply described as "dark, deep, dangerous."
+     Jason does not describe what’s below it without NV/FS active.
+     Restore: With smart glasses frontend restoration (see Backpack.md). -->
+
+### Deep Pool Night Vision Reveal (Roadmap)
+Full spec preserved in the `## WHAT IS VISIBLE FROM THE DEEP POOL (ACT 2 SEED)` section above.
+Triggered by NV or FS filter activation. This is the final image of Act 1.
+
+---
+
+<!-- DEPRECATED [BACKPACK]: Multimeter Slotsky detection readings
+     Reason: Multimeter requires backpack system + Jason’s production prompt.
+     The multimeter behavior near the Tesla wall and near playing card arrangements
+     (anomalous readings, infinite voltage) is a canon mechanic.
+     The behavior is described in Backpack.md item spec (item #4).
+     Restore: With backpack system restoration (see Backpack.md). -->

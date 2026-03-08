@@ -17,7 +17,7 @@ The player is not a character. The player is an **anomaly**. A disembodied voice
 
 **Genre:** Analog Horror / Liminal Space / Psychological Survival  
 **Tone:** Slow-burn existential dread. No gore. No jump scares. Pure uncanny wrongness.  
-**Format:** FMV point-of-listen — voice-command navigation. No menus. No pause screen. No traditional HUD.  
+**Format:** AI-driven voice-command experience. No menus. No pause screen. No traditional HUD. ⚠️ **DEMO NOTE:** FMV clips replaced by Imagen 3 live background generation. Gemini Live native `voiceConfig` replaces ElevenLabs. CSS atmosphere layer replaces cracked smart-glasses HUD overlay for demo.  
 **Platform Target:** Browser (hosted at myceliainteractive.com/ls/game — frontend in separate Mycelia Interactive project; game API backend on Google Cloud Run)  
 **Prototype Scope:** Act 1 — "The Threshold" — Vertical Slice only.
 
@@ -100,6 +100,7 @@ The character bible from the **Bally's Underground Character Dossier** is the so
 - Tries to stay professional even when terrified. Narrates his own horror like he's still filming.
 
 **Smart Glasses System (Jason's POV Tool):**
+> ⛔ **DEFERRED TO ROADMAP (March 2026):** Smart glasses filter modes and HUD overlay require frontend implementation. Jason’s demo prompt does not reference glasses. CSS vignette + grain provides the aesthetic for the demo. See Characters.md ROADMAP section and Backpack.md for full spec.
 - Cracked after the fall. HUD is flickering.
 - Can switch filters: Standard / Infrared (heat signatures) / Night Vision (illuminates dark water) / Full Spectrum (reveals Slotsky signals invisible to naked eye)
 - Each filter acts as a **Visual Prompt Modifier** for the Game Master agent — switching filters triggers new dialogue and environmental events.
@@ -218,7 +219,7 @@ The Game Master is not a character. It is the invisible director of everything.
 
 **What the Game Master Does:**
 - Monitors `trust_level`, `fear_index`, `fourth_wall_count`, `proximity_state` in Firestore
-- Selects scene keys to trigger FMV clip playback
+- Selects scene keys to trigger Imagen 3 background generation (demo) or FMV clip playback (roadmap)
 - Routes player voice to appropriate character agents
 - Triggers Slotsky anomaly events based on probability logic
 - Adjusts "Affective Dialog" — escalates or eases horror pacing based on player's detected emotional state
@@ -276,6 +277,12 @@ Characters can and will refuse player commands. The AI compares `fear_index` aga
 > *"Okay. Okay, no. I need you to tell me right now what the hell is actually happening. Because I am NOT— I'm not okay. I'm not okay."*
 
 ---
+
+## ⛔ ROADMAP: SECTION 7 — THE INTRO FMV (Full Cinematic — Deferred)
+
+> **DEFERRED (March 2026)** — The 90-second intro cinematic and the post-intro static loop FMV clip are deferred to roadmap.
+> The demo opens with an Imagen 3 atmospheric cold open instead (see `docs/Instructions.md` DEMO: PHASE 1).
+> All canonical shot list and static loop spec below are preserved for when the FMV pipeline is built.
 
 ## SECTION 7: THE INTRO FMV — CANONICAL SEQUENCE
 
@@ -340,39 +347,48 @@ Josh's bravado is a **comedic pressure valve in early scenes** — his cocky one
 
 ## SECTION 9: PROTOTYPE SCOPE — ACT 1 "THE THRESHOLD"
 
-**What exists in the prototype:**
+**What exists in the contest demo (March 2026):**
 - One chamber: Boring Tunnel / Water Park merge
-- One active character agent: Jason (primary)
-- Two distant voice agents: Audrey + Josh (audio only, ECHO/RANGE states)
-- Game Master + Slotsky agents running in background
-- Intro FMV (1:30 cinematic)
-- Static loop FMV
-- 30–50 pre-generated reaction clips in Veo 3.1 Fast
+- One active character agent: Jason (primary) — Gemini Live, Fenrir voice, trust float
+- One ambient echo: Audrey (background echo prompt only) — Gemini Live, Aoede voice
+- Game Master agent (webcam 1 FPS + mic, orchestration)
+- Slotsky environmental events (CSS + WebSocket dispatch)
+- Imagen 3 scene backgrounds per scene_key trigger
 - Trust/Fear meters active
 - Fourth-Wall Protocol active (all 4 tiers)
+- Barge-in protocol (Gemini Live native)
 
-**What does NOT exist in the prototype:**
+**What does NOT exist in the demo (deferred to roadmap):**
+- Smart glasses HUD overlay and filter modes
+- Backpack inventory system
+- Josh agent
+- Audrey as a full interactive agent
+- 90-second intro FMV cinematic
+- Pre-generated FMV clip library (30–50 clips)
+- Lyria 3 procedural soundtrack
+- ADK/AutoFlow multi-agent orchestration
+
+**What does NOT exist in the prototype (Act 2+):**
 - Layer 2 (Flood Drain Civilization)
 - Layer 3 (Nature Vault)
 - Layer 4 (The Machine / Jubilee Mine)
-- Full reunion sequence (Act 2+)
-- Full Audrey/Josh active agents (they are distant voice-only)
+- Full reunion sequence
 
-**Prototype Ending:** The player successfully navigates communication between the three characters to trigger the FOUND state. As the reunion begins, an impossible sound rises from below — **water echoing from the Nature Vault**. The demo ends. The game continues beyond.
+**Prototype Ending:** Player triggers FOUND state. Sound rises from below — water echoing from the Nature Vault. The demo ends. The game continues beyond.
 
 ---
 
 ## SECTION 10: TECHNICAL STACK REFERENCE
 
-| Component | Tool | Role |
-|---|---|---|
-| Core Reasoning | Gemini 3.1 Pro | Game Master / high-reasoning orchestration |
-| Character Dialogue | Gemini 2.5 Flash Native Audio | Low-latency live voice agents |
-| Agent Orchestration | ADK (Agent Development Kit) | AutoFlow multi-agent hierarchy |
-| Backend / State | Google Cloud Run + Firestore | Session state, trust meters, proximity |
-| FMV Generation | Morphic → Grok Imagine → Veo 3.1 | Consistent character FMV pipeline |
-| Audio / Score | Lyria 3 | Procedural reactive horror soundtrack |
-| Frontend | Next.js + WebSocket | FMV playback + voice overlay interface |
+| Component | Demo Build (March 2026) | Original Spec (Roadmap) | Role |
+|---|---|---|---|
+| **Core Reasoning** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Same | Game Master + character agents |
+| **Character Dialogue** | Gemini Live native `voiceConfig` (Fenrir/Aoede) | Same | Zero-cost voice output |
+| **Scene Visuals** | Vertex AI Imagen 3 (live generation) | Veo 3.1 Fast pre-generated FMV clips | Background per scene_key |
+| **Agent Orchestration** | Direct GenAI SDK + WebSocket | ADK AutoFlow (deferred) | Multi-agent routing |
+| **Backend / State** | Google Cloud Run + Firestore | Same | Session state, trust meters |
+| **Audio / Score** | Static ambient files | Lyria 3 (deferred) | Procedural reactive soundtrack |
+| **Frontend** | Next.js + WebSocket (myceliainteractive) | Same | Imagen 3 background + voice overlay |
 
 ---
 
@@ -390,5 +406,38 @@ The loop closes. The signal remains broken. The house always won.
 
 *WORLD_BIBLE.md — LIMINAL SIN*  
 *Paradigm Evolution Productions / Mycelia Interactive LLC*  
-*Last Updated: Day 3 — February 25, 2026 | Version 1.1*  
+*Last Updated: March 7, 2026 | Version 1.3 — Demo Scope Revision*
 *Canon version supersedes all prior documents.*
+
+---
+
+## ─── ROADMAP / DEPRECATED — Preserved for Future Development ───
+
+> All content below is **deprecated from the contest demo scope** as of March 7, 2026.
+> Preserved in full for Act 2+ development.
+
+<!-- DEPRECATED [FMV]: Section 7 — Intro FMV Cinematics
+     Reason: 90-second cinematic + static loop FMV clip require a pre-generated clip
+     pipeline and synchronized actress recordings. Not feasible in 4 days.
+     Demo replaces with Imagen 3 atmospheric cold open.
+     Full shot list and static loop spec preserved in Section 7 above.
+     Restore: Build the FMV pipeline, generate cinematic using the canonical shot list,
+     add cracked glasses vignette overlay, wire to frontend video player. -->
+
+<!-- DEPRECATED [TECHNICAL STACK]: Old model names / stack
+     The Section 10 table previously listed:
+     - "Gemini 3.1 Pro" as Core Reasoning (model does not exist — error in original doc)
+     - "Gemini 2.5 Flash Native Audio" for character dialogue (superseded)
+     - "ADK (Agent Development Kit)" as orchestration (DEFERRED per AGENTS.md Section 9)
+     - "Morphic → Grok Imagine → Veo 3.1" as FMV generation (replaced by Imagen 3)
+     - "Lyria 3" as audio (deferred)
+     Correct model: `gemini-2.0-flash-live-preview-04-09` for all agents.
+     Section 10 above has been updated with the correct demo stack. -->
+
+<!-- DEPRECATED [LYRIA3]: Audio Aesthetic — Section 8
+     The Section 8 audio aesthetic note references:
+     "Lyria 3 procedural soundtrack — shifts intensity based on player_fear_index"
+     Lyria 3 is deferred. Demo uses static ambient files.
+     The rest of the audio aesthetic spec (bells = danger, drip = safe, three bells =
+     correction) remains active and canon — it governs Slotsky sound events.
+     Restore: Implement Lyria 3 per docs/AUDIO_DESIGN.md when that doc is created. -->

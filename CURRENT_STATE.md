@@ -1,6 +1,6 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 6, 2026
+> Last updated: March 7, 2026
 
 ---
 
@@ -12,8 +12,8 @@
 | **Contest** | Gemini Live Agent Challenge (Google / Devpost) |
 | **Hard Deadline** | March 16, 2026 @ 5:00 PM PDT |
 | **Internal Prototype Cutoff** | March 11, 2026 @ 11:11 PM MT |
-| **Days to Internal Cutoff** | 5 days |
-| **Days to Hard Deadline** | 10 days |
+| **Days to Internal Cutoff** | 4 days |
+| **Days to Hard Deadline** | 9 days |
 | **Backend Repo** | `d:\DEV\liminal-sin-gemini` (Cloud Run Node.js server — NO frontend code) |
 | **Frontend Repo** | `myceliainteractive` (Cloudflare Pages) |
 | **Marketing Shell** | `https://myceliainteractive.com/ls` — LIVE |
@@ -34,7 +34,9 @@
 | **Gemini SDK mode** | Vertex AI (`vertexai: true`) — bills against $300 GCP credits |
 | **Firestore** | Native mode, `us-west1` — CONNECTED |
 | **Firebase Web App** | `liminal-sin-web` — registered |
-| **Cloud Run** | NOT YET DEPLOYED — Dockerfile ready |
+| **Cloud Run** | ✅ LIVE — `https://liminal-sin-server-1071754889104.us-west1.run.app` |
+| **Artifact Registry** | ✅ `liminal-sin-repo` created in `us-west1` |
+| **Cloud Run Env Vars** | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_REGION` set on service |
 | **GCP Account** | `digitalartifact11@gmail.com` |
 
 ---
@@ -48,30 +50,62 @@
 | `server/server.ts` | ✅ Done | Express + WebSocket server on PORT 3001 (local) / 8080 (Cloud Run) |
 | `server/types/state.ts` | ✅ Done | TrustLevel enum, PlayerEmotion, PlayerSession, GmEvent types |
 | `server/services/db.ts` | ✅ Done | Firestore ADC adapter with in-memory fallback |
-| `server/services/gemini.ts` | ✅ Done | Vertex AI client + GM system prompts + 4 tool declarations |
+| `server/services/gemini.ts` | ✅ Done | Vertex AI client + GM system prompts + 4 tool declarations + `LiveSessionManager` class |
 | `server/services/gameMaster.ts` | ✅ Done | GM function call router — persists state + broadcasts GmEvent over WS |
 | `server/tsconfig.build.json` | ✅ Done | Emits compiled JS to `dist/server/server.js` |
 | `Dockerfile` | ✅ Done | 2-stage build (node:20-alpine), Cloud Run ready |
 | `.gcloudignore` | ✅ Done | Strips docs/assets/public from Cloud Build upload |
 
-### What the Server Currently Does (Reality Check)
+### What the Server Currently Does (Reality Check — March 7, 2026)
 - Accepts WebSocket connections
-- Routes `GM_FUNCTION_CALL` messages to `gameMaster.ts`
-- Echoes all other messages back (stub — not real gameplay)
-- **Gemini is NEVER called. No audio streams. No NPC speaks. GM does not perceive anything.**
+- On connect: opens a `LiveSessionManager` → calls `ai.live.connect()` → sends `SESSION_READY` to client
+- Routes `player_speech` JSON messages (base64 PCM) → `liveManager.sendAudio()`
+- Routes raw binary audio frames → `liveManager.sendAudio()` (fallback)
+- Streams `agent_speech` audio chunks back to frontend over WebSocket
+- Forwards `agent_interrupt` signal to frontend on barge-in
+- Routes GM function calls → `gameMaster.ts` → Firestore + WS broadcast
+- **Deployed on Cloud Run — health check live. End-to-end audio path is wired but UNTESTED with a real frontend client.**
 
 ### What Does NOT Exist Yet
-- [ ] **Gemini Live session wiring** — BLOCKING EVERYTHING. No voice, no agents without this.
-- [ ] Webcam frame pipe (GM vision: 1 JPEG/sec → Gemini)
-- [ ] NPC character agent system prompts injected at session start
-- [ ] VAD / barge-in handler (player interrupts mid-NPC-sentence)
-- [ ] FMV scene switching (frontend reads SCENE_CHANGE event, swaps video)
+- [ ] **End-to-end audio test** — `player_speech` → Gemini → `agent_speech` loop not validated with a real browser client yet
+- [ ] Webcam frame pipe (GM vision: 1 JPEG/sec → `sendFrame()`)
+- [ ] NPC character system prompts (Jason, Audrey, Josh) injected per session
+- [ ] VAD / barge-in handler (player speaks → truncate Gemini output queue)
+- [ ] FMV scene switching (frontend reads `SCENE_CHANGE` GmEvent, swaps video)
 - [x] Frontend game wrapper (`/ls/game`) — DONE in myceliainteractive repo
-- [ ] Cloud Run deployment (Dockerfile ready, just needs `gcloud run deploy`)
+- [x] Cloud Run deployment — LIVE at `https://liminal-sin-server-1071754889104.us-west1.run.app`
+- [ ] **End-to-end audio test** — `player_speech` → Gemini → `agent_speech` loop not validated with a real browser client yet
+- [ ] Jason’s demo system prompt + `voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } }` injected
+- [ ] Webcam frame pipe (GM vision: 1 JPEG/sec → `sendFrame()`)
+- [ ] Imagen 3 scene generation — server calls Vertex AI Imagen 3 when `scene_key` changes
+- [ ] Trust float injection — Jason’s prompt updated with current `trust_level` value
+- [ ] VAD / barge-in handler (player speaks → truncate Gemini output queue)
+- [ ] `deploy.yml` env vars — `--set-env-vars` not yet added to GitHub Actions
+- [ ] Architecture diagram (mandatory submission deliverable)
+- [ ] 4-minute demo video (mandatory submission deliverable)
 
 ---
 
-## Architecture Decision (March 6, 2026)
+## DEMO STRATEGY — PIVOT (March 7, 2026)
+
+> **Why we pivoted:** ElevenLabs trial expired. Pre-generated FMV pipeline requires 50 clips, video player, synchronized audio — not possible in 4 days. New strategy is faster, cheaper, and actually better for contest judges.
+
+| Change | Old Plan | New Plan |
+|---|---|---|
+| **Voice output** | ElevenLabs TTS | Gemini Live native `voiceConfig` (Fenrir for Jason, Aoede for Audrey echo) |
+| **Scene visuals** | Pre-generated FMV clip library (30–50 clips) | Imagen 3 live generation per `scene_key` trigger |
+| **Jason’s POV** | Cracked smart-glasses HUD overlay (requires frontend) | CSS vignette + grain + glitch (implemented in myceliainteractive) |
+| **Active characters** | Jason + Audrey + Josh (3 full agents) | Jason (primary) + Audrey (echo background only) |
+| **Deferred** | — | Backpack, glasses filters, Josh, Lyria 3, ADK/AutoFlow, FMV pipeline |
+
+**4-day execution plan:**
+- Day 1 (Mar 7): All docs revised → end-to-end audio loop validated
+- Day 2 (Mar 8): Jason’s demo prompt injected + Imagen 3 scene generation wired
+- Day 3 (Mar 9): Frontend WebSocket client + mic capture + Imagen 3 background display
+- Day 4 (Mar 10): GM webcam loop live + trust routing + demo polish
+- Day 5 (Mar 11): Demo video + submission prep
+
+---
 
 **`liminal-sin-gemini` is a pure backend repo. Zero frontend code lives here.**
 - All UI, game wrappers, and marketing live in `myceliainteractive` (Cloudflare Pages)
@@ -99,21 +133,33 @@ PORT=3001
 
 ---
 
-## Next Priority Action
+## Next Priority Actions (March 7, 2026)
 
-**IMMEDIATE — Wire Gemini Live audio in `server/server.ts`**
-This is the single most critical unbuilt piece. The entire game depends on it.
+**Phase 2 Step 3 — Validate end-to-end audio (IMMEDIATE)**
+The transport layer is wired. The blocking question is: does audio actually flow?
+1. Write a minimal WebSocket test client that sends a `player_speech` chunk
+2. Confirm `agent_speech` comes back with Gemini audio
+3. Confirm GM function calls fire and write to Firestore
 
-1. Open a Gemini Live session (`ai.live.connect()`) when a WS client connects
-2. Forward incoming binary audio from the browser to Gemini
-3. Stream Gemini's audio response back to the browser
-4. Intercept Gemini function calls → route to `gameMaster.ts`
-5. Handle VAD / barge-in (player speaks → truncate Gemini output)
+**Phase 3 — NPC Character Prompts + Voice Config**
+- Inject Jason’s DEMO prompt (from `docs/Characters.md` DEMO PROMPT section) at session start
+- Add `voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } }` to Jason’s Live session
+- Update model to `gemini-2.0-flash-live-preview-04-09` in `gemini.ts` (currently says `gemini-3.1-pro` — fix this)
+- Validate Jason speaks in-character
 
-**After Gemini Live is wired:**
-- Inject NPC system prompts (Jason first) at session start
-- Build `/ls/game` frontend in `myceliainteractive`
-- Run `gcloud run deploy` (Dockerfile already ready)
+**Phase 3 — Imagen 3 Scene Generation**
+- On GM `triggerSceneChange` function call → call Vertex AI Imagen 3 with matching zone prompt
+- Broadcast result as `{ type: 'scene_image', data: base64 }` WebSocket message
+- Frontend CSS background updates with the image
+
+**Phase 4 — GM Vision Loop**
+- Accept `player_frame` WebSocket message (base64 JPEG from frontend webcam)
+- Pipe to `liveManager.sendFrame()` at 1 FPS
+- This alone unlocks the 40% Innovation scoring criterion
+
+**Infrastructure**
+- Add `--set-env-vars` to `deploy.yml` so GitHub Actions CI/CD deploys correctly
+- Create architecture diagram (mandatory submission deliverable)
 
 ---
 
@@ -132,13 +178,13 @@ This is the single most critical unbuilt piece. The entire game depends on it.
 
 ## Character Agents — Quick Reference
 
-| Character | Model | Starting State | Trust Default |
+| Character | Model | Voice | Demo Status |
 |---|---|---|---|
-| Jason | `gemini-2.5-flash-preview-tts` | Separated, POV via cracked smart glasses | Neutral |
-| Audrey | `gemini-2.5-flash-preview-09-2025` | Separated, voice-only echo | Neutral |
-| Josh | `gemini-2.5-flash-preview-09-2025` | Separated, voice-only echo | Neutral |
-| Slotsky | N/A (probability engine) | Environmental only — never speaks | N/A |
-| Game Master | `gemini-2.0-flash-exp` | Bimodal: webcam 1FPS + audio | N/A |
+| Jason | `gemini-2.0-flash-live-preview-04-09` | `Fenrir` (Gemini Live native) | ✅ PRIMARY AGENT |
+| Audrey | `gemini-2.0-flash-live-preview-04-09` | `Aoede` (Gemini Live native) | 🟡 ECHO BACKGROUND ONLY |
+| Josh | `gemini-2.0-flash-live-preview-04-09` | — | ⛔ DEFERRED TO ROADMAP |
+| Slotsky | N/A (probability engine) | None | ✅ ACTIVE (CSS/WS events) |
+| Game Master | `gemini-2.0-flash-live-preview-04-09` | None | ✅ ACTIVE (bimodal: webcam + mic) |
 
 ---
 

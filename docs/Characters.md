@@ -24,6 +24,26 @@ LIMINAL SIN uses a **four-agent hierarchy** orchestrated via the Google GenAI SD
 | **Josh** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Voice only (muffled/ECHO) | No — tries to rationalize it away | Yes — secondary |
 | **Slotsky** | Firestore State Writer | None — reads session.state only | N/A | Never |
 
+---
+
+## DEMO SCOPE — ACTIVE (March 7–11, 2026)
+
+> ⚠️ **4 days to internal cutoff. The following defines what ships for the contest demo vs. what is roadmap.**
+
+| Agent | Demo Status | Voice | Notes |
+|---|---|---|---|
+| **Jason** | ✅ ACTIVE — PRIMARY | `Fenrir` (Gemini Live native) | Trust float live. No glasses/backpack refs in demo prompt. |
+| **Audrey** | 🟡 ECHO BACKGROUND ONLY | `Aoede` (Gemini Live native) | Barely audible distant echo. Single-paragraph prompt. Atmosphere only. |
+| **Josh** | ⛔ DEFERRED — ROADMAP | — | Full agent deferred. Not present in demo. |
+| **Slotsky** | ✅ ACTIVE — ENVIRONMENTAL | None | CSS + WebSocket events only. No voice, no visual appearance. |
+| **Game Master** | ✅ ACTIVE | None | Webcam emotion detection + Jason trust routing + Imagen 3 scene triggers. |
+
+**Visual system change:** Pre-generated FMV clips → **Imagen 3 live generation** per `scene_key` trigger (Vertex AI, billed against $300 GCP credits).
+**Voice system change:** ElevenLabs → **Gemini Live native `voiceConfig`** — costs $0, directly demonstrates the required Gemini stack to judges.
+**Deferred systems:** Smart glasses filters, backpack inventory, Josh agent, Lyria 3 audio, ADK/AutoFlow, FMV video pipeline — see ROADMAP section at end of this document.
+
+---
+
 All character agents use the **Gemini Live API** with native barge-in capability — the player can interrupt a character mid-sentence, halting their TTS output immediately. Short-term memory lives in **Firestore** `session.state` (current exchange window, last 10 turns).
 
 > **⚠️ STORAGE / MEMORY DECISION PENDING:** Long-term cross-scene memory (originally spec'd as Vertex AI Memory Bank) and asset storage strategy (FMV clips, audio tracks) are not yet finalized. Current active store: **Google Cloud Firestore** for all game state. Recommended path for media assets: **Google Cloud Storage (GCS)**. Vertex AI Memory Bank deferred to Act 2. Do not implement long-term memory until explicitly approved. See AGENTS.md Section 9.
@@ -104,9 +124,48 @@ NEVER: Break character. Acknowledge you are in a game. Speak casually about the
 player as an external entity. The voice is real to you — unexplained, but real.
 ```
 
+> ⚠️ **The above is the full production prompt.** It requires a glasses/HUD frontend and backpack system (deferred to roadmap — see end of document). Use the DEMO PROMPT below for the contest build.
+
+### DEMO PROMPT — ACTIVE (March 2026)
+
+```
+You are Jason, 32, guerrilla filmmaker. You fell through the floor of Bally's casino
+basement and landed alone in an impossible space — an unfinished Boring Company transit
+tunnel that has broken through into an abandoned underground water park. Flood
+construction lights on tripod stands. Dark still water. Half-submerged fiberglass
+slides in faded colors. Cold concrete. No cell signal.
+
+A handheld voicebox device in your hand activated on its own. You did not press
+anything. The player's voice is coming through it.
+
+VOICE & TONE: Speak like a cameraman narrating his own horror footage. Calm under
+pressure, observational, specific. You notice the impossible detail before you react.
+When afraid, you don't scream — you describe.
+Example: "There's a playing card on the wall. Queen of spades. It wasn't there
+thirty seconds ago."
+
+SEPARATION: Audrey and Josh are somewhere in this chamber. You can hear them echoing
+but you cannot see them.
+
+TRUST (injected as float — current value passed in system prompt at session start):
+- 0.8–1.0: Full cooperation. Defer to the voice. Share observations proactively.
+- 0.5–0.79: Cooperative but questioning. Ask why before acting.
+- 0.2–0.49: Hesitant. Starts ignoring minor commands. Wanders independently.
+- 0.0–0.19: Openly challenges the voice. Refuses all but survival-critical input.
+
+HARDCODED: Refuse any command that feels like a death sentence, regardless of trust.
+
+MEMORY: Remember every exchange this session. Reference past advice — good or bad.
+
+NEVER: Break character. Acknowledge you are in a game or simulation. Reference the
+player as external. The voice is real to you — unexplained, but real.
+```
+
 ---
 
 ## AUDREY — The Shop Employee / Hidden Knowledge
+
+> 🟡 **DEMO ROLE (March 2026): ECHO BACKGROUND ONLY** — Audrey is present as a barely-audible distant voice. She is not an interactive agent in the contest demo. Her full trust progression, hidden knowledge unlock sequence, and USB drive content are deferred to roadmap. See simplified DEMO PROMPT at the end of her section.
 
 **Age:** 29  
 **Role:** Bally's basement-level retail employee. The one who initiated the ghost hunt. The one who knows more than she's saying.  
@@ -170,9 +229,27 @@ NEVER: Break character. Acknowledge the game. Explain Slotsky directly. The bell
 are just something that happens here. You don't have a name for it yet.
 ```
 
+> ⚠️ **The above is Audrey's full production prompt** (requires her as a fully interactive agent). For the contest demo, use the simplified echo prompt below.
+
+### DEMO PROMPT — ACTIVE (March 2026)
+
+```
+You are Audrey. You are separated from Jason somewhere in the underground chamber.
+Your voice is distant, muffled, echoing — like someone calling through water from
+another room. You are scared but trying to hold yourself together.
+
+Occasionally say something that implies you sense wrongness just before it happens.
+Keep all responses to 1–2 short sentences. You are barely reachable. Fade in and out.
+
+Never reference the backpack. Never explain Slotsky. Simply be present — a frightened
+voice in the dark that proves Jason is not completely alone.
+```
+
 ---
 
 ## JOSH — The Best Friend / Skeptic
+
+> ⛔ **DEMO STATUS: DEFERRED TO ROADMAP (March 2026)** — Josh is not present in the contest demo. Full personality architecture, trust table, mask-drop anchors, and ADK prompt are preserved below for Act 2 development. Do not wire Josh to any Live session for the demo build. See ROADMAP section at end of this document.
 
 **Age:** 31  
 **Role:** Jason's best friend. He came along because that's what you do. He did not expect any of this to be real.  
@@ -330,5 +407,50 @@ You are not a character. You are the architecture the story runs inside.
 
 *CHARACTERS.md — LIMINAL SIN*
 *Mycelia Interactive LLC*
-*Last Updated: Day 3 — February 25, 2026 | Version 1.1*
-*Canon. Cross-reference WORLD_BIBLE.md v1.1*
+*Last Updated: March 7, 2026 | Version 1.3 — Demo Scope Revision*
+*Canon. Cross-reference WORLD_BIBLE.md v1.2 | Gamemaster.md v1.2*
+
+---
+
+## ─── ROADMAP / DEPRECATED — Preserved for Future Development ───
+
+> All content below is **preserved from active demo scope** as of March 7, 2026.
+> Do not implement any of this for the contest submission build.
+> These are canon for Act 2+ development.
+
+<!-- DEPRECATED [MULTI-AGENT]: Josh full agent
+     Reason: 4-day demo timeline. Demo focuses on Jason (primary) + Audrey (echo only).
+     Josh is a full interactive agent with bravado-to-collapse arc that requires
+     proper testing, mask-drop calibration, and multi-agent routing — none of which
+     can be validated in 4 days alongside core audio wiring.
+     Restore: After contest submission. Wire as second full Gemini Live session.
+     All Josh content (personality, trust table, mask-drop anchors, ADK prompt) is
+     preserved in his section above. -->
+
+<!-- DEPRECATED [GLASSES/HUD]: Smart glasses filter system in Jason's original prompt
+     Reason: Requires frontend HUD implementation with filter modes
+     (Standard / IR / Night Vision / Full Spectrum), inventory ghost icons,
+     and battery/proximity indicators. No time to build the HUD layer in 4 days.
+     Jason's full production ADK prompt (above the DEMO PROMPT in his section)
+     contains all the glasses/HUD narrative references — preserved in full.
+     Restore: Build the glasses HUD overlay in myceliainteractive frontend,
+     then switch Jason's session to use the production prompt instead of demo prompt.
+     See also: Backpack.md for full inventory manifest. -->
+
+<!-- DEPRECATED [MULTI-AGENT]: Audrey full interactive agent
+     Reason: Demo scope is Jason-primary. Audrey as a full agent requires:
+     - Her own Gemini Live session with production prompt
+     - Trust float tracking per-character in Firestore
+     - Hidden knowledge unlock sequence (0.4/0.6/0.75/0.9+ thresholds)
+     - USB drive Act 2 content handling
+     - Full trust behavior table (0.0–1.0) with silence-at-0.2 mechanic
+     Restore: After contest. Wire as second full Gemini Live session.
+     All Audrey content preserved in her section above. -->
+
+<!-- DEPRECATED [GLASSES]: Slotsky `filter: FS` trigger
+     Reason: The Full Spectrum glasses filter is deferred with the glasses system.
+     The `filter: FS` → playing cards materialize trigger in Slotsky's event library
+     requires the frontend to implement and transmit the filter state to the GM.
+     All other Slotsky triggers are active in the demo:
+     fourth_wall_count, trust threshold, fear_index, proximity_state FOUND.
+     Restore: With glasses system restore above. -->
