@@ -27,7 +27,7 @@ export interface PlayerSession {
 }
 
 // Events broadcast over WebSocket to the frontend
-export type GmEventType = 'TRUST_CHANGE' | 'GLITCH_EVENT' | 'SCENE_CHANGE' | 'SLOTSKY_TRIGGER';
+export type GmEventType = 'trust_update' | 'hud_glitch' | 'scene_change' | 'slotsky_trigger';
 
 export interface GmEvent {
   type: GmEventType;

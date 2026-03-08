@@ -1,6 +1,5 @@
 import { WebSocket } from 'ws';
-import { updateTrustLevel } from './db';
-import { GmEvent } from '../types/state';
+import { updateTrustLevel, getOrCreateSession } from './db';
 import { generateSceneImage } from './imagen';
 
 /**
@@ -16,41 +15,41 @@ export async function handleGmFunctionCall(
 ): Promise<void> {
   console.log(`[GM] Function call: ${functionName}`, args);
 
-  let event: GmEvent | null = null;
+  let wsMessage: Record<string, unknown> | null = null;
 
   switch (functionName) {
     case 'triggerTrustChange': {
       const levelMap: Record<string, number> = { High: 0.8, Neutral: 0.5, Low: 0.2 };
       const newLevel = levelMap[args.newTrustLevel as string] ?? 0.5;
       await updateTrustLevel(sessionId, newLevel);
-      event = {
-        type: 'TRUST_CHANGE',
-        sessionId,
-        payload: { trustLevel: newLevel, reason: args.reason },
-        timestamp: Date.now()
+      const session = await getOrCreateSession(sessionId);
+      wsMessage = {
+        type: 'trust_update',
+        agent: 'gm',
+        trust_level: newLevel,
+        fear_index: session.fearIndex
       };
       break;
     }
 
     case 'triggerGlitchEvent': {
-      event = {
-        type: 'GLITCH_EVENT',
-        sessionId,
-        payload: { intensity: args.intensity, glitchType: args.type },
-        timestamp: Date.now()
+      const durationMap: Record<string, number> = { low: 500, medium: 800, high: 1200 };
+      const intensity = args.intensity as string;
+      wsMessage = {
+        type: 'hud_glitch',
+        intensity,
+        duration_ms: durationMap[intensity] ?? 800
       };
       break;
     }
 
     case 'triggerSceneChange': {
       const sceneKey = args.sceneKey as string;
-      event = {
-        type: 'SCENE_CHANGE',
-        sessionId,
-        payload: { sceneKey },
-        timestamp: Date.now()
+      wsMessage = {
+        type: 'scene_change',
+        payload: { sceneKey }
       };
-      // Fire Imagen 4 generation async — sends SCENE_IMAGE when ready (non-blocking)
+      // Fire Imagen 4 generation async — sends scene_image when ready (non-blocking)
       void generateSceneImage(sceneKey).then((base64) => {
         if (base64 && clientWs.readyState === WebSocket.OPEN) {
           clientWs.send(JSON.stringify({
@@ -60,18 +59,16 @@ export async function handleGmFunctionCall(
             payload: { sceneKey, data: base64 },
             timestamp: Date.now()
           }));
-          console.log(`[GM] Broadcast SCENE_IMAGE — sceneKey="${sceneKey}"`);
+          console.log(`[GM] Broadcast scene_image — sceneKey="${sceneKey}"`);
         }
       });
       break;
     }
 
     case 'triggerSlotsky': {
-      event = {
-        type: 'SLOTSKY_TRIGGER',
-        sessionId,
-        payload: { anomalyType: args.anomalyType },
-        timestamp: Date.now()
+      wsMessage = {
+        type: 'slotsky_trigger',
+        payload: { anomalyType: args.anomalyType }
       };
       break;
     }
@@ -81,8 +78,8 @@ export async function handleGmFunctionCall(
       return;
   }
 
-  if (event && clientWs.readyState === WebSocket.OPEN) {
-    clientWs.send(JSON.stringify(event));
-    console.log(`[GM] Broadcast event to client: ${event.type}`);
+  if (wsMessage && clientWs.readyState === WebSocket.OPEN) {
+    clientWs.send(JSON.stringify(wsMessage));
+    console.log(`[GM] Broadcast event to client: ${wsMessage.type}`);
   }
 }

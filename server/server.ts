@@ -67,7 +67,7 @@ wss.on('connection', (ws: WebSocket) => {
       });
 
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'SESSION_READY', sessionId }));
+        ws.send(JSON.stringify({ type: 'session_ready', session_id: sessionId }));
         // Trigger Jason's opening monologue immediately after the client is ready.
         // The voicebox activated on its own — he didn't press anything.
         jasonManager.sendText(
