@@ -1,28 +1,31 @@
 import { GoogleGenAI, Modality, Session, Tool, Type } from '@google/genai';
 
-const project = process.env.GOOGLE_CLOUD_PROJECT || '';
-const location = process.env.GOOGLE_CLOUD_REGION || 'us-west1';
+// Lazy getters — avoids CJS import-hoisting bug where dotenv.config() in server.ts
+// runs AFTER all require()s (including this module) due to TypeScript CJS compilation.
+let _ai: GoogleGenAI | null = null;
+let _liveAi: GoogleGenAI | null = null;
 
-if (!project) {
-  console.warn('[GEMINI] WARNING: GOOGLE_CLOUD_PROJECT is not set. Gemini Vertex AI calls will fail.');
+/** Returns the Vertex AI GenAI client (us-west1). Used for Imagen 4 and non-live calls. */
+export function getAiClient(): GoogleGenAI {
+  if (!_ai) {
+    const project = process.env.GOOGLE_CLOUD_PROJECT || '';
+    const location = process.env.GOOGLE_CLOUD_REGION || 'us-west1';
+    if (!project) {
+      console.warn('[GEMINI] WARNING: GOOGLE_CLOUD_PROJECT is not set. Vertex AI calls will fail.');
+    }
+    _ai = new GoogleGenAI({ vertexai: true, project, location });
+  }
+  return _ai;
 }
 
-// Use Vertex AI mode — authenticates via Application Default Credentials (gcloud auth).
-// All usage bills against the GCP project ($300 contest credits).
-export const ai = new GoogleGenAI({
-  vertexai: true,
-  project,
-  location
-});
-
-// Gemini Live API is only available in us-central1 on Vertex AI.
-// We use a separate client for Live sessions so the rest of the infra stays on us-west1.
-const LIVE_LOCATION = 'us-central1';
-export const liveAi = new GoogleGenAI({
-  vertexai: true,
-  project,
-  location: LIVE_LOCATION
-});
+/** Returns the Vertex AI Live client (us-central1 — required for Live API). */
+function getLiveAiClient(): GoogleGenAI {
+  if (!_liveAi) {
+    const project = process.env.GOOGLE_CLOUD_PROJECT || '';
+    _liveAi = new GoogleGenAI({ vertexai: true, project, location: 'us-central1' });
+  }
+  return _liveAi;
+}
 
 /**
  * Function tool declarations for the Game Master Overseer.
@@ -181,7 +184,7 @@ export class LiveSessionManager {
           responseModalities: [Modality.AUDIO]
         };
 
-    this.session = await liveAi.live.connect({
+    this.session = await getLiveAiClient().live.connect({
       model: this.modelName,
       config,
       callbacks: {

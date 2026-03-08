@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws';
 import { updateTrustLevel } from './db';
 import { GmEvent } from '../types/state';
+import { generateSceneImage } from './imagen';
 
 /**
  * Handles a function call dispatched by the Gemini Game Master.
@@ -42,12 +43,26 @@ export async function handleGmFunctionCall(
     }
 
     case 'triggerSceneChange': {
+      const sceneKey = args.sceneKey as string;
       event = {
         type: 'SCENE_CHANGE',
         sessionId,
-        payload: { sceneKey: args.sceneKey },
+        payload: { sceneKey },
         timestamp: Date.now()
       };
+      // Fire Imagen 4 generation async — sends SCENE_IMAGE when ready (non-blocking)
+      void generateSceneImage(sceneKey).then((base64) => {
+        if (base64 && clientWs.readyState === WebSocket.OPEN) {
+          clientWs.send(JSON.stringify({
+            type: 'SCENE_IMAGE',
+            agent: 'gm',
+            sessionId,
+            payload: { sceneKey, data: base64 },
+            timestamp: Date.now()
+          }));
+          console.log(`[GM] Broadcast SCENE_IMAGE — sceneKey="${sceneKey}"`);
+        }
+      });
       break;
     }
 
