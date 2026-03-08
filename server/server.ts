@@ -95,6 +95,7 @@ wss.on('connection', (ws: WebSocket) => {
 
       // Player speech — base64 PCM audio from the browser → Jason NPC
       if (data.type === 'player_speech' && data.audio) {
+        console.log(`[WS] player_speech received — b64 bytes: ${(data.audio as string).length}`);
         jasonManager.sendAudio(data.audio);
         return;
       }

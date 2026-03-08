@@ -1,4 +1,4 @@
-import { GoogleGenAI, Modality, Session, Tool, Type } from '@google/genai';
+import { GoogleGenAI, Modality, Session, StartSensitivity, EndSensitivity, Tool, Type } from '@google/genai';
 
 // Lazy getters — avoids CJS import-hoisting bug where dotenv.config() in server.ts
 // runs AFTER all require()s (including this module) due to TypeScript CJS compilation.
@@ -175,6 +175,14 @@ export class LiveSessionManager {
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: 'Fenrir' }
+            }
+          },
+          // Default VAD is LOW sensitivity — raise to HIGH so quiet speech
+          // still triggers end-of-turn and Jason responds promptly.
+          realtimeInputConfig: {
+            automaticActivityDetection: {
+              startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_HIGH,
+              endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_HIGH,
             }
           }
         }
