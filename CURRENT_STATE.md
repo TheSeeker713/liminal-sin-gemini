@@ -1,56 +1,32 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 7, 2026 (evening — end of session)
+> Last updated: March 8, 2026 (morning — end of session)
 
 ---
 
 ## ⚠️ NEXT AI SESSION — READ THIS FIRST
 
-### What was completed this session (commit `3d1df02` on `main`):
-1. **Dead End Protocol** added to `AGENTS.md` (Section 3a) and `.github/copilot-instructions.md`
-2. **Jason NPC dual-session architecture** — full implementation:
-   - `prompts/jason.demo.md` — human-editable source of truth for Jason's prompt
-   - `server/services/npc/jason.ts` — `getJasonSystemPrompt(trustLevel: number)`
-   - `server/types/state.ts` — `TrustLevel` enum removed, replaced with float `0.0–1.0`; added `fearIndex`, `ProximityState`, `privateKnowledgeUnlocked`
-   - `server/services/db.ts` — float trust default `0.5`, new session fields
-   - `server/services/gemini.ts` — `LiveSessionManager.connect(prompt, mode)` — `'npc'` = audio+Fenrir voice, `'gm'` = text/silent+tools
-   - `server/server.ts` — two managers per connection: `jasonManager` (speaks) + `gmManager` (silent, function calls only)
-   - `scripts/test-audio.ts` — existing smoke test, labels updated for Jason
-   - `scripts/save-audio.ts` — NEW: collects Jason's PCM audio and writes `scripts/output/jason_response.wav` so you can hear Fenrir voice
-3. **npm scripts added:** `npm run test:audio`, `npm run save-audio`
+### What was completed this session (commit `66d719b` on `main`):
+1. **Gemini Live model fixed** — `gemini-live-2.5-flash-native-audio` (GA as of March 2026) replaces the old non-existent `gemini-2.0-flash-live-preview-04-09` / `gemini-2.0-flash-live-001`
+2. **Live API region fixed** — separate `liveAi` client targeting `us-central1` (only region supporting Live API on Vertex AI)
+3. **Both smoke tests now PASS:**
+   - `npm run test:audio` → `✅ SESSION_READY` + 14 `agent_speech` chunks
+   - `npm run save-audio` → `scripts/output/jason_response.wav` (8.3s of Jason's Fenrir voice)
 
-### What failed THIS session and WHY:
-- **Test 1 (`npm run test:audio`) failed** — NOT a code error. Port 3001 was already occupied by a background server process from an earlier session. The error was `EADDRINUSE: address already in use :::3001`.
+### ⚡ NEXT SESSION FIRST TASK — Phase 4 (Game Master function calling)
 
-### ⚡ NEXT SESSION FIRST TASK — Run Test 1 yourself:
+The pipeline is proven. Next work is **Steps 11–13** from the backend plan:
+- **Step 11:** GM tools wired (`triggerTrustChange`, `triggerGlitchEvent`, `triggerSceneChange`, `triggerSlotsky`) — declarations exist in `gemini.ts`, but handler in `gameMaster.ts` needs implementing
+- **Step 12:** `handleGmFunctionCall` in `server/services/gameMaster.ts` — persist to Firestore + broadcast to frontend WS
+- **Step 13:** Player interruption (barge-in) — `agent_interrupt` event already emitted; frontend needs to handle it
 
+### Server startup (always do this first):
 ```powershell
-# Step 1: Kill whatever is on port 3001
-npx kill-port 3001
-# If that fails, use:
-Get-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess | Stop-Process -Force
-
-# Step 2: Start the server fresh
+Get-Process | Where-Object { $_.ProcessName -like "*node*" } | Stop-Process -Force -ErrorAction SilentlyContinue
 npm run server
-
-# Step 3: In a second terminal, run the smoke test
+# In second terminal:
 npm run test:audio
-
-# Step 4: If Session_READY fires and agent_speech chunks arrive → Test 1 PASSES
-# Step 5: Run save-audio to hear Jason's actual voice
-npm run save-audio
-# Then open: scripts/output/jason_response.wav
 ```
-
-**Pass condition for Test 1:** Console shows `✅ SESSION_READY` followed by `✅ agent_speech received`.
-**Pass condition for Test 2:** `jason_response.wav` opens and a voice is audible.
-
-### If Test 1 FAILS (1008 or connection error from Gemini):
-**STOP. Do NOT iterate.** Report the exact error verbatim. The Dead End Protocol applies.
-The most likely causes are:
-- `GOOGLE_CLOUD_PROJECT` env var not set in `.env.local`
-- ADC credentials expired (`gcloud auth application-default login`)
-- Model name `gemini-2.0-flash-live-preview-04-09` not available in Vertex AI `us-west1`
 
 ---
 
