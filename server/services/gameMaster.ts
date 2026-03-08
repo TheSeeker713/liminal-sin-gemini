@@ -1,17 +1,21 @@
 import { WebSocket } from 'ws';
 import { updateTrustLevel, getOrCreateSession } from './db';
 import { generateSceneImage } from './imagen';
+import type { LiveSessionManager } from './gemini';
 
 /**
  * Handles a function call dispatched by the Gemini Game Master.
  * Persists the state change to Firestore and broadcasts the event
  * over WebSocket to the connected frontend client.
+ * jasonManager, if provided, receives a live trust-context update so Jason's
+ * in-flight Gemini session adapts immediately — not just on the next connect.
  */
 export async function handleGmFunctionCall(
   sessionId: string,
   functionName: string,
   args: Record<string, unknown>,
-  clientWs: WebSocket
+  clientWs: WebSocket,
+  jasonManager?: LiveSessionManager
 ): Promise<void> {
   console.log(`[GM] Function call: ${functionName}`, args);
 
@@ -29,6 +33,15 @@ export async function handleGmFunctionCall(
         trust_level: newLevel,
         fear_index: session.fearIndex
       };
+      // Push live trust context into Jason's running Gemini session so his
+      // behaviour adapts immediately without waiting for a reconnect.
+      if (jasonManager) {
+        jasonManager.sendText(
+          `[TRUST_SYSTEM: trust_level is now ${newLevel.toFixed(2)} — ` +
+          `reason: ${args.reason ?? 'unspecified'}. Adjust your behaviour accordingly.]`
+        );
+        console.log(`[GM] Injected trust context into Jason — level: ${newLevel.toFixed(2)}`);
+      }
       break;
     }
 

@@ -60,7 +60,7 @@ wss.on('connection', (ws: WebSocket) => {
 
       gmManager.onFunctionCall((id, name, args) => {
         if (ws.readyState === WebSocket.OPEN) {
-          handleGmFunctionCall(sessionId, name, args, ws).finally(() => {
+          handleGmFunctionCall(sessionId, name, args, ws, jasonManager).finally(() => {
             gmManager.sendToolResponse(id, name);
           });
         }
