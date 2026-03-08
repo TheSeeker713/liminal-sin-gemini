@@ -68,6 +68,8 @@ wss.on('connection', (ws: WebSocket) => {
 
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'session_ready', session_id: sessionId }));
+        // Fire initial Imagen 4 scene so the screen isn't black on session start.
+        void handleGmFunctionCall(sessionId, 'triggerSceneChange', { sceneKey: 'zone_tunnel_entry' }, ws);
         // Trigger Jason's opening monologue immediately after the client is ready.
         // The voicebox activated on its own — he didn't press anything.
         jasonManager.sendText(
