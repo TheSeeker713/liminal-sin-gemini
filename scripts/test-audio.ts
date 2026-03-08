@@ -5,10 +5,10 @@
  * 
  * What this validates:
  *  1. Server accepts a WebSocket connection
- *  2. Server initialises a Jason NPC Gemini Live session and sends SESSION_READY
+ *  2. Server initialises a Jason NPC Gemini Live session and sends session_ready
  *  3. A player_speech packet (silent PCM) reaches Gemini without crashing the server
  *  4. The server delivers at least one agent_speech audio chunk back (proves Jason responded)
- *  5. Any GM function calls (trust, glitch, scene, slotsky) from the GM session are logged
+ *  5. Any GM function calls (trust_update, hud_glitch, scene_change, slotsky_trigger) are logged
  * 
  * NOTE: agent_speech audio comes from the JASON NPC session (Fenrir voice).
  * The GM session is silent — it only emits function calls. This test does NOT
@@ -71,9 +71,9 @@ ws.on('message', (raw: Buffer) => {
   const type = msg.type as string | undefined;
 
   switch (type) {
-    case 'SESSION_READY': {
+    case 'session_ready': {
       sessionReady = true;
-      console.log(`[${ts()}] ✅ SESSION_READY — sessionId: ${msg.sessionId}`);
+      console.log(`[${ts()}] ✅ session_ready — session_id: ${msg.session_id}`);
       // Step 1: send a text message to trigger an audio response (bypasses VAD)
       console.log(`[${ts()}] → Sending player_text to trigger Gemini response …`);
       ws.send(JSON.stringify({ type: 'player_text', text: 'Jason, can you hear me?' }));
@@ -105,13 +105,13 @@ ws.on('message', (raw: Buffer) => {
     }
 
     // GM function call events broadcast from gameMaster.ts
-    case 'TRUST_CHANGE':
-    case 'GM_EVENT':
-    case 'glitch_event':
+    case 'trust_update':
+    case 'hud_glitch':
     case 'scene_change':
-    case 'slotsky_trigger': {
+    case 'slotsky_trigger':
+    case 'scene_image': {
       functionCallCount++;
-      console.log(`[${ts()}] 🎲 GM event [${type}]:`, JSON.stringify(msg));
+      console.log(`[${ts()}] 🎲 GM event [${type}]:`, JSON.stringify(msg).slice(0, 200));
       break;
     }
 
