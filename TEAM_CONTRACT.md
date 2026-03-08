@@ -29,7 +29,9 @@ Neither repo is complete on its own. They are permanently coupled at the API con
 - Cloudflare Workers for signup API
 - Cloudflare D1 database (`liminal-sin-signups`)
 - Brevo transactional email
-- All visual rendering: FMV playback, HUD overlays, cracked glasses effect, glitch animations
+- All visual rendering: HUD overlays, glitch animations, Imagen 3 scene backgrounds
+<!-- DEPRECATED: FMV playback — replaced by Imagen 3 live scene generation (March 7, 2026 pivot) -->
+<!-- DEFERRED: cracked glasses effect — smart glasses system deferred to roadmap (March 7, 2026) -->
 - WebSocket **client** — sends player mic audio and webcam frames, receives agent events
 
 ### `liminal-sin-gemini` owns:
@@ -37,8 +39,10 @@ Neither repo is complete on its own. They are permanently coupled at the API con
 - Gemini Live API bidirectional audio pipeline
 - Google Cloud Run backend server
 - Cloud Firestore state (trust, fear, proximity, session)
-- Vertex AI Memory Bank (long-term character memory)
-- Google ADK AutoFlow multi-agent orchestration
+<!-- DEFERRED: Vertex AI Memory Bank — long-term storage deferred post-contest; game state stays in Firestore (March 7, 2026) -->
+<!-- - Vertex AI Memory Bank (long-term character memory) -->
+<!-- DEFERRED: Google ADK AutoFlow — not implemented; current stack is direct GenAI SDK + WebSocket (March 7, 2026) -->
+<!-- - Google ADK AutoFlow multi-agent orchestration -->
 - WebSocket **server** — receives player input, sends agent events back
 
 ### Neither repo touches the other's domain without explicit cross-repo coordination.
@@ -69,11 +73,15 @@ Frontend env var: `NEXT_PUBLIC_GAME_WS_URL`
 | `agent_speech` | `{ agent: string, audio: base64, text: string }` |
 | `agent_interrupt` | `{ agent: string }` |
 | `trust_update` | `{ agent: string, trust_level: number, fear_index: number }` |
-| `fmv_trigger` | `{ sequence_id: string, loop: boolean }` |
-| `fmv_stop` | `{}` |
+| ~~`fmv_trigger`~~ | ~~`{ sequence_id: string, loop: boolean }`~~ |
+| ~~`fmv_stop`~~ | ~~`{}`~~ |
+| `scene_change` | `{ scene_key: string }` |
 | `hud_glitch` | `{ intensity: string, duration_ms: number }` |
 | `session_ready` | `{ session_id: string }` |
 | `session_error` | `{ code: string, message: string }` |
+
+<!-- DEPRECATED (March 7, 2026): fmv_trigger { sequence_id, loop } and fmv_stop {} struck above — FMV pipeline replaced by Imagen 3 live generation. Rows preserved for reference. -->
+> ⚠️ **MARCH 7 PIVOT:** `fmv_trigger` / `fmv_stop` struck above — FMV replaced by Imagen 3. New event `scene_change { scene_key: string }` added. **Both repos must implement before deploying.**
 
 ### CONTRACT RULE
 > **Any change to this event schema is a cross-repo breaking change.** Before modifying event names, payloads, or adding new events: flag it, update this file in BOTH repos, and confirm both sides are updated before deploying either.
@@ -85,7 +93,7 @@ Frontend env var: `NEXT_PUBLIC_GAME_WS_URL`
 | Tool | Permitted in MI (frontend) | Permitted in LS (backend) |
 |---|---|---|
 | **Gemini Live API** | ❌ Never — game logic is backend only | ✅ Core requirement |
-| **Google ADK** | ❌ | ✅ Core requirement |
+| **Google ADK** | ❌ | ~~✅ Core requirement~~ ⚠️ Deferred — not implemented (March 7, 2026); current stack: direct GenAI SDK + WebSocket |
 | **Google Cloud Run** | ❌ | ✅ Core requirement |
 | **Cloud Firestore** | ❌ direct writes | ✅ Source of truth |
 | **Cloudflare Workers AI** (Flux, Deepgram, etc.) | ✅ Marketing shell & UI assets only | ❌ |
@@ -104,7 +112,7 @@ VS Code Window 1 → myceliainteractive
 VS Code Window 2 → liminal-sin-gemini
 
 Terminal 1 (MI):   npm run dev           → http://localhost:3000
-Terminal 2 (LS):   npx adk dev           → ws://localhost:4000/game
+Terminal 2 (LS):   npm run dev           → ws://localhost:4000/game  (⚠️ npx adk dev deprecated — ADK not implemented as of March 7, 2026)
 ```
 
 ### Frontend Dev Against Mock Backend
