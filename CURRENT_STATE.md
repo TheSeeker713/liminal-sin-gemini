@@ -1,52 +1,81 @@
 # CURRENT_STATE.md — Liminal Sin Gemini
 > **AI WORKING MEMORY** — This file is overwritten at the start of every new AI session.
-> Last updated: March 8, 2026 (evening — GM fix + doc revisions + FMV strategy pivot)
+> Last updated: March 8, 2026 (late evening — Steps B/C/D live, mic pipeline diagnosed)
 
 ---
 
 ## ⚠️ NEXT AI SESSION — READ THIS FIRST
 
-### What was completed — March 8 session (commit `7cfef79` on `main`):
-1. **Gemini Live model fixed** — `gemini-live-2.5-flash-native-audio` (GA as of March 2026) replaces the old non-existent `gemini-2.0-flash-live-preview-04-09` / `gemini-2.0-flash-live-001`
-2. **Live API region fixed** — separate `liveAi` client targeting `us-central1` (only region supporting Live API on Vertex AI)
-3. **Both smoke tests PASS:**
-   - `npm run test:audio` → `✅ SESSION_READY` + 43 `agent_speech` chunks
-   - `npm run save-audio` → `scripts/output/jason_response.wav` (Jason's Fenrir voice confirmed) [***note: The developer does not like the Fenrir voice. If time allows, we will experiment with other Gemini Live prebuilt voices before finalizing the demo.***]
-4. **Jason demo prompt v2** — `server/services/npc/jason.ts`: `fearIndex` param, fear behavior table, radio brevity rule, opening monologue trigger
-5. **Opening monologue** — `server.ts` calls `jasonManager.sendText()` immediately after `SESSION_READY`
-6. **Deploy fix** — `deploy.yml`: WIF IAM binding step added, `env_vars` block added (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_REGION`)
-7. **GM session fixed** — `gemini.ts` / `gameMaster.ts` / `server.ts`:
-   - GM now uses **AUDIO modality** (not TEXT — entire game is voice-driven, no text anywhere)
-   - `sendToolResponse()` method added to `LiveSessionManager`
-   - `callId` now passed through callback chain
-   - Trust enum mapping fixed
-8. **"Ignore commented content" rule** added as Rule 5 to `AGENTS.md` and `.github/copilot-instructions.md`
-9. **Doc revisions (backend)** — cracked screen refs in `docs/` commented out with HTML comment + explanation (nothing deleted)
+### What was completed — March 8 session (full sprint day)
 
-### ⚠️ OUTSTANDING: Server fails to start locally
-`npm run server` exits with code 1. Port 3001 is clear. Root cause not yet diagnosed. Cloud Run deployment is unaffected. Next session must diagnose this before doing any local testing.
-```powershell
-# Diagnose first:
-npx ts-node --transpile-only server/server.ts 2>&1
-# or:
-npx tsc --noEmit 2>&1
+**Morning (from previous session baseline):**
+1. **Gemini Live model fixed** — `gemini-live-2.5-flash-native-audio` (GA as of March 2026)
+2. **Live API region fixed** — separate `liveAi` client targeting `us-central1`
+3. **Both smoke tests PASS** — `npm run test:audio` → `✅ SESSION_READY` + 43 `agent_speech` chunks
+4. **Jason demo prompt v2** — `server/services/npc/jason.ts`: fearIndex param, opening monologue trigger
+5. **GM session fixed** — AUDIO modality, `sendToolResponse()`, `callId` chain, trust enum mapping
+
+**Afternoon/Evening (this session — Steps B, C, D):**
+
+6. **Step B — Imagen 4 scene generation** — `server/services/imagen.ts` created. `triggerSceneChange` GM function call → Vertex AI `imagen-4.0-generate-001` → first-person POV JPEG → broadcast `{ type: 'scene_image', data: base64jpeg }` over WebSocket. 7 zone prompts keyed by `sceneKey`. `gameMaster.ts` wired to call Imagen on every `triggerSceneChange` event.
+7. **Step C — Frontend scene_image rendering** — `GameWSContext.tsx` receives `scene_image` events, stores base64 in `sceneImage` state. `GameHUD.tsx` renders it as crossfade `<img>` background (z-0, 1s CSS transition). ✅ Confirmed working in browser — tunnel image visible.
+8. **Step D — Webcam frame pipe** — `usePlayerMedia.ts` captures canvas snapshots every 1 second → base64 JPEG → sends `{ type: 'player_frame', jpeg: b64 }` to server. `server.ts` routes `player_frame` events to `gmManager.sendFrame(data.jpeg)`. ✅ Confirmed webcam working.
+9. **IAM permissions fixed** — Cloud Run service account granted `roles/aiplatform.user` + `roles/datastore.user`. Live smoke test PASS against `wss://liminal-sin-server-1071754889104.us-west1.run.app`.
+10. **WSS URL fixed** — `.env.production` updated to `wss://liminal-sin-server-1071754889104.us-west1.run.app` (the canonical `zihz3so5tq` URL redirects and breaks WebSocket upgrades).
+11. **Audio pipeline (partial fix)** — WS connect deferred to "Begin Session" button click (satisfies AudioContext autoplay policy). `MediaRecorder` replaced with `ScriptProcessorNode` at 16kHz (Gemini Live requires raw PCM, not Opus/WebM). Frontend AudioContext for playback created in same click gesture.
+12. **JASON's intro audio confirmed working** — User hears JASON speak first on session start. Proves: WS connect ✅, session_ready ✅, Gemini Live session ✅, agent_speech → AudioContext playback ✅.
+
+---
+
+### ❌ ACTIVE BUG: Microphone → JASON pipeline broken
+
+**Symptom:** JASON hears nothing. JASON speaks his intro but never responds to the player's voice.
+
+**Evidence from browser console (Chrome DevTools screenshot taken):**
+```
+[usePlayerMedia] Media access error: NotReadableError: Device in use
 ```
 
-### ⚡ NEXT SESSION — Step B: Imagen 4 POV Scene Generation
+**Root cause identified:** `usePlayerMedia.ts` `stopAll()` calls `void micCtxRef.current?.close()` — the `void` means it's fire-and-forget (not awaited). When the React `useEffect` re-fires (e.g., `status` changes from `connecting` → `open`), the old AudioContext may not have fully released the mic hardware before the new `getUserMedia({audio:true, video:...})` call. Chrome throws `NotReadableError: Device in use`.
 
-FMV strategy is clarified — see DEMO STRATEGY below. Immediate next work:
-- **Step B:** Wire `triggerSceneChange` GM function call → Vertex AI **Imagen 4** (`imagen-4.0-generate-001`) → broadcast `{ type: 'scene_image', data: base64 }` over WebSocket
-  - All prompts must be **first-person POV framing** — "you are looking at...", not "Jason sees..."
-  - Never use "Smart Glasses" in any Imagen prompt text
-  - Reference aesthetic: brutalist underground concrete, cold clinical lighting, no human figures
-  - Prompt source: `docs/Tunnel-and-park.md` zone definitions (unread: read before writing prompts)
-- **Step C:** Frontend receives `scene_image` event → sets it as CSS background of game container
-- **Step D:** Webcam frame pipe (GM vision: 1 JPEG/sec → `sendFrame()`) — unlocks 40% Innovation scoring
+**Important:** The WS event type is CORRECT. `usePlayerMedia.ts` sends `{ type: "player_speech", audio: btoa(raw) }` which matches the server handler `if (data.type === 'player_speech' && data.audio)`. There is NO event type mismatch — that hypothesis was wrong.
+
+**Fix plan for next session:**
+
+Option A (simplest — fix the stale closure / double-init):
+- Guard `getUserMedia` with a ref flag (`isInitialized.current`) so it only runs once per mount, not on every `status` change.
+- Move `getUserMedia` call OUT of the effect that watches `status`. Instead, expose a `startCapture()` function and call it once from `GameHUD.tsx` after WS `session_ready` is confirmed.
+
+Option B (defensive re-architecture):
+- In `stopAll()`, `await micCtx.close()` properly by making `stopAll` async, or explicitly disconnect `micSource` and `processor` nodes before closing the context.
+- Add `micSource.disconnect(); processor.disconnect();` before `micCtxRef.current.close()`.
+
+**Recommended fix: Option A** — restructure `usePlayerMedia` to expose a `startCapture()` function instead of auto-starting on `status === 'open'`, call it from `GameHUD.tsx` once `session_ready` event fires.
+
+---
+
+### ⚡ NEXT SESSION — Fix mic, then Steps E & F
+
+**IMMEDIATE: Fix `NotReadableError: Device in use` in `usePlayerMedia.ts`**
+- Read `app/ls/game/usePlayerMedia.ts` and `app/ls/game/GameHUD.tsx` before touching anything
+- Key: `getUserMedia` must only be called ONCE, inside a user-gesture triggered flow, after WS is confirmed open
+- Do NOT add a second AudioContext if `GameHUD.tsx` already has one open for playback
+
+**Step E — Three-channel Web Audio** (myceliainteractive repo)
+- Jason voice channel: gain 1.0
+- Ambient SFX channel: gain 0.6
+- Music background channel: gain 0.3
+- `fadeIn`, `fadeOut`, `setVolume`, `loop` controls per channel
+
+**Step F — Trust float injection** (backend)
+- Read Firestore `trustLevel` per session
+- Inject current float value into Jason's system prompt on each turn
+- Broadcast `trust_update` WS event to frontend HUD
 
 ### Server startup (always do this first):
 ```powershell
 Get-Process | Where-Object { $_.ProcessName -like "*node*" } | Stop-Process -Force -ErrorAction SilentlyContinue
-npm run server
+npx tsx server/server.ts
 # In second terminal:
 npm run test:audio
 ```
@@ -100,7 +129,8 @@ npm run test:audio
 | `server/types/state.ts` | ✅ Done | TrustLevel enum, PlayerEmotion, PlayerSession, GmEvent types |
 | `server/services/db.ts` | ✅ Done | Firestore ADC adapter with in-memory fallback |
 | `server/services/gemini.ts` | ✅ Done | Vertex AI client + GM system prompts + 4 tool declarations + `LiveSessionManager` class |
-| `server/services/gameMaster.ts` | ✅ Done | GM function call router — persists state + broadcasts GmEvent over WS |
+| `server/services/gameMaster.ts` | ✅ Done | GM function call router — persists state + broadcasts GmEvent over WS + calls Imagen 4 |
+| `server/services/imagen.ts` | ✅ Done | 7 zone prompts + `generateSceneImage(sceneKey)` → Imagen 4 → base64 JPEG |
 | `server/services/npc/jason.ts` | ✅ Done | Jason demo system prompt v2 — fearIndex + trust injected at runtime, opening monologue trigger |
 | `server/tsconfig.build.json` | ✅ Done | Emits compiled JS to `dist/server/server.js` |
 | `Dockerfile` | ✅ Done | 2-stage build (node:20-alpine), Cloud Run ready |
