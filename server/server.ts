@@ -35,7 +35,7 @@ wss.on('connection', (ws: WebSocket) => {
       const sessionData = await getOrCreateSession(sessionId);
 
       // Jason NPC session — audio out to player
-      const jasonPrompt = getJasonSystemPrompt(sessionData.trustLevel);
+      const jasonPrompt = getJasonSystemPrompt(sessionData.trustLevel, sessionData.fearIndex);
       await jasonManager.connect(jasonPrompt, 'npc');
 
       jasonManager.onAgentAudio((base64Audio) => {
@@ -60,12 +60,19 @@ wss.on('connection', (ws: WebSocket) => {
 
       gmManager.onFunctionCall((name, args) => {
         if (ws.readyState === WebSocket.OPEN) {
-          handleGmFunctionCall(sessionId, name, args as any, ws);
+          handleGmFunctionCall(sessionId, name, args, ws);
         }
       });
 
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'SESSION_READY', sessionId }));
+        // Trigger Jason's opening monologue immediately after the client is ready.
+        // The voicebox activated on its own — he didn't press anything.
+        jasonManager.sendText(
+          '[VOICEBOX ACTIVATION — the device in your hand just turned on by itself. ' +
+          'You did not press anything. A voice is coming through it for the first time. ' +
+          'React. One short sentence, holding your breath.]'
+        );
       }
     } catch (err) {
       console.error(`[WS] Failed to init sessions for ${sessionId}:`, err);

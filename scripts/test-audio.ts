@@ -76,7 +76,7 @@ ws.on('message', (raw: Buffer) => {
       console.log(`[${ts()}] ✅ SESSION_READY — sessionId: ${msg.sessionId}`);
       // Step 1: send a text message to trigger an audio response (bypasses VAD)
       console.log(`[${ts()}] → Sending player_text to trigger Gemini response …`);
-      ws.send(JSON.stringify({ type: 'player_text', text: 'Say hello in one sentence.' }));
+      ws.send(JSON.stringify({ type: 'player_text', text: 'Jason, can you hear me?' }));
       // Step 2: also send a silent PCM chunk to verify the audio path doesn't crash
       setTimeout(() => {
         if (ws.readyState === WebSocket.OPEN) {

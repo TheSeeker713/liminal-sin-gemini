@@ -58,7 +58,19 @@ jobs:
           service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}
-          flags: '--allow-unauthenticated'
+          env_vars: |
+            GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}
+            GOOGLE_CLOUD_REGION=${{ env.REGION }}
+
+      # Set public (unauthenticated) access as a separate IAM step.
+      # Separating this from deploy avoids PERMISSION_DENIED errors when the
+      # deploying service account lacks run.services.setIamPolicy.
+      - name: Allow unauthenticated access
+        run: |
+          gcloud run services add-iam-policy-binding ${{ env.SERVICE }} \
+            --region=${{ env.REGION }} \
+            --member="allUsers" \
+            --role="roles/run.invoker"
 
       - name: Show Output
         run: echo "Deployment full URL - ${{ steps.deploy.outputs.url }}"
