@@ -56,6 +56,24 @@ export const gameMasterTools: Tool[] = [
         }
       },
       {
+        name: 'triggerFearChange',
+        description: 'Update the Fear Index for the current player session. Call this when the player has a genuine frightened reaction, witnesses something horrifying, or calms down after a scare.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            newFearLevel: {
+              type: Type.NUMBER,
+              description: 'New fear index as a float 0.0–1.0. 0.0 = fully calm, 1.0 = paralysed with fear.'
+            },
+            reason: {
+              type: Type.STRING,
+              description: 'A brief internal reason for the fear change. Not shown to player.'
+            }
+          },
+          required: ['newFearLevel', 'reason']
+        }
+      },
+      {
         name: 'triggerGlitchEvent',
         description: 'Trigger a visual or audio glitch on the frontend. Use this when the player is aggressive, breaks immersion, or when escalating dread is needed.',
         parameters: {

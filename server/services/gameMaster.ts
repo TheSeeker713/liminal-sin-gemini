@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { updateTrustLevel, getOrCreateSession } from './db';
+import { updateTrustLevel, updateFearIndex, getOrCreateSession } from './db';
 import { generateSceneImage } from './imagen';
 import type { LiveSessionManager } from './gemini';
 
@@ -41,6 +41,26 @@ export async function handleGmFunctionCall(
           `reason: ${args.reason ?? 'unspecified'}. Adjust your behaviour accordingly.]`
         );
         console.log(`[GM] Injected trust context into Jason — level: ${newLevel.toFixed(2)}`);
+      }
+      break;
+    }
+
+    case 'triggerFearChange': {
+      const newFearLevel = Math.max(0, Math.min(1, args.newFearLevel as number));
+      await updateFearIndex(sessionId, newFearLevel);
+      const fearSession = await getOrCreateSession(sessionId);
+      wsMessage = {
+        type: 'trust_update',
+        agent: 'gm',
+        trust_level: fearSession.trustLevel,
+        fear_index: newFearLevel
+      };
+      if (jasonManager) {
+        jasonManager.sendText(
+          `[TRUST_SYSTEM: fear_index is now ${newFearLevel.toFixed(2)} — ` +
+          `reason: ${args.reason ?? 'unspecified'}. Adjust your fear behaviour accordingly.]`
+        );
+        console.log(`[GM] Injected fear context into Jason — level: ${newFearLevel.toFixed(2)}`);
       }
       break;
     }

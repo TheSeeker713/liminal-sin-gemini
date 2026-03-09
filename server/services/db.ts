@@ -65,3 +65,19 @@ export async function updateTrustLevel(sessionId: string, newLevel: number): Pro
     }
   }
 }
+
+export async function updateFearIndex(sessionId: string, newLevel: number): Promise<void> {
+  if (db) {
+    await db.collection('sessions').doc(sessionId).update({
+      fearIndex: newLevel,
+      updatedAt: Date.now()
+    });
+  } else {
+    const session = memoryStore.get(sessionId);
+    if (session) {
+      session.fearIndex = newLevel;
+      session.updatedAt = Date.now();
+      memoryStore.set(sessionId, session);
+    }
+  }
+}
