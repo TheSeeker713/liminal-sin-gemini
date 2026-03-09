@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "server": "ts-node-dev --respawn --transpile-only server/server.ts",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc --project server/tsconfig.build.json",
     "start": "node dist/server/server.js",
     "lint": "eslint server/",
     "typecheck": "tsc --noEmit",
