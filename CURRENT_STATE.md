@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md - Liminal Sin Gemini
 
 > **AI WORKING MEMORY** - This file is the source of truth for the current state of the project.
-> Last updated: March 9, 2026 (Step G complete - Jason voice set to Enceladus)
+> Last updated: March 9, 2026 (Steps H + I + J complete - iOS fix, echo cancellation, GCS migration done)
 
 ---
 
@@ -45,9 +45,9 @@ The server is backend-only (Cloud Run). All frontend code lives in the myceliain
 | E    | Layered audio system (music / SFX / ambient) | DONE (GCS migration pending) |
 | F    | Voice interrupt / barge-in | DONE |
 | G    | Jason voice - Enceladus | DONE |
-| H    | iOS cross-device compatibility fix | NEXT SESSION |
-| I    | echoCancellation constraint (mic bleed fix) | NEXT SESSION |
-| J    | GCS audio file storage + audioManifest update | NEXT SESSION |
+| H    | iOS cross-device compatibility fix | DONE |
+| I    | echoCancellation constraint (mic bleed fix) | DONE |
+| J    | GCS audio file storage + audioManifest update | DONE |
 | K    | GM trust routing - battle-tested with real session | PENDING |
 | L    | Demo video (4 min, mandatory submission) | March 11-14 |
 | M    | Architecture diagram (mandatory) | March 13-15 |
@@ -132,8 +132,8 @@ This is the audio asset for the `fourth_wall_correction` trigger. The manifest e
 
 | Date | Milestone |
 |------|-----------|
-| March 9, 2026 | Steps E + F + G complete and pushed |
-| March 10, 2026 | iOS fix + echoCancellation + GCS migration |
+| March 9, 2026 | Steps E through J complete and pushed |
+| March 10, 2026 | Step K (GM trust battle-test) + demo video prep |
 | March 11, 2026 @ 11:11 PM MT | **Internal prototype cutoff** - full demo must be functional |
 | March 12-14 | Demo video recording + architecture diagram |
 | March 15 | Submission prep, final review |
@@ -173,7 +173,7 @@ This is the audio asset for the `fourth_wall_correction` trigger. The manifest e
 | Gemini Live Model | `gemini-live-2.5-flash-native-audio` |
 | Firestore | Native mode, `us-west1` - CONNECTED |
 | Cloud Run | LIVE - `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| GCS Bucket | `gs://liminal-sin-assets` - TO BE CREATED for audio files |
+| GCS Bucket | `gs://liminal-sin-assets` - LIVE - `https://storage.googleapis.com/liminal-sin-assets/` |
 
 ---
 
