@@ -189,7 +189,7 @@ export class LiveSessionManager {
       : {
           systemInstruction: systemPrompt,
           tools: gameMasterTools,
-          responseModalities: [Modality.AUDIO]
+          responseModalities: [Modality.TEXT]
         };
 
     this.session = await getLiveAiClient().live.connect({
@@ -200,7 +200,9 @@ export class LiveSessionManager {
           console.log(`[LiveSessionManager] Session connected. ${new Date().toISOString()}`);
         },
         onmessage: (msg) => {
-          console.log(`[LiveSessionManager] onmessage — text: ${!!msg.text}, data: ${!!msg.data}, toolCall: ${!!msg.toolCall}, serverContent: ${!!msg.serverContent}`);
+          // NOTE: Do NOT access msg.text here — the SDK accessor logs a noisy warning
+          // for every audio message that contains inlineData instead of text parts.
+          console.log(`[LiveSessionManager] onmessage — data: ${!!msg.data}, toolCall: ${!!msg.toolCall}, serverContent: ${!!msg.serverContent}`);
           // Audio: use the .data convenience accessor (base64 inline data)
           if (msg.data && this.onAudioCallback) {
             this.onAudioCallback(msg.data);
