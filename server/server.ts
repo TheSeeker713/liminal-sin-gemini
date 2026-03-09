@@ -17,8 +17,49 @@ const wss = new WebSocketServer({ server });
 
 const PORT = process.env.PORT || 3001;
 
+app.use(express.json());
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'liminal-sin-mock-ws' });
+});
+
+/**
+ * POST /debug/fire-gm-event
+ * Step K battle-test helper — manually fires any GM function call against an
+ * active session without needing Gemini to generate it. Only available when
+ * NODE_ENV !== 'production' OR when DEBUG_GM_ENDPOINT=true is set.
+ *
+ * Body: { sessionId: string, functionName: string, args: object }
+ * Example:
+ *   { "sessionId": "...", "functionName": "triggerGlitchEvent", "args": { "intensity": "high", "type": "both" } }
+ */
+const debugSessions = new Map<string, { ws: WebSocket; jasonManager: LiveSessionManager }>();
+
+app.post('/debug/fire-gm-event', async (req, res) => {
+  if (process.env.NODE_ENV === 'production' && process.env.DEBUG_GM_ENDPOINT !== 'true') {
+    res.status(403).json({ error: 'Debug endpoint disabled in production. Set DEBUG_GM_ENDPOINT=true to enable.' });
+    return;
+  }
+  const { sessionId, functionName, args } = req.body as {
+    sessionId?: string;
+    functionName?: string;
+    args?: Record<string, unknown>;
+  };
+  if (!sessionId || !functionName) {
+    res.status(400).json({ error: 'sessionId and functionName are required' });
+    return;
+  }
+  const entry = debugSessions.get(sessionId);
+  if (!entry) {
+    res.status(404).json({ error: `No active session found for sessionId: ${sessionId}. Available: [${[...debugSessions.keys()].join(', ')}]` });
+    return;
+  }
+  try {
+    await handleGmFunctionCall(sessionId, functionName, args ?? {}, entry.ws, entry.jasonManager);
+    res.json({ ok: true, fired: functionName, args: args ?? {} });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 wss.on('connection', (ws: WebSocket) => {
@@ -27,6 +68,8 @@ wss.on('connection', (ws: WebSocket) => {
   const gmManager = new LiveSessionManager();    // GM — silent, function calls only
 
   console.log(`[WS] Client connected — session ${sessionId}`);
+  // Register for debug endpoint access
+  debugSessions.set(sessionId, { ws, jasonManager });
 
   // Init Firestore session + both Gemini Live sessions asynchronously.
   // Send SESSION_READY once all are established.
@@ -120,6 +163,7 @@ wss.on('connection', (ws: WebSocket) => {
 
   ws.on('close', () => {
     console.log(`[WS] Client disconnected — session ${sessionId}`);
+    debugSessions.delete(sessionId);
     jasonManager.disconnect();
     gmManager.disconnect();
   });
