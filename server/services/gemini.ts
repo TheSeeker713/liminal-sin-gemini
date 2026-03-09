@@ -192,7 +192,7 @@ export class LiveSessionManager {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Fenrir' }
+              prebuiltVoiceConfig: { voiceName: 'Enceladus' }
             }
           },
           // Default VAD is LOW sensitivity — raise to HIGH so quiet speech
