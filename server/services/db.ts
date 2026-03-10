@@ -153,9 +153,21 @@ export interface ClientErrorLog {
 }
 
 export async function logClientError(entry: ClientErrorLog): Promise<void> {
+  // Firestore rejects undefined values — strip optional fields that weren't provided.
+  const doc: Record<string, unknown> = {
+    sessionId: entry.sessionId,
+    errorType: entry.errorType,
+    message: entry.message,
+    severity: entry.severity,
+    timestamp: entry.timestamp,
+    receivedAt: entry.receivedAt
+  };
+  if (entry.stack !== undefined) doc.stack = entry.stack;
+  if (entry.url !== undefined) doc.url = entry.url;
+
   if (db) {
-    await db.collection('client_error_logs').add(entry);
+    await db.collection('client_error_logs').add(doc);
   } else {
-    console.warn('[DB] client_error_logs (in-memory fallback):', entry);
+    console.warn('[DB] client_error_logs (in-memory fallback):', doc);
   }
 }
