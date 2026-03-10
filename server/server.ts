@@ -169,6 +169,7 @@ wss.on('connection', (ws: WebSocket) => {
       // Jason is hurt, alone, in darkness. He does NOT know the voicebox is on yet.
       if (data.type === 'intro_complete' && !jasonIntroFired) {
         jasonIntroFired = true;
+        console.log(`[WS] intro_complete received — firing Jason landing sequence for session ${sessionId}`);
         jasonManager.sendText(
           '[SEQUENCE_TRIGGER — You just slammed into the concrete floor. Hard landing. ' +
           'Your shoulder took the impact — something may be cracked. ' +
