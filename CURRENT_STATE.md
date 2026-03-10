@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md - Liminal Sin Gemini (Backend)
 
 > **AI WORKING MEMORY** - This file is the source of truth for the current state of the backend project.
-> Last updated: March 9, 2026 (Architecture correction + demo sequence design)
+> Last updated: March 9, 2026 (Backend phase complete — BLACK SCREEN + lore triggers implemented)
 
 ---
 
@@ -96,8 +96,9 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 | Step | Feature | Status |
 |------|---------|--------|
 | A-J  | Server, WS, mic, dialogue, audio, barge-in, GCS | DONE |
-| K    | Fix server.ts opening — BLACK SCREEN start (remove auto triggerSceneChange) | **NEXT** |
-| L    | GM trust routing — battle-tested with real session | PENDING |
+| K    | Fix server.ts opening — BLACK SCREEN start (remove auto triggerSceneChange) | **DONE** |
+| K2   | Lore script triggers — demo sequence beats in server.ts + gemini.ts | **DONE** |
+| L    | GM trust routing — battle-tested with real session | PENDING (next backend phase) |
 | M    | Upload remaining assets to GCS (video clips, voice-overs) | PENDING |
 | N    | Demo video (4 min, mandatory submission) | March 11-14 |
 | O    | Architecture diagram (mandatory) | March 13-15 |
@@ -106,15 +107,11 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 
 ## Pending Backend Work
 
-### Priority 1 — Fix Session Opening (BLACK SCREEN)
+### ~~Priority 1 — Fix Session Opening (BLACK SCREEN)~~ — DONE
 
-**Problem:** `server.ts` line ~112 fires `triggerSceneChange('zone_tunnel_entry')` immediately on session start. This generates an Imagen 4 image before the player has even spoken — breaking the black screen opening.
+Completed March 9. Removed automatic `triggerSceneChange` on session start. Session now opens with JASON's initial monologue only — pure audio, black screen. Lore script triggers written into `server.ts` and `gemini.ts` for the full 3-minute demo sequence.
 
-**Fix:** Remove the automatic `triggerSceneChange` call. The session should start with JASON's initial monologue only. Scene generation happens later when the GM decides (after player suggests flashlight).
-
-**Files touched:** `server/server.ts` only.
-
-### Priority 2 — GM Trust Routing (Step L)
+### Priority 1 (now) — GM Trust Routing (Step L)
 
 Battle-test the full GM → Firestore → WS → frontend pipeline with a real session:
 - GM hears player speech, evaluates trust/fear
@@ -165,8 +162,8 @@ On `slotsky_trigger` with `found_transition`:
 
 | Date | Milestone |
 |------|-----------|
-| March 9, 2026 | Steps A-J complete. Architecture corrected. Demo sequence designed. |
-| March 10, 2026 | Step K (black screen fix) + Step L (GM trust battle-test) |
+| March 9, 2026 | Steps A-K2 complete. Architecture corrected. Demo sequence designed. BLACK SCREEN + lore triggers implemented. Backend phase done. |
+| March 10, 2026 | Frontend work (myceliainteractive): GM red eye, black screen UI, scene display, demo end sequence. Step L (GM trust battle-test) when frontend is wired. |
 | March 11, 2026 @ 11:11 PM MT | **Internal prototype cutoff** — full demo must be functional |
 | March 12-14 | Demo video recording + architecture diagram |
 | March 15 | Submission prep, final review |
