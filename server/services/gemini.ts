@@ -316,7 +316,13 @@ export class LiveSessionManager {
       : {
           systemInstruction: systemPrompt,
           tools: gameMasterTools,
-          responseModalities: [Modality.TEXT]
+          // NOTE: Do NOT set responseModalities for GM mode.
+          // gemini-live-2.5-flash-native-audio is a native-audio model — TEXT modality
+          // is unsupported and causes an immediate session disconnect.
+          // GM produces audio output (silently discarded — no onAgentAudio callback is
+          // registered for the GM) + toolCall events, which are what we actually use.
+          // Gemini 3.1 Pro Preview does NOT support Live API (no real-time audio
+          // streaming), so the native-audio model is the only valid choice here.
         };
 
     this.session = await getLiveAiClient().live.connect({
