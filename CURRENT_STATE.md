@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md - Liminal Sin Gemini (Backend)
 
 > **AI WORKING MEMORY** - This file is the source of truth for the current state of the backend project.
-> Last updated: March 10, 2026 (B4 + B5 COMPLETE — all 7 GM tools battle-tested. **Frontend F1-F6 ALL COMPLETE.** Full demo integration testing unblocked.)
+> Last updated: March 10, 2026 (B4 + B5 COMPLETE — all 7 GM tools battle-tested. **Frontend F1-F6 ALL COMPLETE.** Full demo integration testing unblocked. Frontend error/resilience work planned.)
 
 ---
 
@@ -118,6 +118,7 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 | **B6** | **Backend bug sweep — 4 bugs found + fixed** | **DONE** |
 | F5   | Frontend: Glitch effects CSS | **DONE (pushed to main)** |
 | F6   | Frontend: Demo end sequence | **DONE (pushed to main)** |
+| **B7** | **`POST /log-client-error` endpoint → Firestore (for frontend error logging)** | **TODO** |
 | N    | Demo video (4 min, mandatory submission) | March 11-14 |
 | O    | Architecture diagram (mandatory) | March 13-15 |
 
@@ -295,6 +296,34 @@ On `slotsky_trigger(found_transition)`: stop audio, freeze scene, 2s → end ove
 
 ### ~~6. `scene_video` Handler~~ — DONE
 Plays Veo 3.1 Fast clips over frozen scene, captures last frame via canvas → crossfade pipeline.
+
+---
+
+## FYI: Frontend Next Work — Error Handling + Camera/Mic Resilience
+
+> **This is a frontend-only work session (`myceliainteractive` repo). No backend action required yet — except one pre-wire item (B7) which the backend session should add separately.**
+> **Do NOT overwrite this section if the backend session has already added its own plan below it.**
+
+The frontend is implementing the following in phases:
+
+| Phase | Work | Backend Impact |
+|-------|------|----------------|
+| FE-1 | Error infrastructure: `useGameError.ts`, `ErrorOverlay.tsx`, `GameErrorBoundary.tsx`, D1 `client_error_logs` table, `POST /api/log-error` CF Worker endpoint | None |
+| FE-2 | Mic blocker modal (fatal if mic denied at session start). Split `getUserMedia` mic/webcam separate. | None |
+| FE-3 | Camera coverage pixel brightness detection. Amber non-blocking nudge banner. `CameraObscuredEvent` type added to WS contract. | **Optional:** backend can send `{ type: "camera_obscured", obscured: bool }` WS event if GM detects no face — frontend already handles it |
+| FE-4 | Wire all existing silent `console.error` calls to `dispatchError` | None |
+
+### Backend Action Required (B7) — `POST /log-client-error` on Cloud Run
+
+The frontend pre-wires a Firestore error log call to this endpoint with `AbortSignal.timeout(3000)`. It silently ignores 404 until implemented. When the backend session is ready:
+- Route: `POST /log-client-error`
+- Body: `{ sessionId, errorType, message, severity, stack?, url?, timestamp }`
+- Action: write one doc to Firestore collection `client_error_logs`
+- No auth — errors only, no secrets
+
+| Step | Feature | Status |
+|------|---------|--------|
+| **B7** | **`POST /log-client-error` endpoint on Cloud Run → Firestore** | **TODO — backend session** |
 
 ---
 
