@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto';
 
 dotenv.config({ path: '.env.local' });
 
-import { getOrCreateSession } from './services/db';
+import { getOrCreateSession, logClientError } from './services/db';
 import { getGameMasterSystemPrompt, LiveSessionManager } from './services/gemini';
 import { getJasonSystemPrompt } from './services/npc/jason';
 import { handleGmFunctionCall } from './services/gameMaster';
@@ -57,6 +57,42 @@ app.post('/debug/fire-gm-event', async (req, res) => {
   try {
     await handleGmFunctionCall(sessionId, functionName, args ?? {}, entry.ws, entry.jasonManager);
     res.json({ ok: true, fired: functionName, args: args ?? {} });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+/**
+ * POST /log-client-error
+ * Frontend error reporting endpoint. Writes one doc to Firestore client_error_logs.
+ * No auth — errors only, no secrets. AbortSignal.timeout(3000) on the frontend side.
+ */
+app.post('/log-client-error', async (req, res) => {
+  const { sessionId, errorType, message, severity, stack, url, timestamp } = req.body as {
+    sessionId?: string;
+    errorType?: string;
+    message?: string;
+    severity?: 'info' | 'warning' | 'error' | 'fatal';
+    stack?: string;
+    url?: string;
+    timestamp?: number;
+  };
+  if (!sessionId || !errorType || !message || !severity) {
+    res.status(400).json({ error: 'sessionId, errorType, message, and severity are required' });
+    return;
+  }
+  try {
+    await logClientError({
+      sessionId,
+      errorType,
+      message,
+      severity,
+      stack,
+      url,
+      timestamp: timestamp ?? Date.now(),
+      receivedAt: Date.now()
+    });
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }

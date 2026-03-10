@@ -140,3 +140,22 @@ export async function updateProximityState(
     }
   }
 }
+
+export interface ClientErrorLog {
+  sessionId: string;
+  errorType: string;
+  message: string;
+  severity: 'info' | 'warning' | 'error' | 'fatal';
+  stack?: string;
+  url?: string;
+  timestamp: number;
+  receivedAt: number;
+}
+
+export async function logClientError(entry: ClientErrorLog): Promise<void> {
+  if (db) {
+    await db.collection('client_error_logs').add(entry);
+  } else {
+    console.warn('[DB] client_error_logs (in-memory fallback):', entry);
+  }
+}
