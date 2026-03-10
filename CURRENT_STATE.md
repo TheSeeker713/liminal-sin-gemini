@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md - Liminal Sin Gemini (Backend)
 
 > **AI WORKING MEMORY** - This file is the source of truth for the current state of the backend project.
-> Last updated: March 10, 2026 (B4 + B5 COMPLETE — all 7 GM tools battle-tested. **Frontend F1-F6 ALL COMPLETE.** Full demo integration testing unblocked. Frontend error/resilience work planned.)
+> Last updated: March 10, 2026 (B4 + B5 COMPLETE — all 7 GM tools battle-tested. **Frontend F1-F6 ALL COMPLETE.** Full demo integration testing unblocked. **Intro sequence + audio fix + demo strategy planned — March 10.**)
 
 ---
 
@@ -118,7 +118,21 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 | **B6** | **Backend bug sweep — 4 bugs found + fixed** | **DONE** |
 | F5   | Frontend: Glitch effects CSS | **DONE (pushed to main)** |
 | F6   | Frontend: Demo end sequence | **DONE (pushed to main)** |
-| **B7** | **`POST /log-client-error` endpoint → Firestore (for frontend error logging)** | **TODO** |
+| **B7** | **`POST /log-client-error` endpoint → Firestore** | **DONE (March 10)** |
+| **B8** | **Intro sequence — Jason silent until `intro_complete` WS signal** | **DONE (March 10)** |
+| **B9** | **Image pre-load queue — 3 scenes cached at session start** | **TODO** |
+| **B10** | **GM beat map rewrite — strict 6-beat scripted flow** | **TODO** |
+| **B11** | **45s flashlight hint timer — backend sends `hint` WS event** | **TODO** |
+| **B12** | **Audrey NPC — female Aoede voice, trust-gated card echo** | **TODO** |
+| **FE-1–4** | **Error infrastructure, mic/cam resilience, error wiring** | **DONE (March 10)** |
+| **FE-5** | **Cinematic intro sequence (music → credits → title → `intro_complete`)** | **IN PROGRESS** |
+| **FE-6** | **SFX volume fix (ambientGain 0.15–0.18, sfxGain dialogue 0.40–0.45)** | **IN PROGRESS** |
+| **FE-7** | **Safety fix: remove strobing from high-intensity glitch CSS** | **TODO** |
+| **FE-8** | **Smart glasses flashlight POV overlay (radial vignette CSS)** | **TODO** |
+| **FE-9** | **VHS glitch transition on video→image swap** | **TODO** |
+| **FE-10** | **Card collectible UI on `slotsky_trigger(anomaly_cards)`** | **TODO** |
+| **FE-11** | **Generator lights-on transition (brightness animation)** | **TODO** |
+| **FE-12** | **Audrey `agent_speech` handler — echo/reverb Web Audio filter** | **TODO** |
 | N    | Demo video (4 min, mandatory submission) | March 11-14 |
 | O    | Architecture diagram (mandatory) | March 13-15 |
 
@@ -386,7 +400,277 @@ The frontend pre-wires a Firestore error log call to this endpoint with `AbortSi
 | `server/services/imagen.ts` | Imagen 4 scene generation — 7 zone prompts, returns base64 JPEG |
 | `server/services/veo.ts` | Veo 3.1 Fast img2vid — zone animation hints, polls operation, returns GCS URI |
 | `server/services/npc/jason.ts` | Jason system prompt v2 — trust + fear floats injected at session start |
+| `server/services/npc/audrey.ts` | *(B12 — TODO)* Audrey echo voice — Aoede, trust-gated card response |
 | `Dockerfile` | 2-stage build (node:20-alpine), Cloud Run ready |
+
+**Local dev server:**
+
+```powershell
+Get-Process | Where-Object { $_.ProcessName -like "*node*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+npx tsx server/server.ts
+```
+
+---
+
+## Environment Variables (`.env.local` - never committed)
+
+```
+GOOGLE_CLOUD_PROJECT=project-c4c3ba57-5165-4e24-89e
+GOOGLE_CLOUD_REGION=us-west1
+JASON_VOICE=Enceladus
+PORT=3001
+```
+
+> No `GEMINI_API_KEY` - Vertex AI mode uses ADC exclusively. No key needed locally or on Cloud Run.
+
+---
+
+## MARCH 10 SPRINT — FULL PLAN (Both Sessions)
+
+> **Internal cutoff: March 11 @ 11:11 PM MT. Complete this sprint before then.**
+> Backend executes B9 → B10 → B11 → B12 in order. Frontend executes FE-7 → FE-5 → FE-6 → FE-8 → FE-9 → FE-10 → FE-11 → FE-12 in order.
+> Neither session touches the other repo. Cross-session handoff happens via WS events and this document.
+
+---
+
+### B9 — Image Pre-Load Queue
+
+**Goal:** Eliminate the long wait for the first image. At session start (after `intro_complete`), pre-generate 3 canonical images in the background and cache them in memory. When the GM calls `triggerSceneChange`, serve from cache instantly — no Imagen 4 latency at the player-facing moment.
+
+**Files touched:** `server/services/imagen.ts`, `server/services/gameMaster.ts`, `server/server.ts`
+
+**Implementation:**
+1. Add `imageCache: Map<string, Map<string, string>>` in `server/services/imagen.ts` — keyed `sessionId → sceneKey → base64JPEG`. Export `prewarmImageCache(sessionId)` which fires `generateSceneImage()` for `zone_tunnel_entry`, `zone_merge`, `zone_park_shore` in parallel (non-blocking, `void Promise.all`). Export `getCachedImage(sessionId, sceneKey)` returning base64 or `null`. Export `clearImageCache(sessionId)` for cleanup on WS close.
+2. In `server/server.ts`, after `jasonIntroFired = true` (after `intro_complete` fires), call `prewarmImageCache(sessionId)` — fire and forget.
+3. In `server/services/gameMaster.ts`, `triggerSceneChange` case: call `getCachedImage(sessionId, sceneKey)` first. If hit, broadcast `scene_image` immediately (no Imagen call). If miss, fall back to `generateSceneImage()` as before.
+4. On WS `close`, call `clearImageCache(sessionId)` to prevent memory leaks.
+
+**WS events:** No change — `scene_image` payload format unchanged.
+**Verification:** Server log should show `[ImageCache] HIT` on first scene change if player delays ≥15s from `intro_complete`.
+
+---
+
+### B10 — GM Beat Map Rewrite
+
+**Goal:** Replace the freeform GM demo prompt with a strict 6-beat scripted sequence. Fixes: images not syncing with lore, `found_transition` firing too early, GM over-triggering events.
+
+**File touched:** `server/services/gemini.ts` — `getGameMasterSystemPrompt()` only.
+
+**6-Beat Sequence (canonical):**
+
+| Beat | Time Window | What GM MUST Do | What GM MUST NOT Do |
+|------|-------------|-----------------|---------------------|
+| **1 — DARKNESS** | 0:00 – ~0:40 | Call `triggerAudienceUpdate` within 10s. Evaluate trust from player's first words. Call `triggerTrustChange` once. | **NO** `triggerSceneChange`. **NO** `triggerSlotsky`. **NO** `triggerGlitchEvent` in first 30s. |
+| **2 — FLASHLIGHT** | ~0:40 – ~1:00 | When player mentions light/flashlight, call `triggerSceneChange("zone_tunnel_entry")` then `triggerVideoGen("zone_tunnel_entry")`. | Only use `zone_tunnel_entry` for beat 2. |
+| **3 — GENERATOR** | ~1:00 – ~1:30 | When Jason mentions finding the generator or player instructs him, call `triggerSceneChange("zone_merge")` then `triggerVideoGen("zone_merge")`. | Do NOT skip to waterpark zones yet. |
+| **4 — WATERPARK** | ~1:30 – ~2:00 | Call `triggerSceneChange("zone_park_shore")` then `triggerVideoGen("zone_park_shore")`. May call `triggerFearChange` up to 0.5. | One scene change max per 20s. Do NOT call `found_transition`. |
+| **5 — CARD** | ~2:00 – ~2:30 | Call `triggerSlotsky("anomaly_cards")` then `triggerSceneChange("slotsky_card")` then `triggerVideoGen("slotsky_card")`. | Do NOT call `found_transition` yet. |
+| **6 — AUDREY ECHO** | ~2:30 – ~3:00 | Call `triggerAudreyVoice` (trust-gated). Then call `triggerSlotsky("found_transition")`. | `found_transition` is the FINAL call of the session. Nothing fires after it. |
+
+**Additional rules baked into the prompt:**
+- `found_transition` is a ONE-WAY door. It ENDS the demo. Never fire it before beat 6.
+- Do NOT fire `triggerGlitchEvent` in the first 30 seconds of the session.
+- Require 2+ consecutive reads of the same negative emotion before firing a glitch event.
+- Trust evaluation happens in beat 1 — it informs Jason's tone for the rest of the session, not sudden behaviour swings.
+- The GM does NOT respond to Jason's dialogue for scene changes — it responds to player behaviour and the scripted timeline.
+
+---
+
+### B11 — 45-Second Flashlight Hint Timer
+
+**Goal:** If the player hasn't triggered a scene change 45 seconds after `intro_complete`, backend sends a `hint` WS event so the frontend can show a text nudge.
+
+**File touched:** `server/server.ts` — `intro_complete` handler only.
+
+**Implementation:**
+1. After the `jasonIntroFired = true` block, start a `setTimeout` of 45,000ms.
+2. In the timeout callback, check an in-scope `sceneChangeCount` counter (incremented in `handleGmFunctionCall` on any `triggerSceneChange` call — pass via closure or shared ref).
+3. If `sceneChangeCount === 0` and `ws.readyState === WebSocket.OPEN`, send: `{ type: 'hint', text: 'ask him if he has a flashlight' }`.
+4. Store the timeout ID so it can be cleared if the session closes before it fires.
+
+**WS event:** `{ type: 'hint', text: string }` — new event type. Frontend must handle it.
+**Frontend impact:** Frontend needs to render this as a fading text overlay (same style as "say something..." hint).
+
+---
+
+### B12 — Audrey NPC (Female Voice, Trust-Gated)
+
+**Goal:** Add Audrey as a second NPC. She speaks exactly once — an echo calling for help — triggered by the GM after the card is found. Voice is `Aoede` (female, per Characters.md). Trust-gated: high trust → close warm echo; low trust → distant panicked whisper.
+
+**Files touched:**
+- `server/services/npc/audrey.ts` — NEW FILE. Audrey system prompt.
+- `server/services/gemini.ts` — add `triggerAudreyVoice` tool declaration to `gameMasterTools`.
+- `server/services/gameMaster.ts` — add `triggerAudreyVoice` case to `handleGmFunctionCall`.
+- `server/server.ts` — add `audreyManager: LiveSessionManager`, connect with Aoede voice, register `onAgentAudio` broadcasting `agent_speech` with `agent: 'audrey'`.
+
+**Audrey system prompt (`audrey.ts`):**
+- She is somewhere in the chamber. She cannot see Jason. She does not know the player exists.
+- She calls out for Jason. Trust-dependent: high trust → hopeful, calling his name softly; low trust → crying, distant, not using his name.
+- She speaks ONCE and goes quiet. She must not sustain a conversation.
+- Voice: `Aoede`. Mode: `npc`.
+
+**`triggerAudreyVoice` tool declaration:**
+```
+name: 'triggerAudreyVoice'
+description: 'Trigger Audrey's single echo line. Call this after anomaly_cards fires and the card scene has been shown. Trust-gated: high trust (0.7+) = hopeful close echo; low trust (<0.4) = panicked distant whisper.'
+parameters: { trustLevel: number (0.0–1.0) }
+```
+
+**`handleGmFunctionCall` case:**
+- Receives `trustLevel` float from GM.
+- Builds a one-shot prompt string: `[AUDREY_TRIGGER: trust=${trustLevel}. Speak once — call out for Jason. If trust >= 0.7, hopeful and close. If trust < 0.4, frightened and distant. One sentence only. Then go silent.]`
+- Calls `audreyManager.sendText(prompt)`.
+- Broadcasts `{ type: 'scene_change', payload: { sceneKey: 'audrey_echo' } }` so frontend can prepare (optional SFX).
+
+**WS event:** `agent_speech` with `agent: 'audrey'` — frontend plays this through the existing audio pipeline but should apply a Web Audio reverb/echo filter (see FE-12).
+
+**Important:** `audreyManager` connects at session start like Jason, but no opening monologue is sent. She idles until `triggerAudreyVoice` fires.
+
+---
+
+### B9–B12 Deploy Order
+After each step passes `npx tsc --noEmit -p tsconfig.json` + `npx eslint`:
+```
+git add <files> && git commit -m "feat: B[N] ..." && git push origin main
+```
+GitHub Actions auto-deploys to Cloud Run on every push to main.
+
+---
+
+## MARCH 10 SPRINT — FRONTEND PLAN (myceliainteractive repo)
+
+> **Frontend session reads this section. Execute in order. Do not skip ahead.**
+> Backend WS events this sprint adds: `hint` (B11), `agent_speech` with `agent: 'audrey'` (B12).
+
+---
+
+### FE-7 — SAFETY: Remove Strobing from Glitch CSS ⚠️ DO FIRST
+
+**File:** The glitch CSS keyframes in the game HUD component (F5 work).
+**Fix:** Remove `invert(1)` and `contrast(3)` from the `high` intensity keyframe entirely. Replace with:
+- A deep red semi-transparent `box-shadow: inset 0 0 0 100vmax rgba(180,0,0,0.35)` overlay via `::before` pseudo-element (already exists per F5 — just remove invert/contrast from the keyframe animation steps).
+- Heavy shake and skew remain. Color inversion does NOT.
+**Why:** Rapid invert cycling is the seizure trigger. Static red tint is safe.
+
+---
+
+### FE-5 — Cinematic Intro Sequence
+
+**When to send `intro_complete`:** At the END of the intro animation — after title card fades out and before game shell becomes interactive. This is the trigger that fires Jason's Gemini Live landing sequence on the backend.
+
+**Sequence timing (canonical):**
+1. `session_ready` received → start intro immediately
+2. 0s: BLACK. Start intro music (from `audioManifest` — intro tier music).
+3. 1s: Wind SFX fires (`rushing_wind` event key). Player audibly senses the fall.
+4. 2–3s: A single heavy **thud/impact SFX** plays (`concrete_impact` or `floor_crack`). Jason hit the ground.
+5. 3–6s: Production credits fade in/out (team name, project name — white text on black, slow fade).
+6. 6–8s: "LIMINAL SIN" title card fades in bold.
+7. 8–10s: Title card fades out.
+8. 10s: Send `{ type: 'intro_complete' }` over WS. 
+
+**After `intro_complete`:** Game shell is now active. Backend fires Jason's pain/landing sequence. The black screen remains until the player speaks and the GM eventually triggers `triggerSceneChange`.
+
+---
+
+### FE-6 — SFX Volume Fix
+
+**File:** `audioManifest.ts` (already identified in previous session).
+- `ambientGain`: reduce to `0.15–0.18`
+- `sfxGain` for dialogue events: reduce to `0.40–0.45`
+- Wind SFX (`rushing_wind`) during intro: set to `0.65` — it should be felt, not overwhelming.
+
+---
+
+### FE-8 — Smart Glasses Flashlight POV Overlay
+
+**Goal:** All scene images and videos show through a smart glasses POV — circular flashlight beam, dark vignette around edges, subtle lens flare.
+
+**Implementation:** A CSS `::after` overlay on the scene image container:
+```css
+.scene-container::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(
+    ellipse 38% 32% at 50% 50%,
+    transparent 0%,
+    transparent 55%,
+    rgba(0,0,0,0.55) 75%,
+    rgba(0,0,0,0.92) 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+```
+- This creates a central bright zone (flashlight) with dark edges.
+- On generator beat (when GM fires `triggerSceneChange("zone_merge")` or `zone_park_shore`), animate the overlay to `opacity: 0` over 2s — the room is now fully lit because the generator is on.
+- Add a subtle amber tint `mix-blend-mode: multiply` layer in the lit-room state to match the flood construction lights (warm orange per lore).
+
+---
+
+### FE-9 — VHS Glitch Transition on Video → Image Swap
+
+**File:** The video overlay handler (F4 work).
+**When:** At the moment the video ends and the last-frame canvas image replaces the `<video>` element.
+**Effect:** 300ms CSS class `vhs-transition` applied to the scene container:
+```css
+@keyframes vhs-swap {
+  0%   { filter: saturate(2) hue-rotate(20deg); transform: scaleX(1.01) translateY(-2px); }
+  33%  { filter: saturate(0) brightness(1.4); transform: scaleX(0.995) translateY(3px); }
+  66%  { filter: saturate(1.5) hue-rotate(-15deg); transform: scaleX(1.005) translateY(-1px); }
+  100% { filter: none; transform: none; }
+}
+```
+- Class is added 50ms before the video ends (use `timeupdate` event, check `currentTime >= duration - 0.05`).
+- Class is removed after 300ms.
+- Does NOT use `invert`. Safe.
+
+---
+
+### FE-10 — Card Collectible UI
+
+**Trigger:** `slotsky_trigger` WS event with `anomalyType === 'anomaly_cards'`.
+**Effect:**
+1. A playing card image (Queen of Spades SVG or PNG — already in GCS as part of `slotsky_card` image) fades in as an overlay in the lower-right corner of the scene.
+2. It pulses with a subtle glow. A small text label: "pick it up?" fades in after 2s.
+3. Player clicks/taps the card → card slides off-screen → frontend sends `{ type: 'card_collected', sessionId }` over WS.
+4. This is the trigger that causes the backend to fire `triggerAudreyVoice` (GM receives the player audio confirmation OR the WS event).
+
+**Note:** The backend `triggerAudreyVoice` is GM-driven, not event-driven from frontend. The card interaction just closes the visual loop for the player. GM will fire Audrey's voice based on the beat 6 timing in the scripted prompt.
+
+---
+
+### FE-11 — Generator Lights-On Transition
+
+**Trigger:** `scene_image` WS event with `sceneKey` containing `zone_merge` or `zone_park_shore` (the generator beat).
+**Effect:**
+1. Detect the scene key in the `scene_image` handler.
+2. Apply a brief "lights flicker on" animation: `brightness(0.15) → brightness(0.8) → brightness(0.4) → brightness(1.0)` over 1.5s using CSS `@keyframes`.
+3. Simultaneously transition the POV flashlight overlay (FE-8) to `opacity: 0` over 2s — the flashlight is no longer needed.
+4. Transition the ambient color from cold-white to warm-amber: CSS `sepia(0.3) saturate(1.2)` filter on the scene container, easing in over 3s.
+
+---
+
+### FE-12 — Audrey `agent_speech` Handler
+
+**Trigger:** `agent_speech` WS event with `agent === 'audrey'`.
+**Effect:**
+1. Route Audrey's base64 PCM audio through the existing audio pipeline (same decode path as Jason).
+2. BUT apply a Web Audio `ConvolverNode` reverb + slight `DelayNode` (0.15s, dry/wet 0.6) to create the echo-from-a-distance effect.
+3. Lower output gain to `0.7` relative to Jason's gain — she is farther away.
+4. Do NOT cancel Audrey's audio on barge-in (`agent_interrupt` applies to Jason only).
+
+**Existing audio pipeline:** `AudioContext.decodeAudioData()` → `AudioBufferSourceNode` → gains. Audrey just needs her own gain chain with the reverb/delay nodes inserted before output.
+
+---
+
+## Cross-Session WS Contract — New Events This Sprint
+
+| Event | Direction | Payload | Who Handles |
+|-------|-----------|---------|-------------|
+| `intro_complete` | FE → BE | `{}` | Backend: fires Jason landing, starts prewarm, starts 45s timer |
+| `hint` | BE → FE | `{ text: string }` | Frontend: fading text overlay (same style as "say something...") |
+| `agent_speech` (audrey) | BE → FE | `{ agent: 'audrey', audio: base64 }` | Frontend: echo audio pipeline (FE-12) |
+| `card_collected` | FE → BE | `{ sessionId: string }` | Backend: informational only — GM drives Audrey timing via beat map |
 
 **Local dev server:**
 
