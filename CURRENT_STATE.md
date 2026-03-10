@@ -115,6 +115,7 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 | **F4** | **Frontend: `scene_video` handler — play clip, freeze on last frame** | **DONE (pushed to main)** |
 | **B4** | **Verify + upload remaining assets to GCS** | **DONE** |
 | **B5** | **GM trust routing battle-test (Step L) — all 7 GM tools** | **DONE** |
+| **B6** | **Backend bug sweep — 4 bugs found + fixed** | **DONE** |
 | F5   | Frontend: Glitch effects CSS | **DONE (pushed to main)** |
 | F6   | Frontend: Demo end sequence | **DONE (pushed to main)** |
 | N    | Demo video (4 min, mandatory submission) | March 11-14 |
@@ -213,6 +214,21 @@ Battle-tested the full GM → Firestore → WS → frontend pipeline via `POST /
 **Known issues (non-blocking for contest):**
 - Veo 3.1 Fast model (`veo-3.1-fast-generate-001`) returns 404 — needs project access enablement
 - ~~GM session closes immediately with "Text output is not supported for native audio output model"~~ — **FIXED March 10**: removed invalid `responseModalities: [Modality.TEXT]` from GM config.
+
+---
+
+### ~~B6 — Backend Bug Sweep~~ — DONE (March 10)
+
+Full backend code scan (tsc + eslint + manual review). 4 bugs found and fixed:
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 1 | **GM model crash** — `responseModalities: [Modality.TEXT]` passed to native-audio-only model caused immediate session disconnect | `gemini.ts` | Removed the invalid modality. GM uses audio output (silently discarded) + toolCall events which work correctly |
+| 2 | **GM tool ACK hang** — `sendToolResponse` was inside `if (ws.readyState === OPEN)` guard; if client disconnected mid-session, Gemini hung permanently waiting for ACK | `server.ts` | Moved `sendToolResponse` outside the guard — always ACKs |
+| 3 | **`GM_FUNCTION_CALL` missing `jasonManager`** — direct frontend GM messages skipped live trust/fear injection into Jason | `server.ts` | Added `jasonManager` as 5th arg to that call path |
+| 4 | **`triggerTrustChange` silent float fail** — `levelMap[0.8]` → `undefined` → silently stored `0.5` instead of `0.8`; also `"high"` (lowercase) fell through | `gameMaster.ts` | Accepts raw numeric float (clamped 0–1) OR case-insensitive string enum (`high`/`High`/`neutral`/`Neutral`/`low`/`Low`) |
+
+Also fixed stale JSDoc: `Fenrir voice` → `Enceladus voice` in `gemini.ts`.
 
 ---
 
