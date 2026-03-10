@@ -8,6 +8,23 @@ dist
 *.log
 .DS_Store
 *.tsbuildinfo
-/assets/screen-records/*.mp4
 scripts/output/
+
+# Binary assets — live on GCS, never committed from the backend repo.
+# Local copies kept for post-contest phases but must not bloat the repo.
+assets/Audio/
+assets/Clips/
+assets/images/
+assets/screen-records/
+*.mp4
+*.mp3
+*.m4a
+*.wav
+*.ogg
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.webm
 

@@ -105,3 +105,38 @@ export async function updateAudienceState(
     }
   }
 }
+
+export async function updateSceneKey(sessionId: string, sceneKey: string): Promise<void> {
+  if (db) {
+    await db.collection('sessions').doc(sessionId).update({
+      sceneKey,
+      updatedAt: Date.now()
+    });
+  } else {
+    const session = memoryStore.get(sessionId);
+    if (session) {
+      session.sceneKey = sceneKey;
+      session.updatedAt = Date.now();
+      memoryStore.set(sessionId, session);
+    }
+  }
+}
+
+export async function updateProximityState(
+  sessionId: string,
+  proximityState: 'ISOLATED' | 'ECHO' | 'RANGE' | 'FOUND'
+): Promise<void> {
+  if (db) {
+    await db.collection('sessions').doc(sessionId).update({
+      proximityState,
+      updatedAt: Date.now()
+    });
+  } else {
+    const session = memoryStore.get(sessionId);
+    if (session) {
+      session.proximityState = proximityState;
+      session.updatedAt = Date.now();
+      memoryStore.set(sessionId, session);
+    }
+  }
+}

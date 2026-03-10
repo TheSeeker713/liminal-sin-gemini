@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { updateTrustLevel, updateFearIndex, updateAudienceState, getOrCreateSession } from './db';
+import { updateTrustLevel, updateFearIndex, updateAudienceState, updateSceneKey, updateProximityState, getOrCreateSession } from './db';
 import { generateSceneImage } from './imagen';
 import { generateSceneVideo } from './veo';
 import type { LiveSessionManager } from './gemini';
@@ -79,6 +79,7 @@ export async function handleGmFunctionCall(
 
     case 'triggerSceneChange': {
       const sceneKey = args.sceneKey as string;
+      await updateSceneKey(sessionId, sceneKey);
       wsMessage = {
         type: 'scene_change',
         payload: { sceneKey }
@@ -100,9 +101,13 @@ export async function handleGmFunctionCall(
     }
 
     case 'triggerSlotsky': {
+      const anomalyType = args.anomalyType as string;
+      if (anomalyType === 'found_transition') {
+        await updateProximityState(sessionId, 'FOUND');
+      }
       wsMessage = {
         type: 'slotsky_trigger',
-        payload: { anomalyType: args.anomalyType }
+        payload: { anomalyType }
       };
       break;
     }
