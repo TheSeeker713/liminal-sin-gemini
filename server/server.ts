@@ -66,6 +66,7 @@ wss.on('connection', (ws: WebSocket) => {
   const sessionId = randomUUID();
   const jasonManager = new LiveSessionManager(); // NPC — speaks, audio out, Enceladus voice
   const gmManager = new LiveSessionManager();    // GM — silent, function calls only
+  let jasonIntroFired = false; // Gates Jason's first line until frontend sends intro_complete
 
   console.log(`[WS] Client connected — session ${sessionId}`);
   // Register for debug endpoint access
@@ -116,16 +117,8 @@ wss.on('connection', (ws: WebSocket) => {
         // The game begins in darkness. Player hears only audio (SFX + JASON voice).
         // Scene images are generated later when the GM decides (e.g. player suggests flashlight).
 
-        // Trigger Jason's opening monologue immediately after the client is ready.
-        // He just fell. He's hurt. It's pitch black. The voicebox activated on its own.
-        jasonManager.sendText(
-          '[VOICEBOX ACTIVATION — the device in your hand just turned on by itself. ' +
-          'You did not press anything. A voice is coming through it for the first time. ' +
-          'You are in total darkness. You fell through the floor moments ago. ' +
-          'Something is broken — maybe a rib, maybe your wrist. You can hear water dripping. ' +
-          'Cold concrete under your hands. You cannot see anything. ' +
-          'React with pain and confusion. One short sentence, holding your breath.]'
-        );
+        // Jason's intro sequence fires when the frontend sends intro_complete (after title card).
+        // At session start Jason does NOT know the voicebox is active — see intro_complete handler.
       }
     } catch (err) {
       console.error(`[WS] Failed to init sessions for ${sessionId}:`, err);
@@ -135,6 +128,22 @@ wss.on('connection', (ws: WebSocket) => {
   ws.on('message', (message: Buffer) => {
     try {
       const data = JSON.parse(message.toString());
+
+      // Frontend signals the intro title card has finished — fire Jason's landing sequence.
+      // Jason is hurt, alone, in darkness. He does NOT know the voicebox is on yet.
+      if (data.type === 'intro_complete' && !jasonIntroFired) {
+        jasonIntroFired = true;
+        jasonManager.sendText(
+          '[SEQUENCE_TRIGGER — You just slammed into the concrete floor. Hard landing. ' +
+          'Your shoulder took the impact — something may be cracked. ' +
+          'It is pitch black. Cold water dripping nearby. You cannot see anything. ' +
+          'Take a sharp breath of pain. Then call out "Audrey? … Josh?" once, quietly. ' +
+          'Wait a beat. No answer. Just dripping. Silence. ' +
+          'The voicebox in your hand is dark — you have not noticed it yet. ' +
+          'DO NOT address anyone through the device. DO NOT mention the voicebox. You are alone.]'
+        );
+        return;
+      }
 
       // Route Game Master function call events
       if (data.type === 'GM_FUNCTION_CALL' && data.sessionId && data.functionName) {
