@@ -28,6 +28,8 @@ export async function getOrCreateSession(sessionId: string): Promise<PlayerSessi
     fourthWallCount: 0,
     privateKnowledgeUnlocked: false,
     sceneKey: '',
+    audienceSize: -1,
+    groupDynamic: 'unknown',
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -76,6 +78,28 @@ export async function updateFearIndex(sessionId: string, newLevel: number): Prom
     const session = memoryStore.get(sessionId);
     if (session) {
       session.fearIndex = newLevel;
+      session.updatedAt = Date.now();
+      memoryStore.set(sessionId, session);
+    }
+  }
+}
+
+export async function updateAudienceState(
+  sessionId: string,
+  audienceSize: number,
+  groupDynamic: 'unknown' | 'solo' | 'pair' | 'group'
+): Promise<void> {
+  if (db) {
+    await db.collection('sessions').doc(sessionId).update({
+      audienceSize,
+      groupDynamic,
+      updatedAt: Date.now()
+    });
+  } else {
+    const session = memoryStore.get(sessionId);
+    if (session) {
+      session.audienceSize = audienceSize;
+      session.groupDynamic = groupDynamic;
       session.updatedAt = Date.now();
       memoryStore.set(sessionId, session);
     }

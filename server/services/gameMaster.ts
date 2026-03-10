@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { updateTrustLevel, updateFearIndex, getOrCreateSession } from './db';
+import { updateTrustLevel, updateFearIndex, updateAudienceState, getOrCreateSession } from './db';
 import { generateSceneImage } from './imagen';
 import { generateSceneVideo } from './veo';
 import type { LiveSessionManager } from './gemini';
@@ -139,6 +139,37 @@ export async function handleGmFunctionCall(
           console.error(`[GM] Veo pipeline failed for sceneKey="${veoSceneKey}":`, (err as Error).message);
         }
       })();
+      break;
+    }
+
+    case 'triggerAudienceUpdate': {
+      const personCount = args.personCount as number;
+      const dynamic = args.groupDynamic as 'unknown' | 'solo' | 'pair' | 'group';
+      const observedEmotions = (args.observedEmotions as string) ?? 'not specified';
+      await updateAudienceState(sessionId, personCount, dynamic);
+      wsMessage = {
+        type: 'audience_update',
+        agent: 'gm',
+        payload: { personCount, groupDynamic: dynamic, observedEmotions }
+      };
+      // Inject audience context into Jason so he can react naturally without breaking character.
+      if (jasonManager) {
+        const dynamicLabel = dynamic === 'solo'
+          ? 'one person — they are alone'
+          : dynamic === 'pair'
+            ? 'two people — they came together'
+            : dynamic === 'group'
+              ? `a group (${personCount} people) — social dynamics in play`
+              : 'an unknown number of people';
+        jasonManager.sendText(
+          `[SITUATION_UPDATE: You just noticed something — ${dynamicLabel} on the other end of the voicebox. ` +
+          `Observed emotional state: ${observedEmotions}. ` +
+          `React in-character, naturally, as if you just caught a detail through the voicebox — ` +
+          `an extra shuffle, a second breath, more than one voice. ` +
+          `Do NOT say "GM told me" or "detected". React as if you just noticed it yourself.]`
+        );
+        console.log(`[GM] Injected audience context into Jason — dynamic: ${dynamic}, count: ${personCount}`);
+      }
       break;
     }
 

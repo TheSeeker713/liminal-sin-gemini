@@ -22,12 +22,15 @@ export interface PlayerSession {
   /** True when trust crosses the unlock threshold (0.6+). */
   privateKnowledgeUnlocked: boolean;
   sceneKey: string;
+  /** -1 = unknown (not yet observed), 1 = solo, 2 = pair, 3+ = group */
+  audienceSize: number;
+  groupDynamic: 'unknown' | 'solo' | 'pair' | 'group';
   createdAt: number;
   updatedAt: number;
 }
 
 // Events broadcast over WebSocket to the frontend
-export type GmEventType = 'trust_update' | 'hud_glitch' | 'scene_change' | 'slotsky_trigger';
+export type GmEventType = 'trust_update' | 'hud_glitch' | 'scene_change' | 'slotsky_trigger' | 'audience_update';
 
 export interface GmEvent {
   type: GmEventType;

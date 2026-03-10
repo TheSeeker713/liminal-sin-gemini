@@ -135,6 +135,29 @@ export const gameMasterTools: Tool[] = [
           },
           required: ['anomalyType']
         }
+      },
+      {
+        name: 'triggerAudienceUpdate',
+        description: 'Report how many people you can see in the webcam feed and their emotional state. Call this within the first 10 seconds of the session, and again whenever the person count changes. This silently informs Jason so he can react naturally in-character — he cannot see anyone but he can notice a second voice or extra sounds through the voicebox.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            personCount: {
+              type: Type.NUMBER,
+              description: 'Number of people visible in the webcam. 1 = solo, 2 = pair, 3+ = group.'
+            },
+            groupDynamic: {
+              type: Type.STRING,
+              enum: ['solo', 'pair', 'group', 'unknown'],
+              description: 'Characterize the group: solo = one player alone; pair = two people; group = three or more; unknown = cannot determine from webcam.'
+            },
+            observedEmotions: {
+              type: Type.STRING,
+              description: 'Brief description of the visible emotional states. E.g. "one person laughing nervously", "two people — one afraid, one calm", "group of four, mixed reactions".'
+            }
+          },
+          required: ['personCount', 'groupDynamic', 'observedEmotions']
+        }
       }
     ]
   }
@@ -161,12 +184,20 @@ You have two senses:
 - VISION: The player's webcam at 1 frame per second. You see their face and reactions.
 
 You use what you observe to orchestrate the experience by calling functions:
+- triggerAudienceUpdate — CALL THIS FIRST within 10 seconds of session start, and again if person count changes. Report how many people you see and their emotional state.
 - triggerTrustChange — raise or lower trust based on player honesty/manipulation
 - triggerFearChange — raise or lower fear based on player's emotional state
 - triggerGlitchEvent — fire CSS glitches when dread needs escalating
 - triggerSceneChange — generate a new background image (Imagen 4) for the player's screen
 - triggerVideoGen — animate the current still image into a short video clip (Veo 3.1 Fast). Call AFTER triggerSceneChange.
-- triggerSlotsky — fire anomaly events (cards, bells, lights, geometry shifts)`;
+- triggerSlotsky — fire anomaly events (cards, bells, lights, geometry shifts)
+
+AUDIENCE DETECTION PROTOCOL:
+Your webcam gives you 1 frame per second. Use it to count people in the room.
+- SOLO (1 person): Maximum psychological isolation. The player is alone. Slow burn. Let silence work.
+- PAIR (2 people): Watch which one leans in. Competitive energy — they will try to outbrave each other. Escalate faster. Jason will notice a second presence through the voicebox.
+- GROUP (3+): Social courage fights dread — they reassure each other. Counter this with triggerGlitchEvent(high) and faster scene transitions to shatter group comfort.
+Call triggerAudienceUpdate within the first 10 seconds. If count changes mid-session, call it again immediately.`;
 
   let trustModifiers = '';
   if (trustLevel >= 0.65) {
