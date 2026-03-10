@@ -212,7 +212,7 @@ Battle-tested the full GM → Firestore → WS → frontend pipeline via `POST /
 
 **Known issues (non-blocking for contest):**
 - Veo 3.1 Fast model (`veo-3.1-fast-generate-001`) returns 404 — needs project access enablement
-- GM session closes immediately with "Text output is not supported for native audio output model" — GM should use text-only mode, not native audio
+- ~~GM session closes immediately with "Text output is not supported for native audio output model"~~ — **FIXED March 10**: removed invalid `responseModalities: [Modality.TEXT]` from GM config.
 
 ---
 

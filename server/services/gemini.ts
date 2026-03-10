@@ -289,8 +289,8 @@ export class LiveSessionManager {
    * Connects to the Gemini Live stream with the provided system prompt.
    *
    * @param systemPrompt The system instruction to inject.
-   * @param mode 'npc' — audio out, Fenrir voice, no tools (Jason / character agents).
-   *             'gm'  — text/silent, gameMasterTools, no voice config (Game Master).
+   * @param mode 'npc' — audio out, Enceladus voice, no tools (Jason / character agents).
+   *             'gm'  — silent, gameMasterTools, no voice config (Game Master).
    */
   async connect(systemPrompt: string, mode: 'npc' | 'gm' = 'npc'): Promise<void> {
     console.log(`[LiveSessionManager] Opening Vertex AI Live session — mode: ${mode}, model: ${this.modelName}...`);
