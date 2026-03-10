@@ -102,11 +102,12 @@ wss.on('connection', (ws: WebSocket) => {
       await gmManager.connect(gmPrompt, 'gm');
 
       gmManager.onFunctionCall((id, name, args) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          handleGmFunctionCall(sessionId, name, args, ws, jasonManager).finally(() => {
-            gmManager.sendToolResponse(id, name);
-          });
-        }
+        // Always ACK the tool call back to Gemini — even if the WS is closed.
+        // If we skip the ACK, Gemini hangs permanently waiting for a response.
+        // handleGmFunctionCall already guards ws.readyState internally before sending.
+        handleGmFunctionCall(sessionId, name, args, ws, jasonManager).finally(() => {
+          gmManager.sendToolResponse(id, name);
+        });
       });
 
       if (ws.readyState === WebSocket.OPEN) {
@@ -137,7 +138,7 @@ wss.on('connection', (ws: WebSocket) => {
 
       // Route Game Master function call events
       if (data.type === 'GM_FUNCTION_CALL' && data.sessionId && data.functionName) {
-        handleGmFunctionCall(data.sessionId, data.functionName, data.args ?? {}, ws);
+        handleGmFunctionCall(data.sessionId, data.functionName, data.args ?? {}, ws, jasonManager);
         return;
       }
 

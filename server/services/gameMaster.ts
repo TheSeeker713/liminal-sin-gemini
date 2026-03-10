@@ -24,8 +24,13 @@ export async function handleGmFunctionCall(
 
   switch (functionName) {
     case 'triggerTrustChange': {
-      const levelMap: Record<string, number> = { High: 0.8, Neutral: 0.5, Low: 0.2 };
-      const newLevel = levelMap[args.newTrustLevel as string] ?? 0.5;
+      // Accept both the PascalCase string enum Gemini sends (High/Neutral/Low)
+      // AND a raw numeric float (e.g. from the debug endpoint or direct calls).
+      const levelMap: Record<string, number> = { high: 0.8, neutral: 0.5, low: 0.2 };
+      const raw = args.newTrustLevel;
+      const newLevel = typeof raw === 'number'
+        ? Math.max(0, Math.min(1, raw))
+        : (levelMap[(raw as string)?.toLowerCase()] ?? 0.5);
       await updateTrustLevel(sessionId, newLevel);
       const session = await getOrCreateSession(sessionId);
       wsMessage = {
