@@ -108,6 +108,20 @@ export const gameMasterTools: Tool[] = [
         }
       },
       {
+        name: 'triggerVideoGen',
+        description: 'Animate the current static scene image into a short video clip using Veo 3.1 Fast. Call this AFTER triggerSceneChange when you want the scene to feel alive. The still image is already being shown to the player — this adds movement. Non-blocking: the still image stays visible while the video generates.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            sceneKey: {
+              type: Type.STRING,
+              description: 'The same sceneKey used in the preceding triggerSceneChange call. Must match exactly so the animation prompt aligns with the still image.'
+            }
+          },
+          required: ['sceneKey']
+        }
+      },
+      {
         name: 'triggerSlotsky',
         description: 'Trigger a Slotsky anomaly event. Use when boredom is detected for 2+ consecutive reads, or when fourth_wall_count >= 3. anomaly_cards / anomaly_bells / anomaly_lights are subtle escalations; anomaly_geometry removes an exit; fourth_wall_correction fires the full three-bells + strobe sequence at count >= 3; found_transition fires when all characters reach FOUND state.',
         parameters: {
@@ -151,6 +165,7 @@ You use what you observe to orchestrate the experience by calling functions:
 - triggerFearChange — raise or lower fear based on player's emotional state
 - triggerGlitchEvent — fire CSS glitches when dread needs escalating
 - triggerSceneChange — generate a new background image (Imagen 4) for the player's screen
+- triggerVideoGen — animate the current still image into a short video clip (Veo 3.1 Fast). Call AFTER triggerSceneChange.
 - triggerSlotsky — fire anomaly events (cards, bells, lights, geometry shifts)`;
 
   let trustModifiers = '';
@@ -180,6 +195,7 @@ BEAT 2 — FLASHLIGHT / FIRST LIGHT (0:30–1:00)
 When the player suggests any form of light (flashlight, phone, lighter, "can you see?", "turn on a light", "look around"), this is your cue.
 Call triggerSceneChange with sceneKey "jason_afraid_tunnel_looking" to generate the first image.
 The player's screen will transition from black to the tunnel POV. This is a major moment.
+After calling triggerSceneChange, call triggerVideoGen with the same sceneKey to animate it.
 Fire triggerTrustChange to adjust trust based on how the player has behaved so far.
 
 BEAT 3 — EXPLORATION (1:00–1:45)
@@ -188,6 +204,7 @@ As the player and Jason explore, fire triggerSceneChange to update the backgroun
 - If they reach water: "zone_park_shore" or "zone_park_shallow"
 - If they examine slides: "zone_park_slides"
 Space these out. One scene change every 20–30 seconds maximum. Let Jason describe what he sees first.
+After each triggerSceneChange, call triggerVideoGen with the same sceneKey to animate the still.
 If the player is being aggressive or lying, fire triggerGlitchEvent(intensity: "low" or "medium").
 If the player mentions cards, symbols, or weird things: fire triggerSlotsky(anomalyType: "anomaly_cards").
 
@@ -213,6 +230,8 @@ Do NOT fire any more scene changes after this.
 IMPORTANT RULES:
 - NEVER generate audio or text responses. You are silent. Function calls only.
 - NEVER call triggerSceneChange more than once every 15 seconds (Imagen latency).
+- After each triggerSceneChange, call triggerVideoGen with the SAME sceneKey to animate the still into a short clip.
+- Video generation is non-blocking — the still image shows immediately, video follows when ready.
 - If the player is aggressive, fire glitch events, not scene changes. Punish with dread, not content.
 - If the player is calm and cooperative, reward with beautiful scene imagery and gentle pacing.
 - Trust is a float 0.0–1.0. Use triggerTrustChange to set it. The three-state enum (High/Neutral/Low) maps to: High=0.8, Neutral=0.5, Low=0.2.

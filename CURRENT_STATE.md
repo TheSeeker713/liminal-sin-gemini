@@ -106,9 +106,9 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 | A-J  | Server, WS, mic, dialogue, audio, barge-in, GCS | DONE |
 | K    | Fix server.ts opening — BLACK SCREEN start | DONE |
 | K2   | Lore script triggers — demo sequence beats | DONE |
-| **B1** | **Create `services/veo.ts` — Veo 3.1 Fast img2vid** | **TODAY** |
-| **B2** | **Add `triggerVideoGen` GM tool declaration to `gemini.ts`** | **TODAY** |
-| **B3** | **Wire `triggerVideoGen` in `gameMaster.ts` → `scene_video` WS event** | **TODAY** |
+| **B1** | **Create `services/veo.ts` — Veo 3.1 Fast img2vid** | **DONE** |
+| **B2** | **Add `triggerVideoGen` GM tool declaration to `gemini.ts`** | **DONE** |
+| **B3** | **Wire `triggerVideoGen` in `gameMaster.ts` → `scene_video` WS event** | **DONE** |
 | **F1** | **Frontend: Black screen opening + `session_ready` handler** | **TODAY (frontend prereq)** |
 | **F2** | **Frontend: GM red eye indicator** | **TODAY (frontend prereq)** |
 | **F3** | **Frontend: Scene image display (`scene_image` → crossfade)** | **TODAY (frontend prereq)** |
@@ -129,37 +129,27 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 
 ---
 
-### B1 — Create `services/veo.ts` (Veo 3.1 Fast)
+### ~~B1 — Create `services/veo.ts` (Veo 3.1 Fast)~~ — DONE
 
-New file. Veo 3.1 Fast image-to-video generation.
-- Takes `sceneKey` (string) + `referenceImageBase64` (JPEG from Imagen 4) as input
-- Constructs a generation request to Vertex AI Veo 3.1 Fast model
-- Returns signed GCS URL or base64 video data
-- Non-blocking async — called after `generateSceneImage()` resolves
-- **NEVER use Veo 2. Model: Veo 3.1 Fast only.**
+Completed March 9. New file `server/services/veo.ts`. Veo 3.1 Fast img2vid generation.
+- Takes `sceneKey` + `base64Jpeg` from Imagen 4 as input
+- Constructs generation request to `veo-3.1-fast-generate-001` model
+- Polls operation until done (max 120s), returns GCS URI
+- Zone-specific animation hints for lore-consistent motion
+- **NEVER uses Veo 2.**
 
-**Files:** `server/services/veo.ts` (new file)
+### ~~B2 — Add `triggerVideoGen` GM Tool Declaration~~ — DONE
 
----
+Completed March 9. Added to `gemini.ts` GM_TOOLS array.
+- GM can call `triggerVideoGen(sceneKey)` after any `triggerSceneChange`
+- System prompt updated: GM instructed to call both in sequence for each scene
 
-### B2 — Add `triggerVideoGen` GM Tool Declaration (`gemini.ts`)
+### ~~B3 — Wire `triggerVideoGen` in `gameMaster.ts`~~ — DONE
 
-Add a new tool to the GM tool declarations array:
-- `triggerVideoGen(sceneKey: string)` — fired by GM after `triggerSceneChange` resolves
-- GM description: "Animate the current static scene image into a short video clip using Veo 3.1 Fast. Call this after triggerSceneChange when you want the scene to feel alive."
-
-**Files:** `server/services/gemini.ts` (append to GM_TOOLS array)
-
----
-
-### B3 — Wire `triggerVideoGen` in `gameMaster.ts`
-
-Add case to `handleGmFunctionCall` switch:
-- Looks up last generated `base64` for this session (store it on the session object after `generateSceneImage` resolves)
-- Calls `generateSceneVideo(sceneKey, base64)` from `veo.ts` async
-- On resolve: broadcasts `scene_video` WS event `{ type: 'scene_video', payload: { sceneKey, url } }` to frontend
-
-**Files:** `server/services/gameMaster.ts`
+Completed March 9. New case in `handleGmFunctionCall` switch.
+- Re-generates Imagen 4 still (for reference), feeds to Veo 3.1 Fast
+- On success: broadcasts `scene_video` WS event `{ type: 'scene_video', payload: { sceneKey, url } }`
+- Fully async — still image already showing while video generates
 
 ---
 
@@ -321,6 +311,7 @@ On `slotsky_trigger` with `found_transition`:
 | `server/services/gemini.ts` | Vertex AI Live client, GM tool declarations, `LiveSessionManager` |
 | `server/services/gameMaster.ts` | GM function call router — writes to Firestore, broadcasts to WS |
 | `server/services/imagen.ts` | Imagen 4 scene generation — 7 zone prompts, returns base64 JPEG |
+| `server/services/veo.ts` | Veo 3.1 Fast img2vid — zone animation hints, polls operation, returns GCS URI |
 | `server/services/npc/jason.ts` | Jason system prompt v2 — trust + fear floats injected at session start |
 | `Dockerfile` | 2-stage build (node:20-alpine), Cloud Run ready |
 

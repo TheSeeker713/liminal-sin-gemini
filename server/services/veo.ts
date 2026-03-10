@@ -1,0 +1,109 @@
+import { getAiClient } from './gemini';
+
+/**
+ * Generates a short video clip from a reference still image via Veo 3.1 Fast.
+ * Takes the Imagen 4 base64 JPEG + the original scene prompt, returns a GCS URI
+ * (or null on failure). This is an async long-running operation — the caller
+ * should fire-and-forget and broadcast the result when it arrives.
+ *
+ * NEVER use Veo 2. Always use Veo 3.1 Fast.
+ */
+
+/** Animation prompt suffixes keyed by zone — keeps video motion lore-consistent. */
+const ANIMATION_HINTS: Record<string, string> = {
+  zone_tunnel_entry: 'Slow cinematic camera drift forward through the tunnel. Flickering LED lights overhead cast moving shadows on concrete walls. Dust motes float through the air.',
+  zone_tunnel_mid: 'Very slow dolly forward. LED strips flicker. A faint haze drifts across the frame. Tire tracks on the floor lead into the wall ahead.',
+  zone_merge: 'Camera slowly passes through the ruptured threshold. Rebar sways slightly. Breath mist drifts from cold into warm air. Construction light flickers once.',
+  zone_park_shore: 'Extremely slow pan across the flooded water park. Still water surface has subtle ripples. Orange flood lights cast shifting amber reflections. Distant slide structures loom.',
+  zone_park_shallow: 'First-person wading motion. Water ripples spread from each step. Warm amber light reflects and shimmers on the water surface. Faded water slides in the distance.',
+  zone_park_slides: 'Slow upward tilt looking at the slide structure. Amber construction light flickers. A single drop of water falls from the slide into dark water below.',
+  zone_park_deep: 'Camera slowly leans forward, peering into the deep dark water. Amber light pillars shimmer in the reflection. Something shifts in the depth below — barely perceptible.',
+  slotsky_card: 'Camera slowly lowers to ground level. The playing cards are motionless but the shadow from the flood light shifts slightly, as if the light source moved on its own.',
+};
+
+/** Resolve a motion-description suffix for a given sceneKey. */
+function resolveAnimationHint(sceneKey: string): string {
+  const key = sceneKey.toLowerCase();
+  for (const zoneId of Object.keys(ANIMATION_HINTS)) {
+    if (key.includes(zoneId)) return ANIMATION_HINTS[zoneId];
+  }
+  // Keyword fallbacks
+  if (key.includes('merge') || key.includes('rupture')) return ANIMATION_HINTS['zone_merge'];
+  if (key.includes('shallow')) return ANIMATION_HINTS['zone_park_shallow'];
+  if (key.includes('slide')) return ANIMATION_HINTS['zone_park_slides'];
+  if (key.includes('deep')) return ANIMATION_HINTS['zone_park_deep'];
+  if (key.includes('shore') || key.includes('park')) return ANIMATION_HINTS['zone_park_shore'];
+  if (key.includes('card') || key.includes('slotsky')) return ANIMATION_HINTS['slotsky_card'];
+  if (key.includes('tunnel')) return ANIMATION_HINTS['zone_tunnel_entry'];
+  return ANIMATION_HINTS['zone_tunnel_entry'];
+}
+
+/** Maximum time to poll before giving up (ms). */
+const MAX_POLL_MS = 120_000;
+/** Interval between polls (ms). */
+const POLL_INTERVAL_MS = 10_000;
+
+/**
+ * Generate a short Veo 3.1 Fast video clip from a still image.
+ *
+ * @param sceneKey  The scene key used for prompt context.
+ * @param base64Jpeg  The Imagen 4 still as base64 JPEG (used as reference image).
+ * @returns  The GCS URI of the generated video, or null on failure/timeout.
+ */
+export async function generateSceneVideo(
+  sceneKey: string,
+  base64Jpeg: string
+): Promise<string | null> {
+  const animHint = resolveAnimationHint(sceneKey);
+  const prompt = `First-person POV underground horror exploration. ${animHint} Cinematic, photorealistic, slow atmospheric camera movement, no people visible, 8K quality.`;
+
+  console.log(`[Veo] Starting Veo 3.1 Fast generation for sceneKey="${sceneKey}"`);
+
+  try {
+    let operation = await getAiClient().models.generateVideos({
+      model: 'veo-3.1-fast-generate-001',
+      image: {
+        imageBytes: base64Jpeg,
+        mimeType: 'image/jpeg',
+      },
+      config: {
+        numberOfVideos: 1,
+        durationSeconds: 5,
+        fps: 24,
+        aspectRatio: '16:9',
+        personGeneration: 'dont_allow',
+        negativePrompt: 'people, faces, hands, text, watermark, logo, blurry, low quality',
+        enhancePrompt: false,
+      },
+      prompt,
+    });
+
+    // Poll until the operation completes or we time out
+    const startTime = Date.now();
+    while (!operation.done) {
+      if (Date.now() - startTime > MAX_POLL_MS) {
+        console.warn(`[Veo] Timed out after ${MAX_POLL_MS / 1000}s for sceneKey="${sceneKey}"`);
+        return null;
+      }
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      operation = await getAiClient().operations.getVideosOperation({ operation });
+    }
+
+    if (operation.error) {
+      console.error(`[Veo] Operation error for sceneKey="${sceneKey}":`, operation.error);
+      return null;
+    }
+
+    const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
+    if (!videoUri) {
+      console.warn(`[Veo] No video URI in response for sceneKey="${sceneKey}"`);
+      return null;
+    }
+
+    console.log(`[Veo] Video generated — sceneKey="${sceneKey}", uri="${videoUri}"`);
+    return videoUri;
+  } catch (err) {
+    console.error(`[Veo] generateVideos failed for sceneKey="${sceneKey}":`, (err as Error).message);
+    return null;
+  }
+}
