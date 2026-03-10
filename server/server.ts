@@ -64,7 +64,7 @@ app.post('/debug/fire-gm-event', async (req, res) => {
 
 wss.on('connection', (ws: WebSocket) => {
   const sessionId = randomUUID();
-  const jasonManager = new LiveSessionManager(); // NPC — speaks, audio out, Fenrir voice
+  const jasonManager = new LiveSessionManager(); // NPC — speaks, audio out, Enceladus voice
   const gmManager = new LiveSessionManager();    // GM — silent, function calls only
 
   console.log(`[WS] Client connected — session ${sessionId}`);
