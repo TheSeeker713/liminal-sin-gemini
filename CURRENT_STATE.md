@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md - Liminal Sin Gemini (Backend)
 
 > **AI WORKING MEMORY** - This file is the source of truth for the current state of the backend project.
-> Last updated: March 10, 2026 (B4 + B5 COMPLETE — all 7 GM tools battle-tested and passing)
+> Last updated: March 10, 2026 (B4 + B5 COMPLETE — all 7 GM tools battle-tested. **Frontend F1-F6 ALL COMPLETE.** Full demo integration testing unblocked.)
 
 ---
 
@@ -115,8 +115,8 @@ The GM communicates ONLY via function calls. Any code routing GM audio to the pl
 | **F4** | **Frontend: `scene_video` handler — play clip, freeze on last frame** | **DONE (pushed to main)** |
 | **B4** | **Verify + upload remaining assets to GCS** | **DONE** |
 | **B5** | **GM trust routing battle-test (Step L) — all 7 GM tools** | **DONE** |
-| F5   | Frontend: Glitch effects CSS | TODAY |
-| F6   | Frontend: Demo end sequence | TODAY |
+| F5   | Frontend: Glitch effects CSS | **DONE (pushed to main)** |
+| F6   | Frontend: Demo end sequence | **DONE (pushed to main)** |
 | N    | Demo video (4 min, mandatory submission) | March 11-14 |
 | O    | Architecture diagram (mandatory) | March 13-15 |
 
@@ -216,38 +216,69 @@ Battle-tested the full GM → Firestore → WS → frontend pipeline via `POST /
 
 ---
 
-### F5 + F6 — Frontend: Glitch Effects + Demo End Sequence
+### ~~F5 — Frontend: HUD Glitch Effects~~ — DONE (March 10)
 
-See frontend CURRENT_STATE.md Priorities 4 + 5. Complete after B5 passes.
-
-~~Priority 1 — Fix Session Opening (BLACK SCREEN)~~ — DONE
-Completed March 9. Session opens with JASON's initial monologue only — pure audio, black screen.
+Completed in `myceliainteractive` repo. Full-screen CSS animation applied to GameHUD container div.
+- `low` → subtle XY jitter (0.08s steps, 500ms default)
+- `medium` → shake + hue-rotate + skew (0.12s steps, 800ms default)
+- `high` → heavy shake + invert + contrast + red scanline `::before` overlay (0.1s steps, 1200ms default)
+- Duration controlled by `hud_glitch.duration_ms`. Blocked after demo ends.
+- Pushed to main.
 
 ---
 
-## Frontend Work (for myceliainteractive repo)
+### ~~F6 — Frontend: Demo End Sequence~~ — DONE (March 10)
 
-These items are documented here so the frontend session has full context:
+Completed in `myceliainteractive` repo. Full end-of-demo pipeline wired.
+- On `slotsky_trigger(found_transition)`: stops all music/ambient
+- Sets `demoEnded` flag — freezes scene, blocks all future `scene_image` / `scene_video` events
+- Plays `proximity_found` SFX
+- After 2s: fades in end overlay ("LIMINAL SIN" + "experience complete")
+- After 7s: sends `session_end` to close WS gracefully
+- Pushed to main.
 
-### 1. GM Red Eye Indicator
-CSS/JS animated red eye in screen corner. Fades in/out. Lets player/judges know the GM is watching.
-Triggered by `session_ready` WS event. Always present during gameplay.
+---
 
-### 2. Black Screen Opening
-Game starts BLACK. No `<img>` or `<video>` element visible.
-SFX triggers: falling, crash, ambient underground.
-Text overlay hint fades in after ~10s: "say something..."
+### GM Eye Redesign — DONE (March 10)
 
-### 3. Scene Image Display
-When `scene_image` WS event arrives, crossfade from black (or previous image) to new image.
-Hold image as background until next `scene_image` arrives.
+Completed in `myceliainteractive` repo alongside F5/F6.
+- Replaced 12px red dot with 44×28px SVG eye (almond shape, red iris with pulse animation, black pupil, white glint, red glow blur)
+- **Eye only renders when webcam is actively capturing** — gated on `webcamActive` flag from `usePlayerMedia`
+- This means the GM eye is literally the GM's "vision" — it lights up when the GM can actually see the player via webcam frames
+- Hidden after demo ends
+- Pushed to main.
 
-### 4. Demo End Sequence
-On `slotsky_trigger` with `found_transition`:
-- Stop requesting new scenes
-- Hold final image
-- Play end animation/overlay
-- Close session gracefully
+---
+
+### F5 + F6 — Frontend: Glitch Effects + Demo End Sequence
+
+~~See frontend CURRENT_STATE.md Priorities 4 + 5. Complete after B5 passes.~~
+
+**BOTH COMPLETE March 10.** Frontend F1-F6 fully done.
+
+---
+
+## Frontend Work (for myceliainteractive repo) — ALL COMPLETE
+
+**All frontend features F1-F6 are complete and pushed to main as of March 10.**
+
+### ~~1. GM Red Eye Indicator~~ — DONE (redesigned as SVG eye, webcam-gated)
+CSS/JS animated SVG eye in screen corner. Breathes in/out. Only visible when session is active AND webcam is capturing frames (GM can actually "see" the player).
+
+### ~~2. Black Screen Opening~~ — DONE
+Game starts BLACK. SFX triggers: falling, crash, ambient underground. Text overlay hint fades in after ~10s.
+
+### ~~3. Scene Image Display~~ — DONE
+`scene_image` WS event → crossfade from black (or previous image) to new image. Dual layer crossfade pipeline.
+
+### ~~4. Demo End Sequence~~ — DONE
+On `slotsky_trigger(found_transition)`: stop audio, freeze scene, 2s → end overlay, 7s → `session_end` WS close.
+
+### ~~5. Glitch Effects~~ — DONE
+`hud_glitch` WS event → 3-tier full-screen CSS animation (low/medium/high intensity).
+
+### ~~6. `scene_video` Handler~~ — DONE
+Plays Veo 3.1 Fast clips over frozen scene, captures last frame via canvas → crossfade pipeline.
 
 ---
 
@@ -256,7 +287,7 @@ On `slotsky_trigger` with `found_transition`:
 | Date | Milestone |
 |------|-----------|
 | March 9, 2026 | Steps A-K2 complete. B1-B3 (Veo service + GM tool + wire). F1-F4 (frontend prereqs). |
-| March 10, 2026 | B4 (GCS verified + assets uploaded) + B5 (all 7 GM tools battle-tested). Integration testing. |
+| March 10, 2026 | B4 (GCS verified) + B5 (all 7 GM tools battle-tested) + **F5 (glitch effects) + F6 (demo end) + GM eye redesign DONE.** All frontend F1-F6 complete. Integration testing unblocked. |
 | March 11, 2026 @ 11:11 PM MT | **Internal prototype cutoff** — full demo must be functional |
 | March 12-14 | Demo video recording + architecture diagram |
 | March 15 | Submission prep, final review |
