@@ -1,7 +1,7 @@
-﻿# CURRENT_STATE.md - Liminal Sin Gemini
+﻿# CURRENT_STATE.md - Liminal Sin Gemini (Backend)
 
-> **AI WORKING MEMORY** - This file is the source of truth for the current state of the project.
-> Last updated: March 9, 2026 (Steps H + I + J complete - iOS fix, echo cancellation, GCS migration done)
+> **AI WORKING MEMORY** - This file is the source of truth for the current state of the backend project.
+> Last updated: March 9, 2026 (Architecture correction + demo sequence design)
 
 ---
 
@@ -9,6 +9,11 @@
 
 Before writing any code, read AGENTS.md and the mandatory docs in Section 9.
 The server is backend-only (Cloud Run). All frontend code lives in the myceliainteractive repo.
+
+**ARCHITECTURE CORRECTION (March 9):**
+The GM is a SILENT gaming engine — it uses Gemini Pro as an AI agent system. It NEVER speaks to the player.
+It talks to other AI agents (JASON, Slotsky). Slotsky is invisible — handles scene changes and in-game perks.
+The GM communicates ONLY via function calls. Any code routing GM audio to the player is architecturally wrong.
 
 ---
 
@@ -19,18 +24,70 @@ The server is backend-only (Cloud Run). All frontend code lives in the myceliain
 1. **Backend server on Cloud Run** - `wss://liminal-sin-server-1071754889104.us-west1.run.app`
 2. **Frontend WS connect** - deferred to "Begin Session" click to satisfy browser autoplay policy
 3. **Mic capture** - `ScriptProcessorNode` at 16kHz, raw PCM Int16 -> base64 -> `player_speech` WS message
-4. **JASON dialogue** - full back-and-forth, in-lore, Gemini Live native audio (was Fenrir voice)
+4. **JASON dialogue** - full back-and-forth, in-lore, Gemini Live native audio (Enceladus voice)
 
-### Steps E + F (completed March 9)
+### Steps E-J (completed March 9)
 
-5. **Voice barge-in (Step F)** - `agent_interrupt` WS event cancels all queued `AudioBufferSourceNode`s in `GameHUD.tsx` instantly. Player can cut JASON off mid-sentence.
-6. **Layered audio system (Step E)** - `audioManifest.ts` + `useAudioLayers.ts` in `app/ls/game/`. Three Web Audio channels: `musicGain`, `sfxGain`, `ambientGain`. All 83 audio files mapped to 28 event keys. Session-locked music picks, SFX anti-repeat, and volume micro-jitter ensure no two sessions sound identical.
-7. **SIGNAL LOST bug** - `app/ls/judges/game/page.tsx` was missing the `connect()` call. Fixed.
-8. **NotReadableError: Device in use** - fixed with `captureStartedRef` guard in `usePlayerMedia.ts`. `getUserMedia` now fires exactly once per session.
+5. **Voice barge-in (Step F)** - `agent_interrupt` WS event cancels all queued `AudioBufferSourceNode`s instantly.
+6. **Layered audio system (Step E)** - `audioManifest.ts` + `useAudioLayers.ts`. Three Web Audio channels: `musicGain`, `sfxGain`, `ambientGain`. 83 audio files mapped to 28 event keys. Session-locked music picks, SFX anti-repeat, volume micro-jitter.
+7. **SIGNAL LOST bug** - `app/ls/judges/game/page.tsx` fixed.
+8. **NotReadableError: Device in use** - fixed with `captureStartedRef` guard.
+9. **Jason voice changed to Enceladus** (Step G).
+10. **iOS cross-device compatibility** (Step H) - shared AudioContext.
+11. **echoCancellation constraint** (Step I) - mic bleed fix.
+12. **GCS audio migration** (Step J) - 83 files (17 music + 66 SFX) live at `gs://liminal-sin-assets/audio/`.
 
-### Step G (completed March 9)
+---
 
-9. **Jason voice changed to Enceladus** - `voiceName` in `server/services/gemini.ts` updated from `Fenrir` to `Enceladus`. Committed and pushed.
+## Core Architecture - The 3-Minute Demo
+
+### How the Game Works
+
+1. **BLACK SCREEN START** — No image, no video at session start. Audio only.
+   - Falling sounds, crash, JASON hurt and panicking, ambient underground sounds.
+   - Frontend plays SFX from GCS. JASON's Gemini Live session delivers voice.
+   - Fade-in text overlay hint appears after ~10s (frontend CSS).
+
+2. **FLASHLIGHT MECHANIC** — Player suggests "turn on your flashlight" or similar.
+   - JASON confirms, describes what he sees.
+   - Backend fires Imagen 4 to generate a still frame (background, non-blocking).
+   - Still frame sent to frontend via `scene_image` WS event.
+   - Frontend displays the image (POV through flashlight).
+
+3. **BACKGROUND GENERATION** — While JASON stalls with dialogue, backend generates.
+   - Each scene change triggers Imagen 4 asynchronously.
+   - When image arrives, frontend transitions from black/previous image to new scene.
+   - JASON's dialogue buys time for generation latency.
+
+4. **DEMO END** — Approaching friends (Audrey/Josh voice echoes).
+   - GM triggers `found_transition` via Slotsky.
+   - Frontend disconnects image/video generation pipeline.
+   - Holds final image. Frontend plays animated end sequence.
+
+### Agent Roles
+
+| Agent | Role | Speaks? |
+|-------|------|---------|
+| **Game Master (GM)** | Silent engine. Evaluates trust/fear via player audio + webcam. Dispatches function calls to control world state. | **NEVER** — function calls only |
+| **JASON** | Player-facing NPC. Gemini Live native audio (Enceladus). Responds to player voice. Stalls with dialogue while scenes generate. | **YES** — real-time voice |
+| **Slotsky** | Invisible agent. Handles scene changes, anomaly triggers, fourth-wall corrections. No voice, no visual presence. | **NEVER** — event flags only |
+
+### Demo Sequence (3-minute scripted path)
+
+| Beat | Time | What Happens | Backend Trigger | Frontend Effect |
+|------|------|-------------|----------------|-----------------|
+| 1 | 0:00 | Session start. BLACK SCREEN. | `session_ready` WS event | SFX: falling, crash, ambient. No image. |
+| 2 | 0:05 | JASON groans, hurt. Voicebox activates. | Jason Live session opens, initial monologue prompt sent | JASON audio plays through speaker |
+| 3 | 0:15 | Text hint fades in: "say something..." | (frontend timer) | CSS fade-in overlay |
+| 4 | 0:20-0:40 | Player talks to JASON. He responds, can't see. | Gemini Live bi-directional audio | Dialogue continues on black screen |
+| 5 | 0:40-1:00 | Player suggests flashlight/light. JASON confirms. | GM hears keyword, fires `triggerSceneChange` → Imagen 4 generates | Frontend receives `scene_image`, crossfades from black to tunnel POV |
+| 6 | 1:00-1:30 | Exploration. JASON describes environment. | GM evaluates trust/fear, may fire `triggerGlitchEvent` | Scene images update. Glitch effects if triggered. |
+| 7 | 1:30-2:00 | Deeper into water park. Slotsky cards appear. | GM fires `triggerSlotsky(anomaly_cards)` + `triggerSceneChange` | Card image appears. SFX: slot machine bells. |
+| 8 | 2:00-2:30 | JASON hears Audrey/Josh echoing. Proximity → ECHO. | GM updates `proximityState` in Firestore | Ambient: distant voice echoes |
+| 9 | 2:30-2:50 | Moving toward voices. Proximity → RANGE. | GM fires trust-dependent scene changes | Scene transitions accelerate |
+| 10 | 2:50-3:00 | Demo end. Proximity → FOUND. | GM fires `triggerSlotsky(found_transition)` | Frontend: hold final image, animated end sequence, session close |
+
+**Branching is an illusion** — the story is linear. Player choices affect JASON's tone, trust level, and which Slotsky anomalies fire, but the path always leads to the same endpoint.
 
 ---
 
@@ -38,93 +95,69 @@ The server is backend-only (Cloud Run). All frontend code lives in the myceliain
 
 | Step | Feature | Status |
 |------|---------|--------|
-| A    | Backend Cloud Run server running | DONE |
-| B    | Frontend WS connects on button click | DONE |
-| C    | Mic capture - raw PCM 16kHz stream | DONE |
-| D    | JASON dialogue - back and forth, in-lore | DONE |
-| E    | Layered audio system (music / SFX / ambient) | DONE (GCS migration pending) |
-| F    | Voice interrupt / barge-in | DONE |
-| G    | Jason voice - Enceladus | DONE |
-| H    | iOS cross-device compatibility fix | DONE |
-| I    | echoCancellation constraint (mic bleed fix) | DONE |
-| J    | GCS audio file storage + audioManifest update | DONE |
-| K    | GM trust routing - battle-tested with real session | PENDING |
-| L    | Demo video (4 min, mandatory submission) | March 11-14 |
-| M    | Architecture diagram (mandatory) | March 13-15 |
+| A-J  | Server, WS, mic, dialogue, audio, barge-in, GCS | DONE |
+| K    | Fix server.ts opening — BLACK SCREEN start (remove auto triggerSceneChange) | **NEXT** |
+| L    | GM trust routing — battle-tested with real session | PENDING |
+| M    | Upload remaining assets to GCS (video clips, voice-overs) | PENDING |
+| N    | Demo video (4 min, mandatory submission) | March 11-14 |
+| O    | Architecture diagram (mandatory) | March 13-15 |
 
 ---
 
-## Pending Work - Next Session Priorities
+## Pending Backend Work
 
-### Priority 1 - iOS / Cross-Device Compatibility
+### Priority 1 — Fix Session Opening (BLACK SCREEN)
 
-**Problem:** `usePlayerMedia.ts` creates its own `AudioContext` for mic capture at 16kHz. `GameHUD.tsx` creates a second `AudioContext` for playback at 24kHz. iOS Safari allows only one concurrent AudioContext - this will silently fail on iPhone/iPad.
+**Problem:** `server.ts` line ~112 fires `triggerSceneChange('zone_tunnel_entry')` immediately on session start. This generates an Imagen 4 image before the player has even spoken — breaking the black screen opening.
 
-**Fix:** Pass `audioCtxRef` from `GameHUD.tsx` into `usePlayerMedia` instead of creating a new context. Mic capture becomes a `createMediaStreamSource()` node on the shared context.
+**Fix:** Remove the automatic `triggerSceneChange` call. The session should start with JASON's initial monologue only. Scene generation happens later when the GM decides (after player suggests flashlight).
 
-**Files touched:** `GameHUD.tsx` and `usePlayerMedia.ts` - no logic changes, context sharing only.
+**Files touched:** `server/server.ts` only.
 
----
+### Priority 2 — GM Trust Routing (Step L)
 
-### Priority 2 - echoCancellation Constraint
+Battle-test the full GM → Firestore → WS → frontend pipeline with a real session:
+- GM hears player speech, evaluates trust/fear
+- Fires function calls (`triggerTrustChange`, `triggerFearChange`, `triggerGlitchEvent`)
+- Jason receives live trust context injection
+- Frontend receives and renders events
 
-Without this, speaker output (music/SFX) bleeds back into the mic and confuses JASON's VAD (voice activity detection).
+**Debug endpoint available:** `POST /debug/fire-gm-event` for manual testing.
 
-In `usePlayerMedia.ts`, change `audio: true` on `getUserMedia` to:
+### Priority 3 — Upload Remaining Assets to GCS
 
-```ts
-audio: {
-  echoCancellation: true,
-  noiseSuppression: true,
-  autoGainControl: true,
-  sampleRate: 16000,
-}
-```
+Video clips and voice-overs in `assets/` need to go to GCS:
+- `assets/Clips/*.mp4` → `gs://liminal-sin-assets/video/clips/`
+- `assets/Audio/Voice_Overs/*.mp3` → `gs://liminal-sin-assets/audio/voice_overs/`
+- `assets/Audio/podcasts/*.m4a` → `gs://liminal-sin-assets/audio/podcasts/`
 
-**iOS note:** Omit `sampleRate: 16000` on iOS - it ignores it and can throw a constraint error. Use UA sniffing or a `try/catch` fallback.
-
----
-
-### Priority 3 - Audio Files to Google Cloud Storage
-
-83 audio files (~120-250MB total) must NOT be in git. Cloudflare Pages has a 25MB per-file limit and large binary files bloat git history permanently.
-
-**Plan: GCS public bucket**
-- GCP project: `project-c4c3ba57-5165-4e24-89e`
-- Bucket name: `liminal-sin-assets`
-- Audio paths: `gs://liminal-sin-assets/audio/music/` and `gs://liminal-sin-assets/audio/sfx/`
-- Public URL pattern: `https://storage.googleapis.com/liminal-sin-assets/audio/music/music_intro.mp3`
-- Configure CORS for `myceliainteractive.com`
-- Update all 83 paths in `audioManifest.ts` to GCS URLs
-- Add `public/assets/music/` and `public/assets/sound_fx/` to `.gitignore` in myceliainteractive
-
-**Setup commands (run once):**
-
-```bash
-gcloud storage buckets create gs://liminal-sin-assets \
-  --project=project-c4c3ba57-5165-4e24-89e \
-  --location=us-west1 \
-  --uniform-bucket-level-access
-
-gcloud storage buckets add-iam-policy-binding gs://liminal-sin-assets \
-  --member=allUsers \
-  --role=roles/storage.objectViewer
-
-gcloud storage cp -r "public/assets/music/*" gs://liminal-sin-assets/audio/music/
-gcloud storage cp -r "public/assets/sound_fx/*" gs://liminal-sin-assets/audio/sfx/
-```
+Audio files (music + SFX) are already migrated: 17 music + 66 SFX = 83 files.
 
 ---
 
-### Priority 4 - Pending User Action (Manual)
+## Frontend Work (for myceliainteractive repo)
 
-Rename this file in `public/assets/music/`:
+These items are documented here so the frontend session has full context:
 
-```
-Psychosis_Apparatus_2026-03-08T204945 (1).mp3  -->  music_psychosis.mp3
-```
+### 1. GM Red Eye Indicator
+CSS/JS animated red eye in screen corner. Fades in/out. Lets player/judges know the GM is watching.
+Triggered by `session_ready` WS event. Always present during gameplay.
 
-This is the audio asset for the `fourth_wall_correction` trigger. The manifest expects `music_psychosis.mp3`.
+### 2. Black Screen Opening
+Game starts BLACK. No `<img>` or `<video>` element visible.
+SFX triggers: falling, crash, ambient underground.
+Text overlay hint fades in after ~10s: "say something..."
+
+### 3. Scene Image Display
+When `scene_image` WS event arrives, crossfade from black (or previous image) to new image.
+Hold image as background until next `scene_image` arrives.
+
+### 4. Demo End Sequence
+On `slotsky_trigger` with `found_transition`:
+- Stop requesting new scenes
+- Hold final image
+- Play end animation/overlay
+- Close session gracefully
 
 ---
 
@@ -132,9 +165,9 @@ This is the audio asset for the `fourth_wall_correction` trigger. The manifest e
 
 | Date | Milestone |
 |------|-----------|
-| March 9, 2026 | Steps E through J complete and pushed |
-| March 10, 2026 | Step K (GM trust battle-test) + demo video prep |
-| March 11, 2026 @ 11:11 PM MT | **Internal prototype cutoff** - full demo must be functional |
+| March 9, 2026 | Steps A-J complete. Architecture corrected. Demo sequence designed. |
+| March 10, 2026 | Step K (black screen fix) + Step L (GM trust battle-test) |
+| March 11, 2026 @ 11:11 PM MT | **Internal prototype cutoff** — full demo must be functional |
 | March 12-14 | Demo video recording + architecture diagram |
 | March 15 | Submission prep, final review |
 | **March 16, 2026 @ 5:00 PM PDT** | **HARD DEADLINE** |
@@ -145,18 +178,16 @@ This is the audio asset for the `fourth_wall_correction` trigger. The manifest e
 
 | Field | Value |
 |-------|-------|
-| Project | Liminal Sin - FMV psychological horror experience |
+| Project | Liminal Sin — FMV psychological horror experience |
 | Contest | Gemini Live Agent Challenge (Google / Devpost) |
 | Hard Deadline | March 16, 2026 @ 5:00 PM PDT |
 | Internal Cutoff | March 11, 2026 @ 11:11 PM MT |
-| Days to Internal Cutoff | 2 days |
-| Days to Hard Deadline | 7 days |
-| Backend Repo | `d:\DEV\liminal-sin-gemini` (Cloud Run Node.js - NO frontend code) |
-| Frontend Repo | `myceliainteractive` (Cloudflare Pages - SEPARATE REPO) |
-| Marketing Shell | https://myceliainteractive.com/ls - LIVE |
-| Judge Backdoor | https://myceliainteractive.com/ls/judges - LIVE |
-| Game Wrapper | https://myceliainteractive.com/ls/game - LIVE |
-| Judge Game Wrapper | https://myceliainteractive.com/ls/judges/game - LIVE |
+| Backend Repo | `d:\DEV\liminal-sin-gemini` (Cloud Run Node.js — NO frontend code) |
+| Frontend Repo | `myceliainteractive` (Cloudflare Pages — SEPARATE REPO) |
+| Marketing Shell | https://myceliainteractive.com/ls — LIVE |
+| Judge Backdoor | https://myceliainteractive.com/ls/judges — LIVE |
+| Game Wrapper | https://myceliainteractive.com/ls/game — LIVE |
+| Judge Game Wrapper | https://myceliainteractive.com/ls/judges/game — LIVE |
 
 ---
 
@@ -168,16 +199,16 @@ This is the audio asset for the `fourth_wall_correction` trigger. The manifest e
 | GCP Project Name | Mycelia Interactive |
 | GCP Account | `digitalartifact11@gmail.com` |
 | Server Region | `us-west1` |
-| Gemini Live Region | `us-central1` (required - Live API only available here) |
+| Gemini Live Region | `us-central1` (required — Live API only available here) |
 | Auth Method | Application Default Credentials (ADC) |
 | Gemini Live Model | `gemini-live-2.5-flash-native-audio` |
-| Firestore | Native mode, `us-west1` - CONNECTED |
-| Cloud Run | LIVE - `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| GCS Bucket | `gs://liminal-sin-assets` - LIVE - `https://storage.googleapis.com/liminal-sin-assets/` |
+| Firestore | Native mode, `us-west1` — CONNECTED |
+| Cloud Run | LIVE — `https://liminal-sin-server-1071754889104.us-west1.run.app` |
+| GCS Bucket | `gs://liminal-sin-assets` — LIVE — `https://storage.googleapis.com/liminal-sin-assets/` |
 
 ---
 
-## Backend Server - All Phases Complete
+## Backend Server — File Map
 
 | File | Purpose |
 |------|---------|
@@ -185,17 +216,15 @@ This is the audio asset for the `fourth_wall_correction` trigger. The manifest e
 | `server/types/state.ts` | TrustLevel, PlayerEmotion, PlayerSession, GmEvent type definitions |
 | `server/services/db.ts` | Firestore ADC client with in-memory fallback for local dev |
 | `server/services/gemini.ts` | Vertex AI Live client, GM tool declarations, `LiveSessionManager` |
-| `server/services/gameMaster.ts` | GM function call router - writes to Firestore, broadcasts to WS |
-| `server/services/imagen.ts` | Imagen 4 scene generation - 7 zone prompts, returns base64 JPEG |
-| `server/services/npc/jason.ts` | Jason system prompt v2 - trust + fear floats injected at session start |
+| `server/services/gameMaster.ts` | GM function call router — writes to Firestore, broadcasts to WS |
+| `server/services/imagen.ts` | Imagen 4 scene generation — 7 zone prompts, returns base64 JPEG |
+| `server/services/npc/jason.ts` | Jason system prompt v2 — trust + fear floats injected at session start |
 | `Dockerfile` | 2-stage build (node:20-alpine), Cloud Run ready |
 
 **Local dev server:**
 
 ```powershell
-# Kill any existing node processes first
 Get-Process | Where-Object { $_.ProcessName -like "*node*" } | Stop-Process -Force -ErrorAction SilentlyContinue
-
 npx tsx server/server.ts
 ```
 

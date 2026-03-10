@@ -111,14 +111,19 @@ wss.on('connection', (ws: WebSocket) => {
 
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'session_ready', session_id: sessionId }));
-        // Fire initial Imagen 4 scene so the screen isn't black on session start.
-        void handleGmFunctionCall(sessionId, 'triggerSceneChange', { sceneKey: 'zone_tunnel_entry' }, ws);
+        // BLACK SCREEN START — no image generation on session open.
+        // The game begins in darkness. Player hears only audio (SFX + JASON voice).
+        // Scene images are generated later when the GM decides (e.g. player suggests flashlight).
+
         // Trigger Jason's opening monologue immediately after the client is ready.
-        // The voicebox activated on its own — he didn't press anything.
+        // He just fell. He's hurt. It's pitch black. The voicebox activated on its own.
         jasonManager.sendText(
           '[VOICEBOX ACTIVATION — the device in your hand just turned on by itself. ' +
           'You did not press anything. A voice is coming through it for the first time. ' +
-          'React. One short sentence, holding your breath.]'
+          'You are in total darkness. You fell through the floor moments ago. ' +
+          'Something is broken — maybe a rib, maybe your wrist. You can hear water dripping. ' +
+          'Cold concrete under your hands. You cannot see anything. ' +
+          'React with pain and confusion. One short sentence, holding your breath.]'
         );
       }
     } catch (err) {
