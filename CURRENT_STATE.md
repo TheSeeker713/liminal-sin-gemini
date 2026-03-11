@@ -27,7 +27,7 @@
 - **B10**: GM 6-beat strict playbook baked into `getGameMasterSystemPrompt()` — DONE
 - **B11**: 45s flashlight hint timer — `{ type: 'hint', text: '...' }` WS event fires if no scene change in 45s — DONE
 - **B12**: Audrey NPC live — Aoede voice, trust-adaptive echo, fires once at beat 6; `audrey_echo` scene_change broadcast — DONE
-- **FE-1–FE-6**: All frontend steps complete in `myceliainteractive` repo — DONE
+- **FE-1–FE-12**: All frontend sprint work complete in `myceliainteractive` repo as of March 10, 2026. FE-7–FE-12 implemented: seizure-safe glitch CSS, flashlight POV vignette, VHS swap transition, card collectible UI, generator lights-on transition, Audrey echo audio pipeline. `GameHUD.tsx` and `GameWSContext.tsx` fully wired. 0 TS errors, 0 ESLint warnings. **Frontend is feature-locked — no further FE work before the March 11 cutoff.**
 
 ---
 
@@ -54,12 +54,12 @@ All B9–B12 backend steps done and pushed to main (`51b56f7`). No remaining bac
 
 | Step | Feature | Notes |
 |------|---------|-------|
-| **FE-7** ⚠️ | Remove `invert(1)` + `contrast(3)` from `high` glitch CSS keyframe | **DO FIRST** — seizure risk |
-| **FE-8** | Radial-gradient flashlight POV vignette `::after` overlay on scene container | Fades out on generator beat |
-| **FE-9** | 300ms `vhs-swap` CSS class on video→image swap (`timeupdate`, no `invert`) | Safe transition effect |
-| **FE-10** | Card collectible overlay on `anomaly_cards`; sends `card_collected` WS on click | Queen of Spades, lower-right |
-| **FE-11** | `zone_merge`/`zone_park_shore` → brightness flicker + flashlight fade + warm tint | Generator lights-on |
-| **FE-12** | `agent_speech` with `agent === 'audrey'` → ConvolverNode reverb + DelayNode 0.15s | Depends on B12 |
+| **FE-7** | Remove `invert(1)` + `contrast(3)` from `high` glitch CSS keyframe | ✅ DONE |
+| **FE-8** | Radial-gradient flashlight POV vignette `::after` overlay on scene container | ✅ DONE |
+| **FE-9** | 300ms `vhs-swap` CSS class on video→image swap (`timeupdate`, no `invert`) | ✅ DONE |
+| **FE-10** | Card collectible overlay on `anomaly_cards`; sends `card_collected` WS on click | ✅ DONE |
+| **FE-11** | `zone_merge`/`zone_park_shore` → brightness flicker + flashlight fade + warm tint | ✅ DONE |
+| **FE-12** | `agent_speech` with `agent === 'audrey'` → ConvolverNode reverb + DelayNode 0.15s | ✅ DONE |
 
 ---
 
