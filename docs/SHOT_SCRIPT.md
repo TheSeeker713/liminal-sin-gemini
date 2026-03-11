@@ -81,6 +81,39 @@ Extends the contract defined in `CURRENT_STATE.md`. Items marked ⚠️ Backend 
 
 ---
 
+## ⚠️ FRONTEND NOTE — JASON TRUST METER (PERMANENT UI)
+
+> **Priority: HIGH — Permanent UI feature. Do NOT remove during any refactor.**
+
+A **Trust Meter** widget must be rendered in the **lower-right corner** of the screen at all times during active gameplay. It is a minimal, always-on overlay that displays Jason's current emotional state in real time.
+
+**Data source:** `trust_update` WS event — `{ trust_level: number, fear_index: number }`
+- `trust_level` — float `0.0–1.0`. Drives the Trust bar.
+- `fear_index` — float `0.0–1.0`. Drives the Fear bar.
+
+**Visual spec:**
+- Two labeled bars stacked vertically, lower-right corner, fixed position.
+- Labels: `TRUST` and `FEAR` (all caps, monospace or horror-adjacent font to match game aesthetic).
+- Bar fill reflects the float value (e.g. `0.75` = 75% fill).
+- Color suggestion: Trust = cold blue or green; Fear = deep red or amber.
+- No border, no background panel — blends into the scene, never breaks immersion.
+
+**Animation — slow pulse (fade in / fade out only):**
+- The entire widget pulses with a slow, continuous CSS `opacity` animation — fade in to full opacity, hold briefly, fade out to ~20% opacity, repeat.
+- Suggested timing: ~5s per full cycle (e.g. `animation: trust-pulse 5s ease-in-out infinite`).
+- The pulse is **cosmetic only** — it runs continuously while the widget is active, regardless of data changes. A data change does NOT reset or interrupt the pulse cycle.
+
+**Activation gate — Phase 3 / Phase 4 boundary:**
+- The widget is **hidden** (opacity: 0, no animation) during Phase 1 (onboarding) and Phase 2 (credits).
+- The widget **activates** (becomes visible and begins pulsing) when the frontend receives the `player_speak_prompt` event (the Phase 3 → Phase 4 transition).
+- Initial values before the first `trust_update` arrives: `trust_level = 0.5`, `fear_index = 0.3` (neutral defaults).
+
+**Data updates:**
+- On every `trust_update` event received over WS, animate the bar fill smoothly to the new value (CSS transition ~500ms).
+- The pulse animation runs on top of/independently from the bar fill transition.
+
+---
+
 ## GM PLAYBOOK TARGET
 
 Documents the **target** 8-beat GM playbook. The current GM has 6 beats (in `getGameMasterSystemPrompt()`).
@@ -157,9 +190,6 @@ Powered by Google Gemini.
 **SFX:**
 - `[SFX: wind_ambient]` — begins with first credit, low level, continuous loop
 - `[SFX: floor_crack]` — fires ONCE as the final credit fades out (not randomized; this is the noclip moment)
-
-**Voice-over (conditional):**
-- If any of the 4 ElevenLabs Voice_Over MP3s in `gs://liminal-sin-assets/Voice_Overs/` contain a narrative line, it plays under the credits at low level. Confirm asset contents before wiring.
 
 **On sequence end:**
 - Frontend sends `intro_complete` → backend
@@ -292,7 +322,7 @@ STEP 7 — FIRST AWARENESS:
 3. `card_discovered({ cardId: 'card1' })` — **[⚠️ Backend TBD — new WS event]**
 
 **Frontend on `card_discovered({ cardId: 'card1' })`:**
-- Floating **Jack of Clubs** playing card overlay appears on screen
+- Floating **Joker Card** playing card overlay appears on screen
 - Card animates gently (spin or float) — indicates it is collectible
 - GM fires NO further scene/video events until `card_collected({ cardId: 'card1' })` is received
 - Jason continues reacting to player speech freely; the game is not frozen — just the visual progression is paused
@@ -355,7 +385,7 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 
 **[Beat 5 — Invisible pressure / two-ending branch]**
 
-**Trigger (GM):** Player guides Jason away from the park floor toward the maintenance area.
+**Trigger (GM):** Player guides Jason through the water park i havetoward the maintenance area.
 
 **GM calls (in order):**
 1. `triggerSceneChange({ sceneKey: "maintenance_area" })`
@@ -371,11 +401,13 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 - `[SFX: glitch_low]` — fires on scene transition to `slotsky_card` (universal transition SFX — random variant)
 
 **Dread Timer behavior (frontend) — [⚠️ Backend TBD for trigger event; SFX is frontend:]**
-- Timer runs invisibly — **zero UI indicator**
+Note: the card should be hidden, Jason needs to find it and needs the help of the Player to find it, but the dread timer is ticking down in the background, creating pressure. The player can only see the card if he instructs Jason to remove a panel. The timer is invisible to the player, but the SFX escalates as it counts down, creating a sense of rising dread. If the timer expires before the card is collected, the game ends with the "bad" ending (Game Over branch). If the player finds and collects the card before the timer expires, they proceed to Phase 8 (good ending).
+
+- Timer runs invisibly — **zero UI indicator**-
 - SFX escalates autonomously over 90 seconds:
   - 0–30s: `[SFX: heartbeat_low]` — barely audible, slow pulse
   - 30–60s: `[SFX: heartbeat_mid]` — louder, slightly faster
-  - 60–90s: `[SFX: heartbeat_high]` + `[SFX: distant_growl]` — urgent pressure, rising
+  - 60–90s: `[SFX: heartbeat_high1]` + `[SFX: heartbeat_high2]` + `[SFX: distant_growl1]` + `[SFX: distant_growl2]` — (growl1 and growl2 will play simultaneously) urgent pressure, rising
 - Timer is **cancelled** when `card_collected({ cardId: 'card2' })` is sent to backend
 
 **Card 2 overlay:**
@@ -389,7 +421,7 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 
 **Trigger:** Backend dread timer reaches 0 — sends `game_over` — **[⚠️ Backend TBD]**
 
-1. `[SFX: monster_sound]` — loud, close, in-ear, one hit (the invisible presence arrives)
+1. `[SFX: monster_sound1]` + `[SFX: monster_sound2]` triggered simultaneously — loud, close, in-ear, one hit (the invisible presence arrives)
 2. Silence. Total.
 3. Screen fades to black (2s)
 4. Text appears (white on black, centered):
@@ -416,6 +448,7 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 4. `triggerSlotsky({ anomalyType: "found_transition" })` — **ONE-WAY DOOR. No GM calls after this.**
 
 **Audrey's voice (trust-adaptive):**
+Note: The trust score only detect's Jason's trust score. Jason's trust score is the only input to Audrey's dialogue variation at the ending. The fear index has no impact on this moment. The player may have influenced the fear index through their choices, but it does not affect the ending dialogue.
 | Trust | Audrey's line |
 |---|---|
 | ≥ 0.7 (High) | *"Jason?"* — soft, hopeful, as if she just heard something. She says his name. |
