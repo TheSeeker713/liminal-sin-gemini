@@ -77,6 +77,8 @@ Extends the contract defined in `CURRENT_STATE.md`. Items marked ⚠️ Backend 
 | `game_over` | BE→FE | `{}` | ⚠️ Backend TBD |
 | `good_ending` | BE→FE | `{}` | ⚠️ Backend TBD |
 
+> **SFX CONVENTION — Universal Scene Transition:** `glitch_low` (random variant) fires on every `scene_change`, `scene_image`, and `scene_video` event, and on every VHS-swap (video-to-still) transition. It is the **only** SFX used for visual scene transitions. No other SFX replaces this role.
+
 ---
 
 ## GM PLAYBOOK TARGET
@@ -270,7 +272,7 @@ STEP 7 — FIRST AWARENESS:
 - Example: *"Okay. I've got the flashlight. Oh— this place is— this place is huge."*
 
 **SFX:**
-- `[SFX: flashlight_click]` — one-shot on scene transition (optional, brief)
+- `[SFX: glitch_low]` — fires on scene transition to `flashlight_beam` (universal transition SFX — random variant)
 - `[SFX: drip_loop]` — continues
 
 **B11 flashlight hint (existing):**
@@ -317,6 +319,7 @@ STEP 7 — FIRST AWARENESS:
 This proves to the player: **the AI can see them**. The AI can hear them (it responds to their voice). The AI can see them (it describes them). The player can interrupt it (barge-in is active). This is the core contest proof-of-concept.
 
 **SFX:**
+- `[SFX: glitch_low]` — fires on scene transition to `generator_area` (universal transition SFX — random variant)
 - `[SFX: card_appear]` — subtle card materialization sound (consistent with Slotsky card SFX family)
 - `[SFX: static_burst]` — brief smartglasses/device static on the vision flash moment
 
@@ -341,6 +344,7 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 > *"...Why is nobody here?"*
 
 **SFX:**
+- `[SFX: glitch_low]` — fires on scene transition to `zone_park_shore` (universal transition SFX — random variant)
 - `[SFX: generator_start]` — industrial generator spool-up, 4 seconds, fires on scene transition
 - `[SFX: neon_hum]` — faint electrical neon hum, low, continuous under this phase
 - `[SFX: drip_loop]` — continues but shifts register (now mixed with the neon environment)
@@ -361,6 +365,10 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 5. `triggerSceneChange({ sceneKey: "slotsky_card" })`
 6. `triggerVideoGen({ sceneKey: "slotsky_card" })`
 7. `card_discovered({ cardId: 'card2' })` — **[⚠️ Backend TBD]** — fires after `slotsky_card` scene loads
+
+**Scene Transition SFX:**
+- `[SFX: glitch_low]` — fires on scene transition to `maintenance_area` (universal transition SFX — random variant)
+- `[SFX: glitch_low]` — fires on scene transition to `slotsky_card` (universal transition SFX — random variant)
 
 **Dread Timer behavior (frontend) — [⚠️ Backend TBD for trigger event; SFX is frontend:]**
 - Timer runs invisibly — **zero UI indicator**
@@ -415,7 +423,8 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 | < 0.4 (Low) | Quiet crying. No name. A single exhale of despair. She sounds very far away. |
 
 **SFX:**
-- `[SFX: found_transition_wash]` — the Nature Vault water sound from deep below; vast, slow-moving, rising from beneath. Beautiful. Wrong. Rises then fades over ~8 seconds.
+- `[SFX: glitch_low]` — fires on scene transition to `card2_closeup` (universal transition SFX — random variant)
+- `[SFX: found_water_rise]` — the Nature Vault water sound from deep below; vast, slow-moving, rising from beneath. Beautiful. Wrong. Rises then fades over ~8 seconds. (random variant from `found_water_rise` pool)
 - Audrey's voice plays over this wash.
 
 **Screen transition:**
