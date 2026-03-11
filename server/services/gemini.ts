@@ -288,9 +288,16 @@ export class LiveSessionManager {
   private onAudioCallback: ((base64Audio: string) => void) | null = null;
   private onInterruptCallback: (() => void) | null = null;
   private onFunctionCallCallback: ((id: string, name: string, args: Record<string, unknown>) => void) | null = null;
-  private readonly modelName = 'gemini-live-2.5-flash-native-audio';
-  
-  constructor() {}
+  private readonly modelName: string;
+
+  /**
+   * @param modelName Override the Gemini model. NPC agents use the native-audio model (default).
+   *                  The GM must use 'gemini-2.0-flash-live-001' — a Live API model that properly
+   *                  supports function calling without forcing native audio output on connect.
+   */
+  constructor(modelName = 'gemini-live-2.5-flash-native-audio') {
+    this.modelName = modelName;
+  }
 
   /**
    * Connects to the Gemini Live stream with the provided system prompt.
@@ -324,13 +331,11 @@ export class LiveSessionManager {
       : {
           systemInstruction: systemPrompt,
           tools: gameMasterTools,
-          // NOTE: Do NOT set responseModalities for GM mode.
-          // gemini-live-2.5-flash-native-audio is a native-audio model — TEXT modality
-          // is unsupported and causes an immediate session disconnect.
-          // GM produces audio output (silently discarded — no onAgentAudio callback is
-          // registered for the GM) + toolCall events, which are what we actually use.
-          // Gemini 3.1 Pro Preview does NOT support Live API (no real-time audio
-          // streaming), so the native-audio model is the only valid choice here.
+          // GM is silent — it uses TEXT modality so it never pushes audio to the client.
+          // gemini-2.0-flash-live-001 fully supports TEXT + function calling on the Live API.
+          // Native-audio model must NOT be used here: it fires an audio turn on connect
+          // before any input arrives, which causes a 1007 disconnect and kills the GM session.
+          responseModalities: [Modality.TEXT],
         };
 
     this.session = await getLiveAiClient().live.connect({

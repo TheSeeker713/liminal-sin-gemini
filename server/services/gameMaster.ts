@@ -1,6 +1,15 @@
 import { WebSocket } from 'ws';
-import { updateTrustLevel, updateFearIndex, updateAudienceState, updateSceneKey, updateProximityState, getOrCreateSession } from './db';
+import { updateTrustLevel, updateFearIndex, updateAudienceState, updateSceneKey, updateProximityState, updateFourthWallCount, getOrCreateSession } from './db';
 import { generateSceneImage, getCachedImage } from './imagen';
+
+// Per-session throttle map — prevents rapid-fire hud_glitch broadcasts (e.g. GROUP audience spam).
+const lastGlitchMs = new Map<string, number>();
+const GLITCH_COOLDOWN_MS = 3000; // minimum 3 seconds between consecutive glitch events per session
+
+/** Call on WebSocket close to reclaim memory for the ended session. */
+export function clearGlitchThrottle(sessionId: string): void {
+  lastGlitchMs.delete(sessionId);
+}
 import { generateSceneVideo } from './veo';
 import type { LiveSessionManager } from './gemini';
 
@@ -73,6 +82,13 @@ export async function handleGmFunctionCall(
     }
 
     case 'triggerGlitchEvent': {
+      const now = Date.now();
+      const last = lastGlitchMs.get(sessionId) ?? 0;
+      if (now - last < GLITCH_COOLDOWN_MS) {
+        console.log(`[GM] triggerGlitchEvent throttled — cooldown active for session "${sessionId}"`);
+        break;
+      }
+      lastGlitchMs.set(sessionId, now);
       const durationMap: Record<string, number> = { low: 500, medium: 800, high: 1200 };
       const intensity = args.intensity as string;
       wsMessage = {
@@ -125,6 +141,9 @@ export async function handleGmFunctionCall(
       const anomalyType = args.anomalyType as string;
       if (anomalyType === 'found_transition') {
         await updateProximityState(sessionId, 'FOUND');
+      }
+      if (anomalyType === 'fourth_wall_correction') {
+        await updateFourthWallCount(sessionId, 1);
       }
       wsMessage = {
         type: 'slotsky_trigger',

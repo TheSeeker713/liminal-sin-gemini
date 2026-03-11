@@ -152,6 +152,22 @@ export interface ClientErrorLog {
   receivedAt: number;
 }
 
+export async function updateFourthWallCount(sessionId: string, increment: number): Promise<void> {
+  if (db) {
+    await db.collection('sessions').doc(sessionId).update({
+      fourthWallCount: admin.firestore.FieldValue.increment(increment),
+      updatedAt: Date.now()
+    });
+  } else {
+    const session = memoryStore.get(sessionId);
+    if (session) {
+      session.fourthWallCount = (session.fourthWallCount ?? 0) + increment;
+      session.updatedAt = Date.now();
+      memoryStore.set(sessionId, session);
+    }
+  }
+}
+
 export async function logClientError(entry: ClientErrorLog): Promise<void> {
   // Firestore rejects undefined values — strip optional fields that weren't provided.
   const doc: Record<string, unknown> = {

@@ -10,7 +10,7 @@ import { getOrCreateSession, logClientError } from './services/db';
 import { getGameMasterSystemPrompt, LiveSessionManager } from './services/gemini';
 import { getJasonSystemPrompt } from './services/npc/jason';
 import { getAudreySystemPrompt } from './services/npc/audrey';
-import { handleGmFunctionCall } from './services/gameMaster';
+import { handleGmFunctionCall, clearGlitchThrottle } from './services/gameMaster';
 import { prewarmImageCache, clearImageCache } from './services/imagen';
 
 const app = express();
@@ -103,9 +103,10 @@ app.post('/log-client-error', async (req, res) => {
 wss.on('connection', (ws: WebSocket) => {
   const sessionId = randomUUID();
   const jasonManager = new LiveSessionManager(); // NPC — speaks, audio out, Enceladus voice
-  const gmManager = new LiveSessionManager();    // GM — silent, function calls only
+  const gmManager = new LiveSessionManager('gemini-2.0-flash-live-001'); // GM — silent, function calls only
   const audreyManager = new LiveSessionManager(); // NPC — single echo, Aoede voice
   let jasonIntroFired = false; // Gates Jason's first line until frontend sends intro_complete
+  let gmGated = false;         // Gates GM scene/video calls until intro_complete is received
   let sceneChangeCount = 0;   // Tracks GM-triggered scene changes (used by hint timer)
   let hintTimer: ReturnType<typeof setTimeout> | null = null; // B11: flashlight hint fallback
 
@@ -158,6 +159,13 @@ wss.on('connection', (ws: WebSocket) => {
       await gmManager.connect(gmPrompt, 'gm');
 
       gmManager.onFunctionCall((id, name, args) => {
+        // Gate scene/video events until the frontend sends intro_complete.
+        // Prevents the GM from firing Beat 2 scene changes during Beat 1 darkness.
+        if (!gmGated && (name === 'triggerSceneChange' || name === 'triggerVideoGen')) {
+          console.log(`[GM] ${name} blocked pre-intro — session=${sessionId}`);
+          gmManager.sendToolResponse(id, name);
+          return;
+        }
         // Track scene changes for B11 hint timer.
         if (name === 'triggerSceneChange') sceneChangeCount++;
         // Always ACK the tool call back to Gemini — even if the WS is closed.
@@ -205,6 +213,7 @@ wss.on('connection', (ws: WebSocket) => {
       // Jason is hurt, alone, in darkness. He does NOT know the voicebox is on yet.
       if (data.type === 'intro_complete' && !jasonIntroFired) {
         jasonIntroFired = true;
+        gmGated = true; // Unblock GM scene/video events — Beat 1 darkness phase is over
         console.log(`[WS] intro_complete received — firing Jason landing sequence for session ${sessionId}`);
         // Pre-warm image cache for the 3 opening zones while Jason speaks in darkness.
         prewarmImageCache(sessionId);
@@ -263,6 +272,7 @@ wss.on('connection', (ws: WebSocket) => {
     if (hintTimer) clearTimeout(hintTimer);
     debugSessions.delete(sessionId);
     clearImageCache(sessionId);
+    clearGlitchThrottle(sessionId);
     jasonManager.disconnect();
     audreyManager.disconnect();
     gmManager.disconnect();
