@@ -114,3 +114,85 @@ PORT=3001
 | **March 11 @ 11:11 PM MT** | Internal prototype cutoff — full demo functional |
 | **March 16 @ 5:00 PM PDT** | HARD DEADLINE — contest submission |
 
+---
+
+## ⚠️ BUG FIX REQUIRED — March 10, 2026
+
+Three bugs were found in a post feature-lock diagnostic. Two are frontend-only and have been fixed in `myceliainteractive`. **One requires a backend fix in this repo.**
+
+---
+
+### Backend Bug: GM Not Gated Behind `intro_complete` — Fires Events During Cinematic
+
+**Severity: Critical**
+
+**What's happening:**
+- `session_start` arrives → all three Gemini sessions (Jason, GM, Audrey) connect immediately  
+- `session_ready` is sent back to the frontend within ~1–2s
+- The GM session begins receiving `player_frame` webcam events immediately (every 1s from frontend)
+- The GM evaluates the player's face and room and starts calling tools: `triggerHudGlitch`, `triggerSlotskyAnomaly`, etc.
+- These events arrive at the frontend **while the 11.5s cinematic intro is still playing**
+- The player sees `hud_glitch` flashes and hears SFX mid-cinematic, breaking immersion and the narrative flow
+
+**Root cause:**
+`intro_complete` is correctly used to gate Jason (B8 is working). But the GM's `player_frame` pipeline has **no equivalent gate**. The relevant code is in `server/server.ts`:
+
+```typescript
+// Player webcam frame — base64 JPEG from browser → Game Master (1 FPS, GM vision)
+if (data.type === 'player_frame' && data.jpeg) {
+  gmManager.sendFrame(data.jpeg);   // ← NO GATE — fires immediately
+  return;
+}
+```
+
+**Required fix (server/server.ts):**
+
+Add a `gmIntroComplete` flag alongside the existing `jasonIntroFired` flag:
+
+```typescript
+let gmIntroComplete = false;  // Gates GM from processing frames until intro_complete
+```
+
+Then in the `intro_complete` handler, set it:
+
+```typescript
+if (data.type === 'intro_complete' && !jasonIntroFired) {
+  jasonIntroFired = true;
+  gmIntroComplete = true;   // ← ADD THIS — unlock GM processing
+  // ... rest of existing handler unchanged ...
+}
+```
+
+Then gate `player_frame` forwarding:
+
+```typescript
+if (data.type === 'player_frame' && data.jpeg) {
+  if (gmIntroComplete) {    // ← ADD THIS GUARD
+    gmManager.sendFrame(data.jpeg);
+  }
+  return;
+}
+```
+
+Optionally (recommended) also gate `player_speech` to GM during intro — Jason shouldn't hear player until intro ends either:
+
+```typescript
+if (data.type === 'player_speech' && data.audio) {
+  jasonManager.sendAudio(data.audio);
+  if (gmIntroComplete) {    // ← ADD THIS GUARD
+    gmManager.sendAudio(data.audio);
+  }
+  return;
+}
+```
+
+**Expected result after fix:**
+- Cinematic plays cleanly for ~11.5s — no GM events, no glitch flashes, no SFX
+- At 11.5s: frontend sends `intro_complete`
+- Jason fires his landing sequence
+- GM begins receiving frames and evaluating the player
+- Game events start flowing in correct narrative order
+
+**Files to touch:** `server/server.ts` only (2 flag additions + 2 guards)  
+**Cross-repo note:** Frontend side is already fixed — `intro_complete` is now sent correctly from `IntroSequence.tsx`. No further frontend changes needed.
+
