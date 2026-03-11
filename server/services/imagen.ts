@@ -131,3 +131,58 @@ export async function generateSceneImage(sceneKey: string): Promise<string | nul
     return null;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Image pre-load cache — keyed sessionId → sceneKey → base64JPEG
+// Populated at session start to eliminate first-scene latency.
+// ---------------------------------------------------------------------------
+const imageCache = new Map<string, Map<string, string>>();
+
+const PREWARM_SCENE_KEYS = ['zone_tunnel_entry', 'zone_merge', 'zone_park_shore'] as const;
+
+/**
+ * Pre-generates images for 3 canonical opening zones in parallel.
+ * Fire-and-forget at session start (after intro_complete).
+ */
+export function prewarmImageCache(sessionId: string): void {
+  const sessionMap = new Map<string, string>();
+  imageCache.set(sessionId, sessionMap);
+  void Promise.all(
+    PREWARM_SCENE_KEYS.map(async (key) => {
+      const base64 = await generateSceneImage(key);
+      if (base64) {
+        sessionMap.set(key, base64);
+        console.log(`[ImageCache] PRE-WARMED — session="${sessionId}" key="${key}"`);
+      }
+    })
+  );
+}
+
+/**
+ * Returns a cached base64 JPEG for the given session+sceneKey, or null on miss.
+ */
+export function getCachedImage(sessionId: string, sceneKey: string): string | null {
+  const sessionMap = imageCache.get(sessionId);
+  if (!sessionMap) return null;
+  // Try exact match first, then partial zone-ID substring match
+  if (sessionMap.has(sceneKey)) {
+    console.log(`[ImageCache] HIT — session="${sessionId}" key="${sceneKey}"`);
+    return sessionMap.get(sceneKey)!;
+  }
+  for (const [cachedKey, base64] of sessionMap) {
+    if (sceneKey.includes(cachedKey) || cachedKey.includes(sceneKey)) {
+      console.log(`[ImageCache] HIT (fuzzy) — session="${sessionId}" cached="${cachedKey}" requested="${sceneKey}"`);
+      return base64;
+    }
+  }
+  console.log(`[ImageCache] MISS — session="${sessionId}" key="${sceneKey}"`);
+  return null;
+}
+
+/**
+ * Frees memory for a session on WS close.
+ */
+export function clearImageCache(sessionId: string): void {
+  imageCache.delete(sessionId);
+  console.log(`[ImageCache] Cleared — session="${sessionId}"`);
+}

@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import { updateTrustLevel, updateFearIndex, updateAudienceState, updateSceneKey, updateProximityState, getOrCreateSession } from './db';
-import { generateSceneImage } from './imagen';
+import { generateSceneImage, getCachedImage } from './imagen';
 import { generateSceneVideo } from './veo';
 import type { LiveSessionManager } from './gemini';
 
@@ -16,7 +16,8 @@ export async function handleGmFunctionCall(
   functionName: string,
   args: Record<string, unknown>,
   clientWs: WebSocket,
-  jasonManager?: LiveSessionManager
+  jasonManager?: LiveSessionManager,
+  onAudreyVoice?: () => void
 ): Promise<void> {
   console.log(`[GM] Function call: ${functionName}`, args);
 
@@ -89,19 +90,34 @@ export async function handleGmFunctionCall(
         type: 'scene_change',
         payload: { sceneKey }
       };
-      // Fire Imagen 4 generation async — sends scene_image when ready (non-blocking)
-      void generateSceneImage(sceneKey).then((base64) => {
-        if (base64 && clientWs.readyState === WebSocket.OPEN) {
+      // Try the pre-warm cache first; fall back to live Imagen 4 generation.
+      const cachedBase64 = getCachedImage(sessionId, sceneKey);
+      if (cachedBase64) {
+        if (clientWs.readyState === WebSocket.OPEN) {
           clientWs.send(JSON.stringify({
             type: 'scene_image',
             agent: 'gm',
             sessionId,
-            payload: { sceneKey, data: base64 },
+            payload: { sceneKey, data: cachedBase64 },
             timestamp: Date.now()
           }));
-          console.log(`[GM] Broadcast scene_image — sceneKey="${sceneKey}"`);
+          console.log(`[GM] Broadcast scene_image (cache hit) — sceneKey="${sceneKey}"`);
         }
-      });
+      } else {
+        // Cache miss — generate on demand (non-blocking)
+        void generateSceneImage(sceneKey).then((base64) => {
+          if (base64 && clientWs.readyState === WebSocket.OPEN) {
+            clientWs.send(JSON.stringify({
+              type: 'scene_image',
+              agent: 'gm',
+              sessionId,
+              payload: { sceneKey, data: base64 },
+              timestamp: Date.now()
+            }));
+            console.log(`[GM] Broadcast scene_image (generated) — sceneKey="${sceneKey}"`);
+          }
+        });
+      }
       break;
     }
 
@@ -180,6 +196,20 @@ export async function handleGmFunctionCall(
         );
         console.log(`[GM] Injected audience context into Jason — dynamic: ${dynamic}, count: ${personCount}`);
       }
+      break;
+    }
+
+    case 'triggerAudreyVoice': {
+      // Trust-gated — server.ts only registers onAudreyVoice when trust >= 0.5.
+      // If the callback isn't registered, the GM fired too early; silently drop.
+      if (onAudreyVoice) {
+        onAudreyVoice();
+        console.log(`[GM] triggerAudreyVoice fired — session="${sessionId}"`);
+      } else {
+        console.warn(`[GM] triggerAudreyVoice ignored — trust gate not met for session="${sessionId}"`);
+      }
+      // No WS broadcast for this — the audrey agent_speech event comes from server.ts
+      wsMessage = null;
       break;
     }
 

@@ -9,7 +9,9 @@ dotenv.config({ path: '.env.local' });
 import { getOrCreateSession, logClientError } from './services/db';
 import { getGameMasterSystemPrompt, LiveSessionManager } from './services/gemini';
 import { getJasonSystemPrompt } from './services/npc/jason';
+import { getAudreySystemPrompt } from './services/npc/audrey';
 import { handleGmFunctionCall } from './services/gameMaster';
+import { prewarmImageCache, clearImageCache } from './services/imagen';
 
 const app = express();
 const server = http.createServer(app);
@@ -102,7 +104,10 @@ wss.on('connection', (ws: WebSocket) => {
   const sessionId = randomUUID();
   const jasonManager = new LiveSessionManager(); // NPC — speaks, audio out, Enceladus voice
   const gmManager = new LiveSessionManager();    // GM — silent, function calls only
+  const audreyManager = new LiveSessionManager(); // NPC — single echo, Aoede voice
   let jasonIntroFired = false; // Gates Jason's first line until frontend sends intro_complete
+  let sceneChangeCount = 0;   // Tracks GM-triggered scene changes (used by hint timer)
+  let hintTimer: ReturnType<typeof setTimeout> | null = null; // B11: flashlight hint fallback
 
   console.log(`[WS] Client connected — session ${sessionId}`);
   // Register for debug endpoint access
@@ -134,15 +139,46 @@ wss.on('connection', (ws: WebSocket) => {
         }
       });
 
+      // Audrey NPC session — Aoede voice, single echo, trust-gated
+      const audreyPrompt = getAudreySystemPrompt();
+      await audreyManager.connect(audreyPrompt, 'npc', 'Aoede');
+
+      audreyManager.onAgentAudio((base64Audio) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'agent_speech',
+            agent: 'audrey',
+            audio: base64Audio
+          }));
+        }
+      });
+
       // GM session — silent, function calls only, no audio back to player
       const gmPrompt = getGameMasterSystemPrompt(sessionData.trustLevel);
       await gmManager.connect(gmPrompt, 'gm');
 
       gmManager.onFunctionCall((id, name, args) => {
+        // Track scene changes for B11 hint timer.
+        if (name === 'triggerSceneChange') sceneChangeCount++;
         // Always ACK the tool call back to Gemini — even if the WS is closed.
         // If we skip the ACK, Gemini hangs permanently waiting for a response.
         // handleGmFunctionCall already guards ws.readyState internally before sending.
-        handleGmFunctionCall(sessionId, name, args, ws, jasonManager).finally(() => {
+        //
+        // Trust-gate Audrey: only register the callback when trust is sufficient.
+        // getOrCreateSession is cheap here — we only fire once per session at beat 6.
+        const audreyCallback = async () => {
+          const sess = await getOrCreateSession(sessionId);
+          if (sess.trustLevel >= 0.5) {
+            audreyManager.sendText(
+              '[SEQUENCE_TRIGGER — The voicebox crackles. A distant echo from somewhere deeper in the chamber. ' +
+              'Deliver your single line now. Scared, muffled, like calling through water. ' +
+              'Fade in and out. 1-2 sentences maximum. Then go silent.]'
+            );
+          } else {
+            console.log(`[GM] triggerAudreyVoice skipped — trust too low (${sess.trustLevel.toFixed(2)}) for session ${sessionId}`);
+          }
+        };
+        handleGmFunctionCall(sessionId, name, args, ws, jasonManager, () => { void audreyCallback(); }).finally(() => {
           gmManager.sendToolResponse(id, name);
         });
       });
@@ -170,6 +206,15 @@ wss.on('connection', (ws: WebSocket) => {
       if (data.type === 'intro_complete' && !jasonIntroFired) {
         jasonIntroFired = true;
         console.log(`[WS] intro_complete received — firing Jason landing sequence for session ${sessionId}`);
+        // Pre-warm image cache for the 3 opening zones while Jason speaks in darkness.
+        prewarmImageCache(sessionId);
+        // B11: If GM fires no scene change within 45s, nudge the player to ask about a flashlight.
+        hintTimer = setTimeout(() => {
+          if (sceneChangeCount === 0 && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'hint', text: 'ask him if he has a flashlight' }));
+            console.log(`[WS] Hint sent — no scene change after 45s for session ${sessionId}`);
+          }
+        }, 45_000);
         jasonManager.sendText(
           '[SEQUENCE_TRIGGER — You just slammed into the concrete floor. Hard landing. ' +
           'Your shoulder took the impact — something may be cracked. ' +
@@ -215,8 +260,11 @@ wss.on('connection', (ws: WebSocket) => {
 
   ws.on('close', () => {
     console.log(`[WS] Client disconnected — session ${sessionId}`);
+    if (hintTimer) clearTimeout(hintTimer);
     debugSessions.delete(sessionId);
+    clearImageCache(sessionId);
     jasonManager.disconnect();
+    audreyManager.disconnect();
     gmManager.disconnect();
   });
 });

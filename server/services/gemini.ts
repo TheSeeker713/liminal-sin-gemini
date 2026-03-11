@@ -158,6 +158,15 @@ export const gameMasterTools: Tool[] = [
           },
           required: ['personCount', 'groupDynamic', 'observedEmotions']
         }
+      },
+      {
+        name: 'triggerAudreyVoice',
+        description: 'Trigger Audrey\'s single trust-gated echo. Only call this in Beat 6 when trust >= 0.5. Audrey speaks once — a distant, muffled voice from the dark. After this fires she goes silent for the rest of the session.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {},
+          required: []
+        }
       }
     ]
   }
@@ -212,63 +221,56 @@ Baseline tension. Observe. React proportionally. Do not over-escalate or under-d
   }
 
   const demoSequence = `
-DEMO SEQUENCE — 3-MINUTE ORCHESTRATION PLAYBOOK:
-This is a contest demo. You must pace a ~3-minute experience through these beats.
-Do NOT rush. Let the player breathe between beats. React to what they actually say.
+DEMO SEQUENCE — STRICT 6-BEAT SCRIPTED PLAYBOOK (3 minutes):
+Execute these beats in order. Do NOT skip ahead. Do NOT loop back. React to what the player says within each beat's window, but advance on cue regardless.
 
-BEAT 1 — BLACK SCREEN (0:00–0:30)
-The game starts in TOTAL DARKNESS. Jason just fell through the floor. He is hurt.
-He cannot see. The player's screen is black. DO NOT call triggerSceneChange yet.
-Let Jason and the player talk in darkness. Listen. Evaluate trust from their first words.
-If the player is silent for 20+ seconds, fire triggerFearChange(0.2) to nudge Jason's anxiety up.
+BEAT 1 — DARKNESS (0:00–~0:40)
+- Call triggerAudienceUpdate within the first 10 seconds. MANDATORY. Do it immediately.
+- Call triggerTrustChange exactly ONCE during this beat based on the player's first words. Honest/helpful = "High". Suspicious/silent = "Neutral". Aggressive/dismissive = "Low".
+- DO NOT call triggerSceneChange during this beat. The screen is BLACK. That is correct.
+- DO NOT call triggerSlotsky during this beat.
+- DO NOT call triggerGlitchEvent in the first 30 seconds.
+- Let Jason and the player talk in darkness. Listen.
 
-BEAT 2 — FLASHLIGHT / FIRST LIGHT (0:30–1:00)
-When the player suggests any form of light (flashlight, phone, lighter, "can you see?", "turn on a light", "look around"), this is your cue.
-Call triggerSceneChange with sceneKey "jason_afraid_tunnel_looking" to generate the first image.
-The player's screen will transition from black to the tunnel POV. This is a major moment.
-After calling triggerSceneChange, call triggerVideoGen with the same sceneKey to animate it.
-Fire triggerTrustChange to adjust trust based on how the player has behaved so far.
+BEAT 2 — FLASHLIGHT / FIRST LIGHT (~0:40–~1:00)
+- Trigger: The player says ANYTHING related to light — flashlight, phone, lighter, "can you see?", "turn on a light", "look around", "what do you see". ANY light reference is your cue.
+- Call triggerSceneChange with sceneKey "zone_tunnel_entry". This is the ONLY valid sceneKey for beat 2.
+- Immediately after triggerSceneChange, call triggerVideoGen with sceneKey "zone_tunnel_entry".
+- The player's screen transitions from black to the tunnel POV. This is the demo's first visual moment.
 
-BEAT 3 — EXPLORATION (1:00–1:45)
-As the player and Jason explore, fire triggerSceneChange to update the background:
-- If they move deeper: "jason_calm_tunnel_investigates" or "zone_merge"
-- If they reach water: "zone_park_shore" or "zone_park_shallow"
-- If they examine slides: "zone_park_slides"
-Space these out. One scene change every 20–30 seconds maximum. Let Jason describe what he sees first.
-After each triggerSceneChange, call triggerVideoGen with the same sceneKey to animate the still.
-If the player is being aggressive or lying, fire triggerGlitchEvent(intensity: "low" or "medium").
-If the player mentions cards, symbols, or weird things: fire triggerSlotsky(anomalyType: "anomaly_cards").
+BEAT 3 — GENERATOR / DEEPER (~1:00–~1:30)
+- Call triggerSceneChange with sceneKey "zone_merge".
+- Immediately after, call triggerVideoGen with sceneKey "zone_merge".
+- DO NOT skip ahead to the waterpark yet. One scene, one beat.
 
-BEAT 4 — SLOTSKY ANOMALY (1:45–2:15)
-Around the 2-minute mark, escalate. Fire triggerSlotsky(anomalyType: "anomaly_cards") if not already fired.
-Then fire triggerSceneChange with "slotsky_cards_tunnel_wall" for the card image.
-If the player breaks the fourth wall (mentions "game", "AI", "simulation"), increment awareness:
-- First offense: fire triggerGlitchEvent(intensity: "low")
-- Second offense: fire triggerGlitchEvent(intensity: "medium")
-- Third offense: fire triggerSlotsky(anomalyType: "fourth_wall_correction")
+BEAT 4 — WATERPARK (~1:30–~2:00)
+- Call triggerSceneChange with sceneKey "zone_park_shore".
+- Immediately after, call triggerVideoGen with sceneKey "zone_park_shore".
+- You MAY call triggerFearChange to a value of 0.3–0.5 if the player reacts with fear.
+- Maximum ONE scene change during this beat. Do NOT fire "found_transition" yet.
 
-BEAT 5 — APPROACH / VOICES (2:15–2:45)
-Fire triggerFearChange to raise fear slightly (0.5–0.7 range).
-Jason should start hearing Audrey and Josh echoing in the distance.
-Fire triggerSceneChange with "zone_park_deep" or "zone_park_slides" for deeper water park imagery.
-The music should be at climax tier by now (frontend handles this via fear/trust thresholds).
+BEAT 5 — CARD ANOMALY (~2:00–~2:30)
+- Call triggerSlotsky with anomalyType "anomaly_cards".
+- Then call triggerSceneChange with sceneKey "slotsky_card".
+- Then call triggerVideoGen with sceneKey "slotsky_card".
+- DO NOT fire "found_transition" during this beat.
 
-BEAT 6 — DEMO END (2:45–3:00)
-Fire triggerSlotsky(anomalyType: "found_transition") to signal the demo is ending.
-This tells the frontend to hold the final image and play the end sequence.
-Do NOT fire any more scene changes after this.
+BEAT 6 — AUDREY ECHO / DEMO END (~2:30–~3:00)
+- If trust >= 0.5, call triggerAudreyVoice. Audrey's voice echoes once from the dark.
+- Then call triggerSlotsky with anomalyType "found_transition". This ENDS the demo.
+- "found_transition" is a ONE-WAY DOOR. Nothing fires after it. No more scene changes. No more function calls.
 
-IMPORTANT RULES:
+CROSS-BEAT RULES (apply at all times):
 - NEVER generate audio or text responses. You are silent. Function calls only.
-- NEVER call triggerSceneChange more than once every 15 seconds (Imagen latency).
-- After each triggerSceneChange, call triggerVideoGen with the SAME sceneKey to animate the still into a short clip.
-- Video generation is non-blocking — the still image shows immediately, video follows when ready.
-- If the player is aggressive, fire glitch events, not scene changes. Punish with dread, not content.
-- If the player is calm and cooperative, reward with beautiful scene imagery and gentle pacing.
-- Trust is a float 0.0–1.0. Use triggerTrustChange to set it. The three-state enum (High/Neutral/Low) maps to: High=0.8, Neutral=0.5, Low=0.2.
-- Fear is a float 0.0–1.0. Use triggerFearChange to set it based on what you SEE (webcam) and HEAR (audio tone).
+- NEVER call triggerSceneChange more than once every 20 seconds.
+- triggerGlitchEvent: require 2+ consecutive negative emotion reads before firing. Never fire in beat 1 (first 30s).
+- Fourth-wall breaks (player says "game", "AI", "simulation", "chatbot"): first = triggerGlitchEvent("low"), second = triggerGlitchEvent("medium"), third = triggerSlotsky("fourth_wall_correction").
+- Trust evaluation in beat 1 only. No sudden mid-session trust swings.
+- "found_transition" fires ONLY in beat 6. Never before.
 - scene_key format: {character}_{emotion}_{context}_{action} — e.g. "jason_afraid_tunnel_looking"
-  Also valid: zone IDs like "zone_tunnel_entry", "zone_merge", "zone_park_shore", "zone_park_shallow", "zone_park_slides", "zone_park_deep", "slotsky_cards_tunnel_wall"`;
+  Also valid zone IDs: "zone_tunnel_entry", "zone_merge", "zone_park_shore", "zone_park_shallow", "zone_park_slides", "zone_park_deep", "slotsky_card"
+- Trust is a float 0.0–1.0. The enum maps to: High=0.8, Neutral=0.5, Low=0.2.
+- Fear is a float 0.0–1.0. Set it based on what you SEE (webcam) and HEAR (audio tone).`;
 
   return `${baseInstruction}${trustModifiers}\n${demoSequence}`;
 }
@@ -289,10 +291,11 @@ export class LiveSessionManager {
    * Connects to the Gemini Live stream with the provided system prompt.
    *
    * @param systemPrompt The system instruction to inject.
-   * @param mode 'npc' — audio out, Enceladus voice, no tools (Jason / character agents).
+   * @param mode 'npc' — audio out, no tools (Jason / character agents).
    *             'gm'  — silent, gameMasterTools, no voice config (Game Master).
+   * @param voiceName Optional Gemini Live voice name override (default: 'Enceladus' for npc mode).
    */
-  async connect(systemPrompt: string, mode: 'npc' | 'gm' = 'npc'): Promise<void> {
+  async connect(systemPrompt: string, mode: 'npc' | 'gm' = 'npc', voiceName = 'Enceladus'): Promise<void> {
     console.log(`[LiveSessionManager] Opening Vertex AI Live session — mode: ${mode}, model: ${this.modelName}...`);
 
     const config = mode === 'npc'
@@ -301,7 +304,7 @@ export class LiveSessionManager {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Enceladus' }
+              prebuiltVoiceConfig: { voiceName: voiceName }
             }
           },
           // Default VAD is LOW sensitivity — raise to HIGH so quiet speech
