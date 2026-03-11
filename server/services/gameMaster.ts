@@ -1,6 +1,9 @@
 import { WebSocket } from 'ws';
 import { updateTrustLevel, updateFearIndex, updateAudienceState, updateSceneKey, updateProximityState, updateFourthWallCount, getOrCreateSession } from './db';
 import { generateSceneImage, getCachedImage } from './imagen';
+import { generateSceneVideo } from './veo';
+import { startDreadTimer } from './dreadTimer';
+import type { LiveSessionManager } from './gemini';
 
 // Per-session throttle map — prevents rapid-fire hud_glitch broadcasts (e.g. GROUP audience spam).
 const lastGlitchMs = new Map<string, number>();
@@ -10,8 +13,6 @@ const GLITCH_COOLDOWN_MS = 3000; // minimum 3 seconds between consecutive glitch
 export function clearGlitchThrottle(sessionId: string): void {
   lastGlitchMs.delete(sessionId);
 }
-import { generateSceneVideo } from './veo';
-import type { LiveSessionManager } from './gemini';
 
 /**
  * Handles a function call dispatched by the Gemini Game Master.
@@ -233,6 +234,28 @@ export async function handleGmFunctionCall(
         type: 'scene_change',
         payload: { sceneKey: 'audrey_echo' }
       };
+      break;
+    }
+
+    case 'triggerCardDiscovered': {
+      const cardId = args.cardId as string;
+      wsMessage = {
+        type: 'card_discovered',
+        cardId
+      };
+      console.log(`[GM] triggerCardDiscovered fired — cardId="${cardId}" session="${sessionId}"`);
+      break;
+    }
+
+    case 'triggerDreadTimerStart': {
+      const durationMs = args.durationMs as number;
+      wsMessage = {
+        type: 'dread_timer_start',
+        durationMs
+      };
+      // Start the backend timer — will emit game_over if it expires
+      startDreadTimer(sessionId, durationMs, clientWs);
+      console.log(`[GM] triggerDreadTimerStart fired — durationMs=${durationMs} session="${sessionId}"`);
       break;
     }
 

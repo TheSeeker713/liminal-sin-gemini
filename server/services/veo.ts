@@ -19,6 +19,14 @@ const ANIMATION_HINTS: Record<string, string> = {
   zone_park_slides: 'Slow upward tilt looking at the slide structure. Amber construction light flickers. A single drop of water falls from the slide into dark water below.',
   zone_park_deep: 'Camera slowly leans forward, peering into the deep dark water. Amber light pillars shimmer in the reflection. Something shifts in the depth below — barely perceptible.',
   slotsky_card: 'Camera slowly lowers to ground level. The playing cards are motionless but the shadow from the flood light shifts slightly, as if the light source moved on its own.',
+
+  flashlight_beam: 'Flashlight beam sweeps slowly left then right through total darkness, catching suspended water droplets as it moves — each droplet briefly lit then returns to black — no environment fills in during the sweep, only what the beam directly touches is visible, beam completes one full sweep and returns to center pointing forward, holds steady',
+
+  generator_area: 'Slow downward tilt from the generator body, flashlight tracking down toward the playing card at the generator\'s base, slight mechanical vibration in the frame from the running generator, beam contracts tighter around the card as if drawn to it, card remains perfectly still, camera holds on the card',
+
+  maintenance_area: 'Rapid urgent searching scan, flashlight sweeps left to right across pipes and conduit, beam pauses briefly on each deep shadow as if checking for movement, swings back sharply to the aquamarine-glowing park doorway in the background — the neon glow through the arch flickers once — then flashlight swings forward',
+
+  card2_closeup: 'Camera holds steady on the queen of spades card in the palm. Subtle natural lighting shifts as if the flashlight breath-wavers. Card surface catches light. Minimal motion — the card is held perfectly still.',
 };
 
 /** Resolve a motion-description suffix for a given sceneKey. */

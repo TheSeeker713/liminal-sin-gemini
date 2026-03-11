@@ -5,6 +5,10 @@
   "scripts": {
     "server": "ts-node-dev --respawn --transpile-only server/server.ts",
     "build": "tsc --project server/tsconfig.build.json",
+    "docker:build": "docker build -t us-west1-docker.pkg.dev/project-c4c3ba57-5165-4e24-89e/liminal-sin-repo/liminal-sin-server:latest ./",
+    "docker:push": "docker push us-west1-docker.pkg.dev/project-c4c3ba57-5165-4e24-89e/liminal-sin-repo/liminal-sin-server:latest",
+    "cloudrun:deploy": "gcloud run deploy liminal-sin-server --region=us-west1 --image=us-west1-docker.pkg.dev/project-c4c3ba57-5165-4e24-89e/liminal-sin-repo/liminal-sin-server:latest --allow-unauthenticated",
+    "deploy": "npm run build && npm run docker:build && npm run docker:push && npm run cloudrun:deploy",
     "start": "node dist/server/server.js",
     "lint": "eslint server/",
     "typecheck": "tsc --noEmit",

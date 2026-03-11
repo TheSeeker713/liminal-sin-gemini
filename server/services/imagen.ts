@@ -72,6 +72,39 @@ over wet concrete, three playing cards arranged in a deliberate triangular patte
 them, single warm flood construction light casting a hard shadow from the right,
 the cards were not there before, photorealistic, wide angle 24mm, brutalist concrete
 and still water, desaturated with amber light accent, cinematic horror, 8K`,
+
+  flashlight_beam: `First-person POV in total darkness underground, a single flashlight beam shooting
+forward through absolute blackness, Jason's right hand visible at the bottom of
+frame gripping a heavy rubberized flashlight, beam illuminating wet concrete floor
+ahead and catching water droplets suspended in mid-air, walls beyond the beam edge
+barely visible in peripheral darkness as faint grey, cold white light source, pure
+black surround, no ambient lighting anywhere, photorealistic horror photography,
+wide angle 16mm, high contrast, cinematic horror, 8K`,
+
+  generator_area: `First-person POV looking toward an industrial diesel generator unit set against
+rough dark concrete wall underground, warm amber flashlight glow from below
+illuminating the battered metal generator housing and surrounding concrete floor,
+a single playing card — jack of clubs, face-up, pristine — lying flat on wet
+concrete at the base of the generator, isolated in a tight flashlight spotlight
+as if placed deliberately, no other people, photorealistic, wide angle 24mm,
+brutalist industrial concrete, oil-stained floor, cinematic horror, 8K`,
+
+  maintenance_area: `First-person POV standing in an industrial maintenance corridor branching off an
+underground water park, exposed pipe clusters and electrical conduit running along
+low brutalist concrete ceiling, faded yellow safety signage barely legible on damp
+walls, flashlight cone cutting forward into the industrial dark, through an open
+arched doorway in the background the park's aquamarine neon glow bleeds into frame —
+a sliver of paradise behind the industrial grimness, decorative arch frame with
+moisture-stained painted tropical mural barely visible through the staining, no
+people, photorealistic, wide angle 16mm, industrial concrete with neon bleed,
+cinematic horror, 8K`,
+
+  card2_closeup: `Close-up first-person POV, a queen of spades playing card lying face-up held in an
+open palm, flashlight beam from directly above casting hard-edged shadows from card
+corners onto the palm below, card surface pristine and bone-dry despite the
+surrounding damp, wet concrete floor faintly visible blurred in the background,
+photorealistic, 50mm macro-style lens, shallow depth of field, high contrast
+flashlight illumination, cinematic horror, 8K`,
 };
 
 /**
@@ -138,7 +171,7 @@ export async function generateSceneImage(sceneKey: string): Promise<string | nul
 // ---------------------------------------------------------------------------
 const imageCache = new Map<string, Map<string, string>>();
 
-const PREWARM_SCENE_KEYS = ['zone_tunnel_entry', 'zone_merge', 'zone_park_shore'] as const;
+const PREWARM_SCENE_KEYS = ['flashlight_beam', 'zone_merge', 'zone_park_shore'] as const;
 
 /**
  * Pre-generates images for 3 canonical opening zones in parallel.

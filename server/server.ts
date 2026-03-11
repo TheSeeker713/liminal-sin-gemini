@@ -12,6 +12,7 @@ import { getJasonSystemPrompt } from './services/npc/jason';
 import { getAudreySystemPrompt } from './services/npc/audrey';
 import { handleGmFunctionCall, clearGlitchThrottle } from './services/gameMaster';
 import { prewarmImageCache, clearImageCache } from './services/imagen';
+import { handleCardCollected } from './services/sessionEndings';
 
 const app = express();
 const server = http.createServer(app);
@@ -269,6 +270,14 @@ wss.on('connection', (ws: WebSocket) => {
       // Player webcam frame — base64 JPEG from browser → Game Master (1 FPS, GM vision)
       if (data.type === 'player_frame' && data.jpeg) {
         if (gmGated) gmManager.sendFrame(data.jpeg); // GM sees webcam only after intro_complete
+        return;
+      }
+
+      // Card collected — player clicked a collectible card overlay
+      if (data.type === 'card_collected' && data.cardId) {
+        handleCardCollected(data.cardId, sessionId, jasonManager, ws).catch((err: Error) => {
+          console.error(`[WS] card_collected handler error for session ${sessionId}:`, err.message);
+        });
         return;
       }
 
