@@ -161,11 +161,16 @@ export const gameMasterTools: Tool[] = [
       },
       {
         name: 'triggerAudreyVoice',
-        description: 'Trigger Audrey\'s single trust-gated echo. Only call this in Beat 6 when trust >= 0.5. Audrey speaks once — a distant, muffled voice from the dark. After this fires she goes silent for the rest of the session.',
+        description: 'Fire after anomaly_cards + card scene shown. Audrey speaks once. High trust (>=0.7) = hopeful echo, calls Jason by name. Low trust (<0.4) = panicked whisper, does not use his name. Only call this in Beat 6.',
         parameters: {
           type: Type.OBJECT,
-          properties: {},
-          required: []
+          properties: {
+            trustLevel: {
+              type: Type.NUMBER,
+              description: 'The current trust level float (0.0–1.0). Determines whether Audrey sounds hopeful (>=0.7) or frightened and distant (<0.4).'
+            }
+          },
+          required: ['trustLevel']
         }
       }
     ]

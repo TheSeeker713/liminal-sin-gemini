@@ -17,7 +17,7 @@ export async function handleGmFunctionCall(
   args: Record<string, unknown>,
   clientWs: WebSocket,
   jasonManager?: LiveSessionManager,
-  onAudreyVoice?: () => void
+  onAudreyVoice?: (trustLevel: number) => void
 ): Promise<void> {
   console.log(`[GM] Function call: ${functionName}`, args);
 
@@ -200,16 +200,20 @@ export async function handleGmFunctionCall(
     }
 
     case 'triggerAudreyVoice': {
-      // Trust-gated — server.ts only registers onAudreyVoice when trust >= 0.5.
-      // If the callback isn't registered, the GM fired too early; silently drop.
+      const audreyTrust = typeof args.trustLevel === 'number'
+        ? Math.max(0, Math.min(1, args.trustLevel))
+        : 0.5;
       if (onAudreyVoice) {
-        onAudreyVoice();
-        console.log(`[GM] triggerAudreyVoice fired — session="${sessionId}"`);
+        onAudreyVoice(audreyTrust);
+        console.log(`[GM] triggerAudreyVoice fired — trust=${audreyTrust.toFixed(2)} session="${sessionId}"`);
       } else {
-        console.warn(`[GM] triggerAudreyVoice ignored — trust gate not met for session="${sessionId}"`);
+        console.warn(`[GM] triggerAudreyVoice ignored — no callback registered for session="${sessionId}"`);
       }
-      // No WS broadcast for this — the audrey agent_speech event comes from server.ts
-      wsMessage = null;
+      // Broadcast scene_change so frontend can apply the audrey_echo visual treatment.
+      wsMessage = {
+        type: 'scene_change',
+        payload: { sceneKey: 'audrey_echo' }
+      };
       break;
     }
 

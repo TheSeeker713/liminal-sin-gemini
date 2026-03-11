@@ -166,19 +166,19 @@ wss.on('connection', (ws: WebSocket) => {
         //
         // Trust-gate Audrey: only register the callback when trust is sufficient.
         // getOrCreateSession is cheap here — we only fire once per session at beat 6.
-        const audreyCallback = async () => {
-          const sess = await getOrCreateSession(sessionId);
-          if (sess.trustLevel >= 0.5) {
-            audreyManager.sendText(
-              '[SEQUENCE_TRIGGER — The voicebox crackles. A distant echo from somewhere deeper in the chamber. ' +
-              'Deliver your single line now. Scared, muffled, like calling through water. ' +
-              'Fade in and out. 1-2 sentences maximum. Then go silent.]'
-            );
-          } else {
-            console.log(`[GM] triggerAudreyVoice skipped — trust too low (${sess.trustLevel.toFixed(2)}) for session ${sessionId}`);
-          }
+        const audreyCallback = (trustLevel: number) => {
+          const trustTag = trustLevel >= 0.7
+            ? 'HIGH — sound hopeful. Call out "Jason?" softly. You sense he might be close.'
+            : trustLevel < 0.4
+              ? 'LOW — you are crying quietly. Do not use his name. You feel very far away.'
+              : 'NEUTRAL — scared but holding it together. One short sentence. Muffled, echoing.';
+          audreyManager.sendText(
+            `[AUDREY_TRIGGER: trust=${trustLevel.toFixed(2)}. ${trustTag} ` +
+            'Speak once. 1 sentence maximum. Then go completely silent.]'
+          );
+          console.log(`[WS] Audrey triggered — trust=${trustLevel.toFixed(2)} session=${sessionId}`);
         };
-        handleGmFunctionCall(sessionId, name, args, ws, jasonManager, () => { void audreyCallback(); }).finally(() => {
+        handleGmFunctionCall(sessionId, name, args, ws, jasonManager, (trustLevel) => { audreyCallback(trustLevel); }).finally(() => {
           gmManager.sendToolResponse(id, name);
         });
       });
