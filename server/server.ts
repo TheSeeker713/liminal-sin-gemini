@@ -246,13 +246,13 @@ wss.on('connection', (ws: WebSocket) => {
       if (data.type === 'player_speech' && data.audio) {
         console.log(`[WS] player_speech received — b64 bytes: ${(data.audio as string).length}`);
         jasonManager.sendAudio(data.audio);
-        gmManager.sendAudio(data.audio); // GM hears player to evaluate trust/fear in real-time
+        if (gmGated) gmManager.sendAudio(data.audio); // GM hears player only after intro_complete
         return;
       }
 
       // Player webcam frame — base64 JPEG from browser → Game Master (1 FPS, GM vision)
       if (data.type === 'player_frame' && data.jpeg) {
-        gmManager.sendFrame(data.jpeg);
+        if (gmGated) gmManager.sendFrame(data.jpeg); // GM sees webcam only after intro_complete
         return;
       }
 
