@@ -107,6 +107,8 @@ wss.on('connection', (ws: WebSocket) => {
   const audreyManager = new LiveSessionManager(); // NPC — single echo, Aoede voice
   let jasonIntroFired = false; // Gates Jason's first line until frontend sends intro_complete
   let gmGated = false;         // Gates GM scene/video calls until intro_complete is received
+  let jasonReadyForPlayer = false; // Gates player audio to Jason until landing monologue completes
+  let jasonReadyTimer: ReturnType<typeof setTimeout> | null = null; // Flips jasonReadyForPlayer after ~18s
   let sceneChangeCount = 0;   // Tracks GM-triggered scene changes (used by hint timer)
   let hintTimer: ReturnType<typeof setTimeout> | null = null; // B11: flashlight hint fallback
 
@@ -225,14 +227,25 @@ wss.on('connection', (ws: WebSocket) => {
           }
         }, 45_000);
         jasonManager.sendText(
-          '[SEQUENCE_TRIGGER — You just slammed into the concrete floor. Hard landing. ' +
-          'Your shoulder took the impact — something may be cracked. ' +
-          'It is pitch black. Cold water dripping nearby. You cannot see anything. ' +
-          'Take a sharp breath of pain. Then call out "Audrey? … Josh?" once, quietly. ' +
-          'Wait a beat. No answer. Just dripping. Silence. ' +
+          '[SEQUENCE_TRIGGER — PHYSICAL PERFORMANCE, NO NARRATION. ' +
+          'You just hit concrete floor full force after a long fall. Perform this exact sequence: ' +
+          'STEP 1 — impact: a single sharp involuntary grunt, wind knocked out, no words. ' +
+          'STEP 2 — recovery: a ragged exhale and low groan as you roll onto your back. ' +
+          'STEP 3 — silence: just hold still. Nothing but dripping water. A full beat. ' +
+          'STEP 4 — call out, quiet and strained: "Audrey?... Josh?" Wait. Nothing comes back. ' +
+          'STEP 5 — silence again. You are alone in pitch blackness. ' +
           'The voicebox in your hand is dark — you have not noticed it yet. ' +
-          'DO NOT address anyone through the device. DO NOT mention the voicebox. You are alone.]'
+          'DO NOT address anyone through the device. DO NOT mention the voicebox. DO NOT narrate your actions.]'
         );
+        // Gate player audio to Jason for 18s — covers Gemini latency + full monologue duration.
+        // After 18s: flip the gate and tell the frontend to show the "speak to JASON" hint.
+        jasonReadyTimer = setTimeout(() => {
+          jasonReadyForPlayer = true;
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'player_speak_prompt' }));
+          }
+          console.log(`[WS] jasonReadyForPlayer = true — player_speak_prompt sent for session ${sessionId}`);
+        }, 18_000);
         return;
       }
 
@@ -245,6 +258,9 @@ wss.on('connection', (ws: WebSocket) => {
       // Player speech — base64 PCM audio from the browser → Jason NPC + GM (for trust evaluation)
       if (data.type === 'player_speech' && data.audio) {
         console.log(`[WS] player_speech received — b64 bytes: ${(data.audio as string).length}`);
+        // Drop all player audio until Jason's landing monologue completes (~18s after intro_complete).
+        // Prevents ambient mic bleed from triggering Jason before the voicebox is "discovered".
+        if (!jasonReadyForPlayer) return;
         jasonManager.sendAudio(data.audio);
         if (gmGated) gmManager.sendAudio(data.audio); // GM hears player only after intro_complete
         return;
@@ -270,6 +286,7 @@ wss.on('connection', (ws: WebSocket) => {
   ws.on('close', () => {
     console.log(`[WS] Client disconnected — session ${sessionId}`);
     if (hintTimer) clearTimeout(hintTimer);
+    if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
     debugSessions.delete(sessionId);
     clearImageCache(sessionId);
     clearGlitchThrottle(sessionId);

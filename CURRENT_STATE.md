@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **AI WORKING MEMORY** — Source of truth for backend state.
-> Last updated: March 10, 2026 — **All bugs fixed. Backend complete. Deployed.**
+> Last updated: March 10, 2026 — **B13 + B14 landed: Jason vocalization performance upgrade + jasonReadyForPlayer player input gate.**
 
 ---
 
@@ -31,6 +31,8 @@ No remaining backend work before the March 11 cutoff.
 - **B10**: GM 6-beat strict playbook in `getGameMasterSystemPrompt()`
 - **B11**: 45s flashlight hint timer — `{ type: 'hint', text: '...' }` if no scene change
 - **B12**: Audrey NPC — Aoede voice, trust-adaptive single echo at beat 6
+- **B13**: Jason `VOCALIZATIONS` clause — model now performs grunts, exhales, groans, gasps as authentic non-verbal audio before any speech. `AMBIENT FILTER` clause added — Jason ignores environmental sounds (drip/wind/echo); only responds to direct human speech.
+- **B14**: `jasonReadyForPlayer` gate — all `player_speech` is silently dropped for 18s after `intro_complete`. After 18s: gate opens + `{ type: 'player_speak_prompt' }` sent to frontend to trigger the "speak to JASON" hint. Prevents ambient mic bleed and premature Jason responses during the landing monologue. `jasonReadyTimer` cleared on WS close.
 
 ### March 10 Bug Fixes (commit `720fb87` + input gate follow-up)
 
@@ -63,6 +65,7 @@ FE-1–FE-12 all done in `myceliainteractive`. Feature-locked. No further FE wor
 | `scene_video` | BE → FE | `{ payload: { sceneKey, url: string } }` |
 | `slotsky_trigger` | BE → FE | `{ payload: { anomalyType: string } }` |
 | `hint` | BE → FE | `{ text: string }` |
+| `player_speak_prompt` | BE → FE | `{}` — fires 18s after `intro_complete`; FE shows "speak to JASON" hint |
 | `audience_update` | BE → FE | `{ payload: { personCount, groupDynamic, observedEmotions } }` |
 
 ---
