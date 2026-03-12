@@ -34,11 +34,11 @@
 
 ## Phase B Plan — Split Execution Workflow
 
-- [ ] Run two VS Code windows in parallel for delivery.
-- [ ] Backend window: liminal-sin-gemini handles backend checklist items only.
-- [ ] Frontend window: myceliainteractive handles frontend checklist items only.
-- [ ] Keep ownership strict: no cross-window implementation edits.
-- [ ] Sync only through documented WS contract and CURRENT_STATE status deltas.
+- [x] Run two VS Code windows in parallel for delivery.
+- [x] Backend window: liminal-sin-gemini handles backend checklist items only.
+- [x] Frontend window: myceliainteractive handles frontend checklist items only.
+- [x] Keep ownership strict: no cross-window implementation edits.
+- [x] Sync only through documented WS contract and CURRENT_STATE status deltas.
 
 ### Backend Window Instructions (This Repo)
 
