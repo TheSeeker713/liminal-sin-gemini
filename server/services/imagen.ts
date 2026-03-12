@@ -1,4 +1,5 @@
 import { getAiClient } from './gemini';
+import { NEGATIVES } from './mediaSafety';
 
 // ---------------------------------------------------------------------------
 // Canonical Imagen 4 prompts — sourced verbatim from docs/Tunnel-and-park.md
@@ -107,6 +108,11 @@ photorealistic, 50mm macro-style lens, shallow depth of field, high contrast
 flashlight illumination, cinematic horror, 8K`,
 };
 
+export type SceneImageGeneration = {
+  imageBytes: string;
+  seed: number | null;
+};
+
 /**
  * Maps a GM-issued scene_key to a zone prompt.
  * Tries direct substring match on zone IDs first, then keyword fallbacks.
@@ -138,6 +144,17 @@ function resolvePrompt(sceneKey: string): string {
  * Returns a base64-encoded JPEG string, or null on failure.
  */
 export async function generateSceneImage(sceneKey: string): Promise<string | null> {
+  const result = await generateSceneImageWithMeta(sceneKey);
+  return result?.imageBytes ?? null;
+}
+
+/**
+ * Generates a first-person POV scene image via Imagen 4 and returns image bytes
+ * plus seed metadata when available.
+ */
+export async function generateSceneImageWithMeta(
+  sceneKey: string,
+): Promise<SceneImageGeneration | null> {
   const prompt = resolvePrompt(sceneKey);
   console.log(`[Imagen] Generating image for sceneKey="${sceneKey}" (${sceneKey.split('_').slice(2, 4).join('_')} context)`);
 
@@ -148,6 +165,7 @@ export async function generateSceneImage(sceneKey: string): Promise<string | nul
       config: {
         numberOfImages: 1,
         outputMimeType: 'image/jpeg',
+        negativePrompt: NEGATIVES,
       },
     });
 
@@ -157,8 +175,18 @@ export async function generateSceneImage(sceneKey: string): Promise<string | nul
       return null;
     }
 
+    const first = response.generatedImages?.[0] as
+      | { seed?: number; image?: { seed?: number } }
+      | undefined;
+    const seed =
+      typeof first?.seed === 'number'
+        ? first.seed
+        : typeof first?.image?.seed === 'number'
+          ? first.image.seed
+          : null;
+
     console.log(`[Imagen] Scene image generated — sceneKey="${sceneKey}"`);
-    return imageBytes;
+    return { imageBytes, seed };
   } catch (err) {
     console.error(`[Imagen] generateImages failed for sceneKey="${sceneKey}":`, (err as Error).message);
     return null;

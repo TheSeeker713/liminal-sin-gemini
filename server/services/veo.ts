@@ -1,5 +1,6 @@
 import type { GenerateVideosOperation } from "@google/genai";
 import { getVeoAiClient } from "./gemini";
+import { NEGATIVES } from "./mediaSafety";
 
 /**
  * Generates a short video clip from a reference still image via Veo 3.1 Fast.
@@ -97,6 +98,17 @@ export async function generateSceneVideo(
 ): Promise<string | null> {
   const animHint = resolveAnimationHint(sceneKey);
   const prompt = `First-person POV underground cinematic exploration. ${animHint} Cinematic, photorealistic, slow atmospheric camera movement, no people visible, 8K quality.`;
+  const veoConfig = {
+    numberOfVideos: 1,
+    durationSeconds: 6,
+    fps: 24,
+    aspectRatio: "16:9",
+    personGeneration: "ALLOW_ADULT",
+    negativePrompt: NEGATIVES,
+    safetyFilterLevel: "BLOCK_ONLY_HIGH",
+    addWatermark: false,
+    enhancePrompt: true,
+  };
 
   console.log(
     `[Veo] Starting Veo 3.1 Fast generation for sceneKey="${sceneKey}"`,
@@ -115,16 +127,7 @@ export async function generateSceneVideo(
             imageBytes: base64Jpeg,
             mimeType: "image/jpeg",
           },
-          config: {
-            numberOfVideos: 1,
-            durationSeconds: 6,
-            fps: 24,
-            aspectRatio: "16:9",
-            personGeneration: "dont_allow",
-            negativePrompt:
-              "people, faces, hands, text, watermark, logo, blood, gore, weapon, blurry, low quality",
-            enhancePrompt: true,
-          },
+          config: veoConfig as never,
           prompt,
         });
         selectedModel = model;
@@ -182,6 +185,9 @@ export async function generateSceneVideo(
     if ((operation.response?.raiMediaFilteredCount ?? 0) > 0) {
       console.warn(
         `[Veo] Output filtered by RAI for sceneKey="${sceneKey}". count=${operation.response?.raiMediaFilteredCount}`,
+      );
+      console.warn(
+        `[VEO] RAI filter blocked: sceneKey="${sceneKey}" count=${operation.response?.raiMediaFilteredCount}`,
       );
       console.warn(
         `[Veo] RAI reasons for sceneKey="${sceneKey}": ${JSON.stringify(operation.response?.raiMediaFilteredReasons ?? [])}`,

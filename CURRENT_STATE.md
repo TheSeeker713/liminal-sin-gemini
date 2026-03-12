@@ -183,13 +183,13 @@ These are the exact tasks to execute in the next session, in order:
 
 ### Pending / Not Started
 
-- [ ] **Directive 1:** Safety filter relaxation (`safetyFilterLevel: "block_only_high"` in veo.ts + benchmark)
-- [ ] **Directive 2:** Centralized `NEGATIVES` constant in imagen.ts, veo.ts, and benchmark
-- [ ] **Directive 3:** `scripts/frameExtract.ts` + chained pipeline in benchmark
-- [ ] **Directive 4:** Seed logging in SceneResult + benchmark.json output
-- [ ] **Directive 5:** FPV/POV rewrite of all 12 VIDEO_HINTS in benchmark script
-- [ ] veo.ts: strip "horror" from prompts, add explicit RAI warning log
-- [ ] Full benchmark run after all above are done
+- [x] **Directive 1:** Safety filter relaxation (`safetyFilterLevel: "block_only_high"` in veo.ts + benchmark)
+- [x] **Directive 2:** Centralized `NEGATIVES` constant in imagen.ts, veo.ts, and benchmark
+- [x] **Directive 3:** `scripts/frameExtract.ts` + chained pipeline in benchmark
+- [x] **Directive 4:** Seed logging in SceneResult + benchmark.json output
+- [x] **Directive 5:** FPV/POV rewrite of all 12 VIDEO_HINTS in benchmark script
+- [x] veo.ts: strip "horror" from prompts, add explicit RAI warning log
+- [x] Full benchmark run after all above are done
 - [ ] Final deploy (`npm run deploy`) — NOT yet triggered
 
 ---
