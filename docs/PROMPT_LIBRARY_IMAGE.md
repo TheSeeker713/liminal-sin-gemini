@@ -119,7 +119,7 @@ Usage:
 - Image mode: NONE (overlay only)
 
 7. Live interaction begins, trust/fear shown
-- Image mode: NONE unless fallback hint state requires visual nudge
+- Image mode: NONE 
 
 8. Darkness timer and autonomy phase
 - Image mode: NONE

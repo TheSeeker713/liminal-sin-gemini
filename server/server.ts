@@ -224,12 +224,10 @@ wss.on("connection", (ws: WebSocket) => {
               : fromStep === 11
                 ? 13
                 : fromStep === 13
-                  ? 16
-                  : fromStep === 16
-                    ? 18
-                    : fromStep === 18
-                      ? 20
-                      : currentSequenceStep + 1;
+                  ? 15
+                  : fromStep === 15
+                    ? 17
+                    : currentSequenceStep + 1;
         currentSequenceStep = toStep;
         lastPlayerSpeechAt = Date.now();
 
@@ -316,21 +314,42 @@ wss.on("connection", (ws: WebSocket) => {
           await handleGmFunctionCall(
             sessionId,
             "triggerSceneChange",
-            { sceneKey: "zone_park_shore" },
+            { sceneKey: "park_entrance" },
             ws,
             jasonManager,
           );
           await handleGmFunctionCall(
             sessionId,
             "triggerVideoGen",
-            { sceneKey: "zone_park_shore" },
+            { sceneKey: "park_entrance" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        // Fourth inactivity autoplay action: Jason explores deeper into the waterpark.
+        if (fromStep === 13 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You keep moving, following the walkways deeper into the park.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "park_walkway" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "park_walkway" },
             ws,
             jasonManager,
           );
         }
 
         // Late-session autoplay action: move to maintenance and start dread/card2 branch.
-        if (fromStep === 16 && gmGated) {
+        if (fromStep === 15 && gmGated) {
           jasonManager.sendText(
             "[AUTOPLAY_TIMEOUT: No player response. You commit to the maintenance path and keep moving.]",
           );
@@ -351,28 +370,7 @@ wss.on("connection", (ws: WebSocket) => {
           await handleGmFunctionCall(
             sessionId,
             "triggerDreadTimerStart",
-            { durationMs: 90_000 },
-            ws,
-            jasonManager,
-          );
-          await handleGmFunctionCall(
-            sessionId,
-            "triggerSlotsky",
-            { anomalyType: "anomaly_cards" },
-            ws,
-            jasonManager,
-          );
-          await handleGmFunctionCall(
-            sessionId,
-            "triggerSceneChange",
-            { sceneKey: "slotsky_card" },
-            ws,
-            jasonManager,
-          );
-          await handleGmFunctionCall(
-            sessionId,
-            "triggerVideoGen",
-            { sceneKey: "slotsky_card" },
+            { durationMs: 60_000 },
             ws,
             jasonManager,
           );

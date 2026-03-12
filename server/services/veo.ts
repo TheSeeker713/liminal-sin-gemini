@@ -13,34 +13,20 @@ import { NEGATIVES } from "./mediaSafety";
 
 /** Animation prompt suffixes keyed by zone — keeps video motion lore-consistent. */
 const ANIMATION_HINTS: Record<string, string> = {
-  zone_tunnel_entry:
-    "Slow cinematic camera drift forward through the tunnel. Flickering LED lights overhead cast moving shadows on concrete walls. Dust motes float through the air.",
-  zone_tunnel_mid:
-    "Very slow dolly forward. LED strips flicker. A faint haze drifts across the frame. Tire tracks on the floor lead into the wall ahead.",
-  zone_merge:
-    "Camera slowly passes through the ruptured threshold. Rebar sways slightly. Breath mist drifts from cold into warm air. Construction light flickers once.",
-  zone_park_shore:
-    "Extremely slow pan across the flooded water park. Still water surface has subtle ripples. Orange flood lights cast shifting amber reflections. Distant slide structures loom.",
-  zone_park_shallow:
-    "First-person wading motion. Water ripples spread from each step. Warm amber light reflects and shimmers on the water surface. Faded water slides in the distance.",
-  zone_park_slides:
-    "Slow upward tilt looking at the slide structure. Amber construction light flickers. A single drop of water falls from the slide into dark water below.",
-  zone_park_deep:
-    "Camera slowly leans forward over deeper water. Amber light pillars shimmer in the reflection. Soft ripples travel across the surface and fade naturally.",
-  slotsky_card:
-    "Camera slowly lowers to ground level. The playing cards are motionless but the shadow from the flood light shifts slightly, as if the light source moved on its own.",
-
   flashlight_beam:
-    "Flashlight beam sweeps slowly left then right through total darkness, catching suspended water droplets as it moves — each droplet briefly lit then returns to black — no environment fills in during the sweep, only what the beam directly touches is visible, beam completes one full sweep and returns to center pointing forward, holds steady",
+    "Flashlight beam sweeps slowly left then right through total darkness, catching suspended water droplets as it moves — each droplet briefly lit then returns to black — no environment fills in except what the beam directly touches, beam completes one full survey sweep and returns to center pointing forward, holds steady",
 
   generator_area:
-    "Slow downward tilt from the generator body, flashlight tracking down toward the playing card at the generator's base, slight mechanical vibration in the frame from the running generator, beam contracts tighter around the card as if drawn to it, card remains perfectly still, camera holds on the card",
+    "Flashlight beam sweeps across the industrial generator housing and settles on the starting mechanism — a gloved hand enters frame to actuate the generator switch, the machine shudders and vibrates to life, beam then drifts slowly downward to the concrete floor at the generator base where a joker playing card lies face-up, perfectly placed, camera holds on the card",
+
+  park_entrance:
+    "Camera drifts slowly forward through the broken concrete threshold — concrete rubble at the tunnel edge gives way to tropical warmth, pool surface shimmers with reflected neon, a working slide in background lightly mists the air below its exit chute, tropical palms sway almost imperceptibly, the transition from dark industrial concrete behind to vivid living color ahead fills the frame as camera advances",
+
+  park_walkway:
+    "Slow walking-pace forward camera movement along the promenade, slight natural sway from footsteps, looking ahead and gently upward at the massive curved slides, panning right to reveal the lazy river channel and its moving water, then back ahead as the cascading waterfall fills the far frame with shimmering spray-light, park scale revealed over six seconds of motion, subtle mist drifts near the waterfall",
 
   maintenance_area:
     "Rapid exploratory scan, flashlight sweeps left to right across pipes and conduit, beam pauses briefly on darker alcoves, then swings back to the aquamarine-glowing park doorway in the background — the neon glow through the arch flickers once — then flashlight swings forward",
-
-  card2_closeup:
-    "Camera holds steady on the queen of spades card in the palm. Subtle natural lighting shifts as if the flashlight breath-wavers. Card surface catches light. Minimal motion — the card is held perfectly still.",
 };
 
 /** Resolve a motion-description suffix for a given sceneKey. */
@@ -50,17 +36,13 @@ function resolveAnimationHint(sceneKey: string): string {
     if (key.includes(zoneId)) return ANIMATION_HINTS[zoneId];
   }
   // Keyword fallbacks
-  if (key.includes("merge") || key.includes("rupture"))
-    return ANIMATION_HINTS["zone_merge"];
-  if (key.includes("shallow")) return ANIMATION_HINTS["zone_park_shallow"];
-  if (key.includes("slide")) return ANIMATION_HINTS["zone_park_slides"];
-  if (key.includes("deep")) return ANIMATION_HINTS["zone_park_deep"];
-  if (key.includes("shore") || key.includes("park"))
-    return ANIMATION_HINTS["zone_park_shore"];
-  if (key.includes("card") || key.includes("slotsky"))
-    return ANIMATION_HINTS["slotsky_card"];
-  if (key.includes("tunnel")) return ANIMATION_HINTS["zone_tunnel_entry"];
-  return ANIMATION_HINTS["zone_tunnel_entry"];
+  if (key.includes("park") || key.includes("shore") || key.includes("shallow") || key.includes("slide") || key.includes("deep"))
+    return ANIMATION_HINTS["park_walkway"];
+  if (key.includes("maintenance") || key.includes("card") || key.includes("slotsky"))
+    return ANIMATION_HINTS["maintenance_area"];
+  if (key.includes("generator"))
+    return ANIMATION_HINTS["generator_area"];
+  return ANIMATION_HINTS["flashlight_beam"];
 }
 
 /** Maximum time to poll before giving up (ms). */

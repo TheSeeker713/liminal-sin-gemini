@@ -2,78 +2,12 @@ import { getAiClient } from "./gemini";
 import { NEGATIVES } from "./mediaSafety";
 
 // ---------------------------------------------------------------------------
-// Canonical Imagen 4 prompts — sourced verbatim from docs/Tunnel-and-park.md
-// where marked, and derived from zone descriptions for the 4 remaining zones.
+// Canonical Imagen 4 prompts — Act 1 primary scene keys only.
+// All scenes: 16:9, high quality photorealistic, cinematic, first-person POV.
 // NEVER include 'smart glasses', 'cracked screen', or human figures in prompts.
-// All prompts are first-person POV per lore invariant.
+// No close-up shots of any kind — maintain Jason's natural POV at all times.
 // ---------------------------------------------------------------------------
 const ZONE_PROMPTS: Record<string, string> = {
-  zone_tunnel_entry: `First-person POV standing inside an unfinished Boring Company tunnel, looking ahead
-down the white smooth-concrete cylinder, precast segmented ring walls with diagonal
-bolt-plate seams, cold LED strip lighting along ceiling (flickering), concrete dust
-on floor, tire tracks pressed into the dust leading into the far wall and stopping,
-no people, photorealistic architectural photography, wide angle 16mm, brutalist
-concrete, desaturated cool palette, mist in mid-air, cinematic horror, 8K`,
-
-  zone_tunnel_mid: `First-person POV deep inside an unfinished Boring Company tunnel, cold LED strip
-lighting flickering overhead, smooth white-concrete cylinder walls with diagonal
-bolt-plate seams, Tesla EV tire tracks in concrete dust leading directly into a
-seamless intact wall ahead and stopping — the tracks simply end, no impact, no
-disturbance, as if the vehicle drove into the solid wall and vanished, no people,
-photorealistic architectural photography, wide angle 16mm, brutalist concrete,
-desaturated cool palette, cinematic horror, 8K`,
-
-  zone_merge: `First-person POV standing at a ruptured concrete threshold where a Boring Company
-tunnel has broken into a vast dark chamber, fractured precast concrete segments with
-displaced rebar bent outward as if pushed through from the other side, cold white
-LED light from behind transitioning to warm orange amber flood construction light
-ahead, visible breath mist drifting through the rupture into darkness, edges of a
-vast abandoned structure visible beyond the threshold, no people, photorealistic
-wide angle 16mm, brutalist concrete and rebar, desaturated cool-warm contrast at
-threshold, cinematic horror, 8K`,
-
-  zone_park_shore: `First-person POV standing at the threshold of a vast underground water park that
-looks like a drowned paradise, lush artificial tropical foliage bleached bone-white
-by moisture and age but still dense and overhanging the walkway, fragments of broken
-neon signs glowing pink and teal reflected in perfectly still dark water below,
-illuminated aquamarine shimmer rising from beneath the pool surface, warm amber
-flood construction lights on tripod stands competing with cold neon, reflections
-geometrically wrong and extending into impossible depth, no people, photorealistic
-architectural photography, wide angle 16mm, desaturated cool-warm contrast palette,
-cinematic horror, 8K`,
-
-  zone_park_shallow: `First-person POV wading through shallow dark water, ten inches deep, in an
-underground abandoned water park, looking across a vast subterranean concrete
-floor partially flooded, warm orange flood construction lights on tripod stands
-at the perimeter reflecting in the perfectly still water surface, abandoned
-fiberglass water slides in faded red and yellow visible in the middle distance,
-disturbed water rings spreading from footsteps, no people, photorealistic
-wide angle 16mm, brutalist concrete, desaturated cool-warm contrast palette,
-cinematic horror, 8K`,
-
-  zone_park_slides: `First-person POV looking up at an abandoned underground water park slide structure,
-large fiberglass tube slide in faded red and yellow above the waterline, brutalist
-ribbed concrete arched ceiling at 40 feet overhead, warm orange flood construction
-light casting amber glow from below, black water at the base disappearing into the
-slide entrance, slide surface coated with biological patina, no people, photorealistic
-wide angle 16mm, brutalist concrete and aging fiberglass, desaturated with amber
-light accent, cinematic horror, 8K`,
-
-  zone_park_deep: `First-person POV standing at the edge of an underground water park deep pool,
-looking down into five feet of utterly still black water, smooth concrete pool floor
-visible through the depth, a water slide continuing down into the pool underwater
-still visible, a faint suggestion of a wider cavern opening below the pool floor —
-natural stone not concrete — deep beyond the lit zone, warm amber construction flood
-lights on tripod stands reflecting as inverted orange pillars in the still water,
-no people, no movement, photorealistic wide angle 16mm, cinematic horror, 8K`,
-
-  slotsky_card: `First-person POV looking down at an underground water park floor, shallow dark water
-over wet concrete, three playing cards arranged in a deliberate triangular pattern
-(queen of spades, jack of clubs, ace of hearts) lying flat on the floor, no one near
-them, single warm flood construction light casting a hard shadow from the right,
-the cards were not there before, photorealistic, wide angle 24mm, brutalist concrete
-and still water, desaturated with amber light accent, cinematic horror, 8K`,
-
   flashlight_beam: `First-person POV in total darkness underground, a single flashlight beam shooting
 forward through absolute blackness, Jason's right hand visible at the bottom of
 frame gripping a heavy rubberized flashlight, beam illuminating wet concrete floor
@@ -85,10 +19,29 @@ wide angle 16mm, high contrast, cinematic horror, 8K`,
   generator_area: `First-person POV looking toward an industrial diesel generator unit set against
 rough dark concrete wall underground, warm amber flashlight glow from below
 illuminating the battered metal generator housing and surrounding concrete floor,
-a single playing card — jack of clubs, face-up, pristine — lying flat on wet
-concrete at the base of the generator, isolated in a tight flashlight spotlight
-as if placed deliberately, no other people, photorealistic, wide angle 24mm,
-brutalist industrial concrete, oil-stained floor, cinematic horror, 8K`,
+a single joker playing card — face-up, pristine, vivid colorful illustration —
+lying flat on wet concrete at the base of the generator, isolated in a tight
+flashlight spotlight as if placed deliberately, no other people, photorealistic,
+wide angle 16mm, brutalist industrial concrete, oil-stained floor, cinematic horror, 8K`,
+
+  park_entrance: `First-person POV standing at the threshold where a Boring Company tunnel wall has
+ruptured open, the broken concrete arch frames a vast underground water park in full
+vibrant operation beyond — bright turquoise pool water under full-spectrum artificial
+sunlight, clean white and cobalt-blue fiberglass slides curving overhead, working neon
+signs in pink and tropical green casting vivid color reflections across the water
+surface, real tropical palms and bird-of-paradise plants thriving, the park looks
+completely intact and operational with no visible damage or decay, no people,
+photorealistic, wide angle 16mm, vibrant saturated color palette, cinematic, 8K`,
+
+  park_walkway: `First-person POV walking along a dry concrete promenade path through a massive
+underground water park, operational turquoise pools extending wide on both sides,
+clean white and cobalt fiberglass slides spiraling high above, a cascading waterfall
+thundering over artificial rock formations ahead, a lazy river circuit visible through
+a palm-lined walkway to the right, the cavern ceiling is lost in the distance above the
+artificial lighting, the park interior is enormous — fully operational and immaculate,
+no guests, in the far background a recessed maintenance corridor entrance is cut into
+the cavern rock wall barely visible beyond the park lights, no people, photorealistic,
+wide angle 16mm, vibrant color palette, cinematic, 8K`,
 
   maintenance_area: `First-person POV standing in an industrial maintenance corridor branching off an
 underground water park, exposed pipe clusters and electrical conduit running along
@@ -99,13 +52,6 @@ a sliver of paradise behind the industrial grimness, decorative arch frame with
 moisture-stained painted tropical mural barely visible through the staining, no
 people, photorealistic, wide angle 16mm, industrial concrete with neon bleed,
 cinematic horror, 8K`,
-
-  card2_closeup: `Close-up first-person POV, a queen of spades playing card lying face-up held in an
-open palm, flashlight beam from directly above casting hard-edged shadows from card
-corners onto the palm below, card surface pristine and bone-dry despite the
-surrounding damp, wet concrete floor faintly visible blurred in the background,
-photorealistic, 50mm macro-style lens, shallow depth of field, high contrast
-flashlight illumination, cinematic horror, 8K`,
 };
 
 export type SceneImageGeneration = {
@@ -127,19 +73,15 @@ function resolvePrompt(sceneKey: string): string {
   }
 
   // Keyword fallbacks for coarse scene_key contexts
-  if (key.includes("merge") || key.includes("rupture"))
-    return ZONE_PROMPTS["zone_merge"];
-  if (key.includes("shallow")) return ZONE_PROMPTS["zone_park_shallow"];
-  if (key.includes("slide")) return ZONE_PROMPTS["zone_park_slides"];
-  if (key.includes("deep")) return ZONE_PROMPTS["zone_park_deep"];
-  if (key.includes("shore") || key.includes("park"))
-    return ZONE_PROMPTS["zone_park_shore"];
-  if (key.includes("card") || key.includes("slotsky"))
-    return ZONE_PROMPTS["slotsky_card"];
-  if (key.includes("tunnel")) return ZONE_PROMPTS["zone_tunnel_entry"];
+  if (key.includes("park") || key.includes("shore") || key.includes("shallow") || key.includes("slide") || key.includes("deep"))
+    return ZONE_PROMPTS["park_walkway"];
+  if (key.includes("maintenance") || key.includes("card") || key.includes("slotsky"))
+    return ZONE_PROMPTS["maintenance_area"];
+  if (key.includes("generator"))
+    return ZONE_PROMPTS["generator_area"];
 
-  // Default: tunnel entry (where the session always begins)
-  return ZONE_PROMPTS["zone_tunnel_entry"];
+  // Default: flashlight (where the visual session always begins)
+  return ZONE_PROMPTS["flashlight_beam"];
 }
 
 /**
@@ -214,7 +156,7 @@ const imageCache = new Map<string, Map<string, string>>();
 const PREWARM_SCENE_KEYS = [
   "flashlight_beam",
   "generator_area",
-  "zone_park_shore",
+  "park_entrance",
 ] as const;
 
 /**

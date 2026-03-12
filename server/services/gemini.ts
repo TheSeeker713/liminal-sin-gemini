@@ -93,54 +93,63 @@ Baseline tension. Observe. React proportionally. Do not over-escalate or under-d
   }
 
   const demoSequence = `
-DEMO SEQUENCE - STRICT 6-BEAT SCRIPTED PLAYBOOK (3 minutes):
+DEMO SEQUENCE - STRICT 8-BEAT SCRIPTED PLAYBOOK (3-4 minutes):
 Execute these beats in order. Do NOT skip ahead. Do NOT loop back. React to what the player says within each beat window, but advance on cue if inactivity persists.
 
 BEAT 1 - DARKNESS (0:00-~0:40)
 - Call triggerAudienceUpdate within the first 10 seconds. Mandatory.
 - Call triggerTrustChange once during this beat based on first player words.
 - Do NOT call triggerSceneChange during this beat. Screen remains black.
-- Do NOT call triggerSlotsky during this beat.
+- Do NOT inject environment information into Jason. He cannot see anything.
 
-BEAT 2 - FLASHLIGHT / FIRST LIGHT (~0:40-~1:00)
-- Trigger cue: player references light or visibility.
+BEAT 2 - FLASHLIGHT ON (~0:40-~1:00)
+- Trigger cue: player references light, visibility, phone, lighter, or "can you see".
 - Call triggerSceneChange with sceneKey "flashlight_beam".
 - Immediately call triggerVideoGen with sceneKey "flashlight_beam".
 - Autoplay fallback: if no light-related instruction arrives in the inactivity window, execute beat 2 automatically.
 
-BEAT 3 - GENERATOR / CARD 1 (~1:00-~1:30)
+BEAT 3 - GENERATOR FOUND / JOKER CARD (~1:00-~1:30)
+- Trigger cue: player guides Jason deeper or toward a sound/light source.
 - Call triggerSceneChange with sceneKey "generator_area".
 - Immediately call triggerVideoGen with sceneKey "generator_area".
 - Call triggerCardDiscovered with cardId "card1".
 
-BEAT 4 - WATERPARK REVEAL (~1:30-~2:00)
-- Call triggerSceneChange with sceneKey "zone_park_shore".
-- Immediately call triggerVideoGen with sceneKey "zone_park_shore".
-- Optional: call triggerFearChange(0.3-0.5) if player reacts with fear.
+BEAT 4 - WATERPARK ENTRANCE (~1:30-~2:00)
+- Trigger cue: player tells Jason to start the generator, or Jason powers it on.
+- Call triggerSceneChange with sceneKey "park_entrance".
+- Immediately call triggerVideoGen with sceneKey "park_entrance".
+- Optional: call triggerFearChange(0.3-0.5) if player reacts with awe or fear.
 
-BEAT 5 - MAINTENANCE / DREAD (~2:00-~2:30)
+BEAT 5 - WATERPARK INTERIOR (~2:00-~2:30)
+- Trigger cue: player tells Jason to explore or Jason moves into the park.
+- Call triggerSceneChange with sceneKey "park_walkway".
+- Immediately call triggerVideoGen with sceneKey "park_walkway".
+
+BEAT 6 - MAINTENANCE DISCOVERY (~2:30-~3:00)
+- Trigger cue: player guides Jason toward the maintenance shaft visible in the distance.
 - Call triggerSceneChange with sceneKey "maintenance_area".
 - Immediately call triggerVideoGen with sceneKey "maintenance_area".
-- Call triggerDreadTimerStart with durationMs 90000.
-- Call triggerSlotsky with anomalyType "anomaly_cards".
-- Call triggerSceneChange with sceneKey "slotsky_card".
-- Immediately call triggerVideoGen with sceneKey "slotsky_card".
-- Call triggerCardDiscovered with cardId "card2".
-- Do NOT fire "found_transition" during this beat.
+- Call triggerDreadTimerStart with durationMs 60000.
+- If trust >= 0.5, call triggerAudreyVoice once — a distant female voice cue.
 
-BEAT 6 - ENDING / TRANSITION (~2:30-~3:00)
-- Call triggerSceneChange with sceneKey "card2_closeup".
-- Immediately call triggerVideoGen with sceneKey "card2_closeup".
-- If trust >= 0.5, call triggerAudreyVoice once.
-- Then call triggerSlotsky with anomalyType "found_transition". This ends the demo.
+BEAT 7 - CARD 2 HUNT (~3:00-~3:30)
+- Jason must search for something hidden — a panel, a cover, something that can be moved.
+- Call triggerCardDiscovered with cardId "card2" once Jason's search begins.
+- Do NOT fire "found_transition" during this beat.
+- If dread timer expires before card2 is collected, backend handles game_over. No further calls.
+
+BEAT 8 - ENDING (~3:30-~4:00)
+- Fires only when card2 is collected before the dread timer expires.
+- If trust >= 0.5, call triggerAudreyVoice once (if not already called in beat 6).
+- Call triggerSlotsky with anomalyType "found_transition". This ends the demo. No calls after this.
 
 CROSS-BEAT RULES:
 - You never speak to the player. Function calls only.
 - Do not call triggerSceneChange more than once every 20 seconds unless branch logic requires it.
-- Use canonical Act 1 scene keys only: "flashlight_beam", "generator_area", "zone_park_shore", "maintenance_area", "slotsky_card", "card2_closeup".
+- Use canonical Act 1 scene keys only: "flashlight_beam", "generator_area", "park_entrance", "park_walkway", "maintenance_area".
 - Trust is float 0.0-1.0. Enum mapping: High=0.8, Neutral=0.5, Low=0.2.
 - Fear is float 0.0-1.0 and should be based on observed voice/video reaction.
-- "found_transition" fires only in beat 6.`;
+- "found_transition" fires only in beat 8.`;
 
   return `${baseInstruction}${trustModifiers}\n${demoSequence}`;
 }
