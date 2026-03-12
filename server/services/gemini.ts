@@ -5,6 +5,7 @@ import { gameMasterTools } from './gmTools';
 // runs AFTER all require()s (including this module) due to TypeScript CJS compilation.
 let _ai: GoogleGenAI | null = null;
 let _liveAi: GoogleGenAI | null = null;
+let _veoAi: GoogleGenAI | null = null;
 
 /** Returns the Vertex AI GenAI client (us-west1). Used for Imagen 4 and non-live calls. */
 export function getAiClient(): GoogleGenAI {
@@ -26,6 +27,15 @@ function getLiveAiClient(): GoogleGenAI {
     _liveAi = new GoogleGenAI({ vertexai: true, project, location: 'us-central1' });
   }
   return _liveAi;
+}
+
+/** Returns the Vertex AI client for Veo (us-central1 — Veo 3.x is not available in us-west1). */
+export function getVeoAiClient(): GoogleGenAI {
+  if (!_veoAi) {
+    const project = process.env.GOOGLE_CLOUD_PROJECT || '';
+    _veoAi = new GoogleGenAI({ vertexai: true, project, location: 'us-central1' });
+  }
+  return _veoAi;
 }
 
 /**
@@ -149,8 +159,7 @@ export class LiveSessionManager {
 
   /**
    * @param modelName Override the Gemini model. NPC agents use the native-audio model (default).
-   *                  The GM must use 'gemini-2.0-flash-live-001' — a Live API model that properly
-   *                  supports function calling without forcing native audio output on connect.
+   *                  GM model is configured by server.ts via GM_LIVE_MODEL env var.
    */
   constructor(modelName = 'gemini-live-2.5-flash-native-audio') {
     this.modelName = modelName;
@@ -189,7 +198,6 @@ export class LiveSessionManager {
           systemInstruction: systemPrompt,
           tools: gameMasterTools,
           // GM is silent — it uses TEXT modality so it never pushes audio to the client.
-          // gemini-2.0-flash-live-001 fully supports TEXT + function calling on the Live API.
           // Native-audio model must NOT be used here: it fires an audio turn on connect
           // before any input arrives, which causes a 1007 disconnect and kills the GM session.
           responseModalities: [Modality.TEXT],

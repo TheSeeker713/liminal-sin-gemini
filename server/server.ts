@@ -103,8 +103,9 @@ app.post('/log-client-error', async (req, res) => {
 
 wss.on('connection', (ws: WebSocket) => {
   const sessionId = randomUUID();
+  const gmLiveModel = process.env.GM_LIVE_MODEL || 'gemini-live-2.5-flash';
   const jasonManager = new LiveSessionManager(); // NPC — speaks, audio out, Enceladus voice
-  const gmManager = new LiveSessionManager('gemini-2.0-flash-live-001'); // GM — silent, function calls only
+  const gmManager = new LiveSessionManager(gmLiveModel); // GM — silent, function calls only
   const audreyManager = new LiveSessionManager(); // NPC — single echo, Aoede voice
   let jasonIntroFired = false; // Gates Jason's first line until frontend sends intro_complete
   let gmGated = false;         // Gates GM scene/video calls until intro_complete is received
