@@ -70,12 +70,15 @@ Extends the contract defined in `CURRENT_STATE.md`. Items marked ⚠️ Backend 
 | `slotsky_trigger` | BE→FE | `{ payload: { anomalyType: string } }` | ✅ Existing |
 | `hint` | BE→FE | `{ text: string }` | ✅ Existing |
 | `player_speak_prompt` | BE→FE | `{}` | ✅ Existing |
+| `overlay_text` | BE→FE | `{ payload: { text: string, variant: string, durationMs: number } }` | ✅ Existing |
+| `npc_idle_nudge` | BE→FE | `{ payload: { phase: string, secondsSilent: number, urgency: 'soft'\|'urgent' } }` | ✅ Existing |
+| `autoplay_advance` | BE→FE | `{ payload: { fromStep: number, toStep: number, reason: 'timeout'\|'npc_choice' } }` | ✅ Existing |
 | `audience_update` | BE→FE | `{ payload: { personCount, groupDynamic, observedEmotions } }` | ✅ Existing |
-| `card_discovered` | BE→FE | `{ cardId: 'card1'\|'card2' }` | ⚠️ Backend TBD |
-| `card_collected` | FE→BE | `{ cardId: 'card1'\|'card2' }` | ⚠️ Backend TBD |
-| `dread_timer_start` | BE→FE | `{ durationMs: number }` | ⚠️ Backend TBD |
-| `game_over` | BE→FE | `{}` | ⚠️ Backend TBD |
-| `good_ending` | BE→FE | `{}` | ⚠️ Backend TBD |
+| `card_discovered` | BE→FE | `{ cardId: 'card1'\|'card2' }` | ✅ Existing |
+| `card_collected` | FE→BE | `{ cardId: 'card1'\|'card2' }` | ✅ Existing |
+| `dread_timer_start` | BE→FE | `{ durationMs: number }` | ✅ Existing |
+| `game_over` | BE→FE | `{}` | ✅ Existing |
+| `good_ending` | BE→FE | `{}` | ✅ Existing |
 
 > **SFX CONVENTION — Universal Scene Transition:** `glitch_low` (random variant) fires on every `scene_change`, `scene_image`, and `scene_video` event, and on every VHS-swap (video-to-still) transition. It is the **only** SFX used for visual scene transitions. No other SFX replaces this role.
 
@@ -199,7 +202,7 @@ Powered by Google Gemini.
 **Backend on `intro_complete`:**
 - `jasonIntroFired = true`
 - `gmGated = true` (GM may now fire scene/video events)
-- `prewarmImageCache()` fires — generates `flashlight_beam`, `zone_merge`, `zone_park_shore` in parallel
+- `prewarmImageCache()` fires — generates `flashlight_beam`, `generator_area`, `zone_park_shore` in parallel
 - Jason `SEQUENCE_TRIGGER` text is injected (Phase 3)
 - `jasonReadyTimer` (18s) starts
 
@@ -253,8 +256,9 @@ STEP 7 — FIRST AWARENESS:
 
 **Player audio during Phase 3:**
 - All `player_speech` events are **dropped** for 18 seconds (existing `jasonReadyForPlayer` gate in `server.ts`)
-- Mic is ACTIVE on frontend but audio is not yet streamed to Jason
+- Mic and camera are runtime-blocked until interaction opens; frontend may hold permissions but must not present active interaction indicators
 - Mic visualization / "speak" prompt should NOT appear yet
+- No player webcam or speech is processed by gameplay logic during this phase
 
 **On 18s timer expiry:**
 - `jasonReadyForPlayer = true`
@@ -272,14 +276,18 @@ STEP 7 — FIRST AWARENESS:
 
 **Frontend activates:**
 - Subtle "SPEAK TO JASON" hint appears
-- Camera indicator visible (GM now receives webcam frames)
-- Microphone indicator visible (player audio now streams to Jason)
+- Camera indicator becomes active for the first time (GM now receives webcam frames)
+- Microphone indicator becomes active for the first time (player audio now streams to Jason)
+- Live styled text overlay is allowed here (`overlay_text`) for TALK prompt variants
 
 **Backend:**
 - Player audio gate is open (`jasonReadyForPlayer = true`)
 - GM receives audio + webcam frames from this point forward
 - GM calls `triggerAudienceUpdate` within 10 seconds (MANDATORY — Beat 1)
 - GM calls `triggerTrustChange` once based on the player's first words
+- Start repeating idle-silence protocol from this point forward:
+  - Every 15s of no player speech: send `npc_idle_nudge` and/or `overlay_text`
+  - Every 60s of inactive phase time: commit one `autoplay_advance` to prevent deadlock
 
 **Beat 1 ends here. Beat 2 activates (GM watches).**
 
@@ -290,6 +298,8 @@ STEP 7 — FIRST AWARENESS:
 **[Beat 2 — First visual moment of the experience]**
 
 **Trigger (GM):** Player says anything light-related — "flashlight", "light", "can you see", "look around", "is it dark", "phone", "lighter", etc. ANY light reference is the GM's cue.
+
+**Autoplay fallback:** If no light-related command is received within 60 seconds after Phase 4 opens, Jason self-initiates flashlight use and GM executes Beat 2 automatically.
 
 **GM calls (in order):**
 1. `triggerSceneChange({ sceneKey: "flashlight_beam" })`
@@ -330,6 +340,10 @@ STEP 7 — FIRST AWARENESS:
 **Player clicks the card:**
 - Frontend sends `card_collected({ cardId: 'card1' })` to backend — **[⚠️ Backend TBD]**
 - Card overlay disappears; card stored in frontend collected state
+
+**Card timeout fallback (new canonical):**
+- If Card 1 is not clicked within 60 seconds, Jason auto-collects it and frontend sends the same `card_collected({ cardId: 'card1' })` event path.
+- During this 60-second window, backend emits 15-second silence nudges (`npc_idle_nudge` / `overlay_text`) if player does not speak.
 
 **Backend on `card_collected({ cardId: 'card1' }):`** — **[⚠️ Backend TBD]**
 - GM injects a SITUATION_UPDATE into Jason with the player's appearance (GM vision data from webcam)
@@ -385,7 +399,7 @@ This proves to the player: **the AI can see them**. The AI can hear them (it res
 
 **[Beat 5 — Invisible pressure / two-ending branch]**
 
-**Trigger (GM):** Player guides Jason through the water park i havetoward the maintenance area.
+**Trigger (GM):** Player guides Jason through the water park toward the maintenance area.
 
 **GM calls (in order):**
 1. `triggerSceneChange({ sceneKey: "maintenance_area" })`
@@ -414,6 +428,12 @@ Note: the card should be hidden, Jason needs to find it and needs the help of th
 - Floating **Queen of Spades** overlay appears on screen
 - Same mechanic as Card 1: GM pauses scene progression until player clicks
 - Player clicks → `card_collected({ cardId: 'card2' })` FE→BE → Phase 8
+
+**Card 2 timeout fallback (new canonical):**
+- If Card 2 is not collected within the active branch timeout, Jason makes an autonomous choice and commits the branch.
+- Branch result is deterministic by timer outcome:
+  - card resolved before timer expiry -> good ending path
+  - timer expires first -> game over path
 
 ---
 
@@ -617,10 +637,10 @@ at face-up position and camera holds perfectly still on the revealed queen of sp
 
 `PREWARM_SCENE_KEYS` in `server/services/imagen.ts` should contain:
 ```typescript
-const PREWARM_SCENE_KEYS = ['flashlight_beam', 'zone_merge', 'zone_park_shore'] as const;
+const PREWARM_SCENE_KEYS = ['flashlight_beam', 'generator_area', 'zone_park_shore'] as const;
 ```
 
-**Rationale:** `flashlight_beam` replaces `zone_tunnel_entry` in the prewarm because it is now the first visual moment (Beat 2). `zone_merge` and `zone_park_shore` remain valuable as early-session ambient fallbacks. `generator_area`, `maintenance_area`, and `card2_closeup` are mid-to-late game — on-demand generation has enough time to complete before they are needed.
+**Rationale:** `flashlight_beam` is the first visual moment (Beat 2), and `generator_area` follows immediately in the primary flow, so both are prewarmed. `zone_park_shore` remains the first large reveal anchor. `maintenance_area` and `card2_closeup` are later-game beats where on-demand generation has enough time to complete.
 
 ---
 

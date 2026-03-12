@@ -65,6 +65,8 @@ Frontend env var: `NEXT_PUBLIC_GAME_WS_URL`
 | `session_start` | `{ judge_mode: boolean }` |
 | `player_speech` | `{ audio: base64, timestamp: number }` |
 | `player_frame` | `{ jpeg: base64, timestamp: number }` |
+| `intro_complete` | `{}` |
+| `card_collected` | `{ cardId: 'card1'\|'card2' }` |
 | `session_end` | `{}` |
 
 ### Server → Client (backend sends)
@@ -73,12 +75,22 @@ Frontend env var: `NEXT_PUBLIC_GAME_WS_URL`
 | `agent_speech` | `{ agent: string, audio: base64, text: string }` |
 | `agent_interrupt` | `{ agent: string }` |
 | `trust_update` | `{ agent: string, trust_level: number, fear_index: number }` |
-| ~~`fmv_trigger`~~ | ~~`{ sequence_id: string, loop: boolean }`~~ |
-| ~~`fmv_stop`~~ | ~~`{}`~~ |
-| `scene_change` | `{ scene_key: string }` |
 | `hud_glitch` | `{ intensity: string, duration_ms: number }` |
 | `session_ready` | `{ session_id: string }` |
 | `session_error` | `{ code: string, message: string }` |
+| `scene_change` | `{ payload: { sceneKey: string } }` |
+| `scene_image` | `{ payload: { sceneKey: string, data: base64 } }` |
+| `scene_video` | `{ payload: { sceneKey: string, url: string } }` |
+| `slotsky_trigger` | `{ payload: { anomalyType: string } }` |
+| `hint` | `{ text: string }` |
+| `player_speak_prompt` | `{}` |
+| `overlay_text` | `{ payload: { text: string, variant: string, durationMs: number } }` |
+| `npc_idle_nudge` | `{ payload: { phase: string, secondsSilent: number, urgency: 'soft'\|'urgent' } }` |
+| `autoplay_advance` | `{ payload: { fromStep: number, toStep: number, reason: 'timeout'\|'npc_choice' } }` |
+| `card_discovered` | `{ cardId: 'card1'\|'card2' }` |
+| `dread_timer_start` | `{ durationMs: number }` |
+| `game_over` | `{}` |
+| `good_ending` | `{}` |
 
 <!-- DEPRECATED (March 7, 2026): fmv_trigger { sequence_id, loop } and fmv_stop {} struck above — FMV pipeline replaced by Imagen 3 live generation. Rows preserved for reference. -->
 > ⚠️ **MARCH 7 PIVOT:** `fmv_trigger` / `fmv_stop` struck above — FMV replaced by Imagen 3. New event `scene_change { scene_key: string }` added. **Both repos must implement before deploying.**

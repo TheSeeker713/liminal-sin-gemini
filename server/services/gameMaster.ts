@@ -208,9 +208,9 @@ export async function handleGmFunctionCall(
               ? `a group (${personCount} people) — social dynamics in play`
               : 'an unknown number of people';
         jasonManager.sendText(
-          `[SITUATION_UPDATE: You just noticed something — ${dynamicLabel} on the other end of the voicebox. ` +
+          `[SITUATION_UPDATE: You just noticed something - ${dynamicLabel} on the other end of the smartglasses audio channel. ` +
           `Observed emotional state: ${observedEmotions}. ` +
-          `React in-character, naturally, as if you just caught a detail through the voicebox — ` +
+          `React in-character, naturally, as if you just caught a detail through the channel - ` +
           `an extra shuffle, a second breath, more than one voice. ` +
           `Do NOT say "GM told me" or "detected". React as if you just noticed it yourself.]`
         );

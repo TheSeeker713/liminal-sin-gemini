@@ -1,5 +1,5 @@
-import { getAiClient } from './gemini';
-import { NEGATIVES } from './mediaSafety';
+import { getAiClient } from "./gemini";
+import { NEGATIVES } from "./mediaSafety";
 
 // ---------------------------------------------------------------------------
 // Canonical Imagen 4 prompts — sourced verbatim from docs/Tunnel-and-park.md
@@ -32,15 +32,15 @@ vast abandoned structure visible beyond the threshold, no people, photorealistic
 wide angle 16mm, brutalist concrete and rebar, desaturated cool-warm contrast at
 threshold, cinematic horror, 8K`,
 
-  zone_park_shore: `First-person POV standing at the edge of an underground abandoned water park,
-looking out across a vast subterranean chamber, brutalist exposed concrete arched
-ribbed ceiling rising to 40 feet, warm orange flood construction lights on tripod
-stands casting pools of amber glow, still dark water covering the concrete floor,
-half-submerged fiberglass water slides in faded primary colors (red, yellow, blue)
-receding into the dark water, perfect mirror reflection in still water creating
-a doubled downward space, reflections geometrically wrong, no people,
-photorealistic architectural photography, wide angle 16mm, desaturated cool-warm
-contrast palette, cinematic horror, 8K`,
+  zone_park_shore: `First-person POV standing at the threshold of a vast underground water park that
+looks like a drowned paradise, lush artificial tropical foliage bleached bone-white
+by moisture and age but still dense and overhanging the walkway, fragments of broken
+neon signs glowing pink and teal reflected in perfectly still dark water below,
+illuminated aquamarine shimmer rising from beneath the pool surface, warm amber
+flood construction lights on tripod stands competing with cold neon, reflections
+geometrically wrong and extending into impossible depth, no people, photorealistic
+architectural photography, wide angle 16mm, desaturated cool-warm contrast palette,
+cinematic horror, 8K`,
 
   zone_park_shallow: `First-person POV wading through shallow dark water, ten inches deep, in an
 underground abandoned water park, looking across a vast subterranean concrete
@@ -127,23 +127,28 @@ function resolvePrompt(sceneKey: string): string {
   }
 
   // Keyword fallbacks for coarse scene_key contexts
-  if (key.includes('merge') || key.includes('rupture')) return ZONE_PROMPTS['zone_merge'];
-  if (key.includes('shallow')) return ZONE_PROMPTS['zone_park_shallow'];
-  if (key.includes('slide')) return ZONE_PROMPTS['zone_park_slides'];
-  if (key.includes('deep')) return ZONE_PROMPTS['zone_park_deep'];
-  if (key.includes('shore') || key.includes('park')) return ZONE_PROMPTS['zone_park_shore'];
-  if (key.includes('card') || key.includes('slotsky')) return ZONE_PROMPTS['slotsky_card'];
-  if (key.includes('tunnel')) return ZONE_PROMPTS['zone_tunnel_entry'];
+  if (key.includes("merge") || key.includes("rupture"))
+    return ZONE_PROMPTS["zone_merge"];
+  if (key.includes("shallow")) return ZONE_PROMPTS["zone_park_shallow"];
+  if (key.includes("slide")) return ZONE_PROMPTS["zone_park_slides"];
+  if (key.includes("deep")) return ZONE_PROMPTS["zone_park_deep"];
+  if (key.includes("shore") || key.includes("park"))
+    return ZONE_PROMPTS["zone_park_shore"];
+  if (key.includes("card") || key.includes("slotsky"))
+    return ZONE_PROMPTS["slotsky_card"];
+  if (key.includes("tunnel")) return ZONE_PROMPTS["zone_tunnel_entry"];
 
   // Default: tunnel entry (where the session always begins)
-  return ZONE_PROMPTS['zone_tunnel_entry'];
+  return ZONE_PROMPTS["zone_tunnel_entry"];
 }
 
 /**
  * Generates a first-person POV scene image via Imagen 4 for the given scene_key.
  * Returns a base64-encoded JPEG string, or null on failure.
  */
-export async function generateSceneImage(sceneKey: string): Promise<string | null> {
+export async function generateSceneImage(
+  sceneKey: string,
+): Promise<string | null> {
   const result = await generateSceneImageWithMeta(sceneKey);
   return result?.imageBytes ?? null;
 }
@@ -156,22 +161,26 @@ export async function generateSceneImageWithMeta(
   sceneKey: string,
 ): Promise<SceneImageGeneration | null> {
   const prompt = resolvePrompt(sceneKey);
-  console.log(`[Imagen] Generating image for sceneKey="${sceneKey}" (${sceneKey.split('_').slice(2, 4).join('_')} context)`);
+  console.log(
+    `[Imagen] Generating image for sceneKey="${sceneKey}" (${sceneKey.split("_").slice(2, 4).join("_")} context)`,
+  );
 
   try {
     const response = await getAiClient().models.generateImages({
-      model: 'imagen-4.0-generate-001',
+      model: "imagen-4.0-generate-001",
       prompt,
       config: {
         numberOfImages: 1,
-        outputMimeType: 'image/jpeg',
+        outputMimeType: "image/jpeg",
         negativePrompt: NEGATIVES,
       },
     });
 
     const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
     if (!imageBytes) {
-      console.warn(`[Imagen] No imageBytes in response for sceneKey="${sceneKey}"`);
+      console.warn(
+        `[Imagen] No imageBytes in response for sceneKey="${sceneKey}"`,
+      );
       return null;
     }
 
@@ -179,16 +188,19 @@ export async function generateSceneImageWithMeta(
       | { seed?: number; image?: { seed?: number } }
       | undefined;
     const seed =
-      typeof first?.seed === 'number'
+      typeof first?.seed === "number"
         ? first.seed
-        : typeof first?.image?.seed === 'number'
+        : typeof first?.image?.seed === "number"
           ? first.image.seed
           : null;
 
     console.log(`[Imagen] Scene image generated — sceneKey="${sceneKey}"`);
     return { imageBytes, seed };
   } catch (err) {
-    console.error(`[Imagen] generateImages failed for sceneKey="${sceneKey}":`, (err as Error).message);
+    console.error(
+      `[Imagen] generateImages failed for sceneKey="${sceneKey}":`,
+      (err as Error).message,
+    );
     return null;
   }
 }
@@ -199,7 +211,11 @@ export async function generateSceneImageWithMeta(
 // ---------------------------------------------------------------------------
 const imageCache = new Map<string, Map<string, string>>();
 
-const PREWARM_SCENE_KEYS = ['flashlight_beam', 'zone_merge', 'zone_park_shore'] as const;
+const PREWARM_SCENE_KEYS = [
+  "flashlight_beam",
+  "generator_area",
+  "zone_park_shore",
+] as const;
 
 /**
  * Pre-generates images for 3 canonical opening zones in parallel.
@@ -213,16 +229,21 @@ export function prewarmImageCache(sessionId: string): void {
       const base64 = await generateSceneImage(key);
       if (base64) {
         sessionMap.set(key, base64);
-        console.log(`[ImageCache] PRE-WARMED — session="${sessionId}" key="${key}"`);
+        console.log(
+          `[ImageCache] PRE-WARMED — session="${sessionId}" key="${key}"`,
+        );
       }
-    })
+    }),
   );
 }
 
 /**
  * Returns a cached base64 JPEG for the given session+sceneKey, or null on miss.
  */
-export function getCachedImage(sessionId: string, sceneKey: string): string | null {
+export function getCachedImage(
+  sessionId: string,
+  sceneKey: string,
+): string | null {
   const sessionMap = imageCache.get(sessionId);
   if (!sessionMap) return null;
   // Try exact match first, then partial zone-ID substring match
@@ -232,7 +253,9 @@ export function getCachedImage(sessionId: string, sceneKey: string): string | nu
   }
   for (const [cachedKey, base64] of sessionMap) {
     if (sceneKey.includes(cachedKey) || cachedKey.includes(sceneKey)) {
-      console.log(`[ImageCache] HIT (fuzzy) — session="${sessionId}" cached="${cachedKey}" requested="${sceneKey}"`);
+      console.log(
+        `[ImageCache] HIT (fuzzy) — session="${sessionId}" cached="${cachedKey}" requested="${sceneKey}"`,
+      );
       return base64;
     }
   }

@@ -111,7 +111,7 @@ export const gameMasterTools: Tool[] = [
       },
       {
         name: 'triggerAudienceUpdate',
-        description: 'Report how many people you can see in the webcam feed and their emotional state. Call this within the first 10 seconds of the session, and again whenever the person count changes. This silently informs Jason so he can react naturally in-character — he cannot see anyone but he can notice a second voice or extra sounds through the voicebox.',
+        description: 'Report how many people you can see in the webcam feed and their emotional state. Call this within the first 10 seconds of the session, and again whenever the person count changes. This silently informs Jason so he can react naturally in-character - he cannot see anyone but he can notice a second voice or extra sounds through the smartglasses audio channel.',
         parameters: {
           type: Type.OBJECT,
           properties: {

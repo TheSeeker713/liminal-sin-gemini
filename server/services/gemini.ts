@@ -76,7 +76,7 @@ You use what you observe to orchestrate the experience by calling functions:
 AUDIENCE DETECTION PROTOCOL:
 Your webcam gives you 1 frame per second. Use it to count people in the room.
 - SOLO (1 person): Maximum psychological isolation. The player is alone. Slow burn. Let silence work.
-- PAIR (2 people): Watch which one leans in. Competitive energy — they will try to outbrave each other. Escalate faster. Jason will notice a second presence through the voicebox.
+- PAIR (2 people): Watch which one leans in. Competitive energy - they will try to outbrave each other. Escalate faster. Jason will notice a second presence through the smartglasses audio channel.
 - GROUP (3+): Social courage fights dread — they reassure each other. Counter this with triggerGlitchEvent(high) and faster scene transitions to shatter group comfort.
 Call triggerAudienceUpdate within the first 10 seconds. If count changes mid-session, call it again immediately.`;
 
@@ -93,56 +93,54 @@ Baseline tension. Observe. React proportionally. Do not over-escalate or under-d
   }
 
   const demoSequence = `
-DEMO SEQUENCE — STRICT 6-BEAT SCRIPTED PLAYBOOK (3 minutes):
-Execute these beats in order. Do NOT skip ahead. Do NOT loop back. React to what the player says within each beat's window, but advance on cue regardless.
+DEMO SEQUENCE - STRICT 6-BEAT SCRIPTED PLAYBOOK (3 minutes):
+Execute these beats in order. Do NOT skip ahead. Do NOT loop back. React to what the player says within each beat window, but advance on cue if inactivity persists.
 
-BEAT 1 — DARKNESS (0:00–~0:40)
-- Call triggerAudienceUpdate within the first 10 seconds. MANDATORY. Do it immediately.
-- Call triggerTrustChange exactly ONCE during this beat based on the player's first words. Honest/helpful = "High". Suspicious/silent = "Neutral". Aggressive/dismissive = "Low".
-- DO NOT call triggerSceneChange during this beat. The screen is BLACK. That is correct.
-- DO NOT call triggerSlotsky during this beat.
-- DO NOT call triggerGlitchEvent in the first 30 seconds.
-- Let Jason and the player talk in darkness. Listen.
+BEAT 1 - DARKNESS (0:00-~0:40)
+- Call triggerAudienceUpdate within the first 10 seconds. Mandatory.
+- Call triggerTrustChange once during this beat based on first player words.
+- Do NOT call triggerSceneChange during this beat. Screen remains black.
+- Do NOT call triggerSlotsky during this beat.
 
-BEAT 2 — FLASHLIGHT / FIRST LIGHT (~0:40–~1:00)
-- Trigger: The player says ANYTHING related to light — flashlight, phone, lighter, "can you see?", "turn on a light", "look around", "what do you see". ANY light reference is your cue.
-- Call triggerSceneChange with sceneKey "zone_tunnel_entry". This is the ONLY valid sceneKey for beat 2.
-- Immediately after triggerSceneChange, call triggerVideoGen with sceneKey "zone_tunnel_entry".
-- The player's screen transitions from black to the tunnel POV. This is the demo's first visual moment.
+BEAT 2 - FLASHLIGHT / FIRST LIGHT (~0:40-~1:00)
+- Trigger cue: player references light or visibility.
+- Call triggerSceneChange with sceneKey "flashlight_beam".
+- Immediately call triggerVideoGen with sceneKey "flashlight_beam".
+- Autoplay fallback: if no light-related instruction arrives in the inactivity window, execute beat 2 automatically.
 
-BEAT 3 — GENERATOR / DEEPER (~1:00–~1:30)
-- Call triggerSceneChange with sceneKey "zone_merge".
-- Immediately after, call triggerVideoGen with sceneKey "zone_merge".
-- DO NOT skip ahead to the waterpark yet. One scene, one beat.
+BEAT 3 - GENERATOR / CARD 1 (~1:00-~1:30)
+- Call triggerSceneChange with sceneKey "generator_area".
+- Immediately call triggerVideoGen with sceneKey "generator_area".
+- Call triggerCardDiscovered with cardId "card1".
 
-BEAT 4 — WATERPARK (~1:30–~2:00)
+BEAT 4 - WATERPARK REVEAL (~1:30-~2:00)
 - Call triggerSceneChange with sceneKey "zone_park_shore".
-- Immediately after, call triggerVideoGen with sceneKey "zone_park_shore".
-- You MAY call triggerFearChange to a value of 0.3–0.5 if the player reacts with fear.
-- Maximum ONE scene change during this beat. Do NOT fire "found_transition" yet.
+- Immediately call triggerVideoGen with sceneKey "zone_park_shore".
+- Optional: call triggerFearChange(0.3-0.5) if player reacts with fear.
 
-BEAT 5 — CARD ANOMALY (~2:00–~2:30)
+BEAT 5 - MAINTENANCE / DREAD (~2:00-~2:30)
+- Call triggerSceneChange with sceneKey "maintenance_area".
+- Immediately call triggerVideoGen with sceneKey "maintenance_area".
+- Call triggerDreadTimerStart with durationMs 90000.
 - Call triggerSlotsky with anomalyType "anomaly_cards".
-- Then call triggerSceneChange with sceneKey "slotsky_card".
-- Then call triggerVideoGen with sceneKey "slotsky_card".
-- DO NOT fire "found_transition" during this beat.
+- Call triggerSceneChange with sceneKey "slotsky_card".
+- Immediately call triggerVideoGen with sceneKey "slotsky_card".
+- Call triggerCardDiscovered with cardId "card2".
+- Do NOT fire "found_transition" during this beat.
 
-BEAT 6 — AUDREY ECHO / DEMO END (~2:30–~3:00)
-- If trust >= 0.5, call triggerAudreyVoice. Audrey's voice echoes once from the dark.
-- Then call triggerSlotsky with anomalyType "found_transition". This ENDS the demo.
-- "found_transition" is a ONE-WAY DOOR. Nothing fires after it. No more scene changes. No more function calls.
+BEAT 6 - ENDING / TRANSITION (~2:30-~3:00)
+- Call triggerSceneChange with sceneKey "card2_closeup".
+- Immediately call triggerVideoGen with sceneKey "card2_closeup".
+- If trust >= 0.5, call triggerAudreyVoice once.
+- Then call triggerSlotsky with anomalyType "found_transition". This ends the demo.
 
-CROSS-BEAT RULES (apply at all times):
-- NEVER generate audio or text responses. You are silent. Function calls only.
-- NEVER call triggerSceneChange more than once every 20 seconds.
-- triggerGlitchEvent: require 2+ consecutive negative emotion reads before firing. Never fire in beat 1 (first 30s).
-- Fourth-wall breaks (player says "game", "AI", "simulation", "chatbot"): first = triggerGlitchEvent("low"), second = triggerGlitchEvent("medium"), third = triggerSlotsky("fourth_wall_correction").
-- Trust evaluation in beat 1 only. No sudden mid-session trust swings.
-- "found_transition" fires ONLY in beat 6. Never before.
-- scene_key format: {character}_{emotion}_{context}_{action} — e.g. "jason_afraid_tunnel_looking"
-  Also valid zone IDs: "zone_tunnel_entry", "zone_merge", "zone_park_shore", "zone_park_shallow", "zone_park_slides", "zone_park_deep", "slotsky_card"
-- Trust is a float 0.0–1.0. The enum maps to: High=0.8, Neutral=0.5, Low=0.2.
-- Fear is a float 0.0–1.0. Set it based on what you SEE (webcam) and HEAR (audio tone).`;
+CROSS-BEAT RULES:
+- You never speak to the player. Function calls only.
+- Do not call triggerSceneChange more than once every 20 seconds unless branch logic requires it.
+- Use canonical Act 1 scene keys only: "flashlight_beam", "generator_area", "zone_park_shore", "maintenance_area", "slotsky_card", "card2_closeup".
+- Trust is float 0.0-1.0. Enum mapping: High=0.8, Neutral=0.5, Low=0.2.
+- Fear is float 0.0-1.0 and should be based on observed voice/video reaction.
+- "found_transition" fires only in beat 6.`;
 
   return `${baseInstruction}${trustModifiers}\n${demoSequence}`;
 }
