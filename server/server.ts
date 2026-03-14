@@ -1109,18 +1109,16 @@ wss.on("connection", (ws: WebSocket) => {
           }
         }, 45_000);
         jasonManager.sendText(
-          "[SEQUENCE_TRIGGER - PHYSICAL PERFORMANCE, NO NARRATION. " +
-            "You just hit concrete floor full force after a long fall. Perform this exact sequence: " +
-            "STEP 1 - impact: a single sharp involuntary grunt, wind knocked out, no words. " +
-            "STEP 2 - recovery: a ragged exhale and low groan as you roll onto your back. " +
-            "STEP 3 - silence: just hold still. Nothing but dripping water. A full beat. " +
-            'STEP 4 - call out, quiet and strained: "Audrey?... Josh?" Wait. Nothing comes back. ' +
-            "STEP 5 - silence again. You are alone in pitch blackness. " +
-            "The smartglasses audio channel is active, but you have not noticed it yet. " +
-            "DO NOT address anyone through the channel. DO NOT mention smartglasses. DO NOT narrate your actions.]",
+          "[SESSION_START: You came to in pitch darkness after a hard fall underground. " +
+            "You are hurt but functional. Dead silence except for distant dripping water. You cannot see. " +
+            "Call out for Audrey. Call out for Josh. You get no answer. " +
+            "You are completely alone in the dark. The smartglasses audio channel is live but you have not noticed it yet. " +
+            "DO NOT narrate or describe your physical state or injuries. " +
+            "DO NOT address anyone through the channel yet. " +
+            "React naturally to the darkness and the silence.]",
         );
-        // Gate player audio to Jason for 18s - covers Gemini latency + full monologue duration.
-        // After 18s: flip the gate and tell the frontend to show the "speak to JASON" hint.
+        // Gate player audio to Jason for 10s - covers Gemini latency + landing monologue duration.
+        // After 10s: flip the gate and tell the frontend to show the "speak to JASON" hint.
         jasonReadyTimer = setTimeout(() => {
           jasonReadyForPlayer = true;
           if (ws.readyState === WebSocket.OPEN) {
@@ -1140,7 +1138,7 @@ wss.on("connection", (ws: WebSocket) => {
           console.log(
             `[WS] jasonReadyForPlayer = true - player_speak_prompt sent for session ${sessionId}`,
           );
-        }, 18_000);
+        }, 10_000);
         return;
       }
 
