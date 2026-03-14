@@ -61,6 +61,16 @@ function resolveMediaId(sceneKey: string): string {
       return "wildcard_good_ending";
     case "tunnel_darkness_01":
       return "tunnel_darkness_01";
+    case "park_liminal":
+      return "park_liminal_01";
+    case "elevator_inside":
+      return "elevator_inside_01";
+    case "elevator_inside_2":
+      return "elevator_inside_02";
+    case "hallway_pov_02":
+      return "hallway_pov_02";
+    case "acecard_reveal":
+      return "acecard_reveal_01";
     default:
       return sceneKey;
   }
@@ -208,6 +218,7 @@ export async function handleGmFunctionCall(
     sessionId: string,
     clientWs: WebSocket,
   ) => Promise<void> | void,
+  onAcecardReveal?: () => void,
 ): Promise<void> {
   console.log(`[GM] Function call: ${functionName}`, args);
 
@@ -550,6 +561,15 @@ export async function handleGmFunctionCall(
       );
       console.log(
         `[GM] triggerDreadTimerStart fired — durationMs=${durationMs} session="${sessionId}"`,
+      );
+      break;
+    }
+
+    case "triggerAcecardReveal": {
+      // Signal the server to start the acecard reveal flow (clears keyword timer, sends acecard_reveal_start).
+      onAcecardReveal?.();
+      console.log(
+        `[GM] triggerAcecardReveal fired — session="${sessionId}"`,
       );
       break;
     }

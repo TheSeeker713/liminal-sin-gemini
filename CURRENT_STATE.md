@@ -242,6 +242,22 @@ These are the exact tasks to execute in the next session, in order:
 - [x] **Directive 5:** FPV/POV rewrite of all 12 VIDEO_HINTS in benchmark script
 - [x] veo.ts: strip "horror" from prompts, add explicit RAI warning log
 - [x] Full benchmark run after all above are done
-- [ ] Final deploy (`npm run deploy`) — NOT yet triggered
+- [x] Final deploy (`npm run deploy`) — deployed March 14, 2026 — revision `liminal-sin-server-00045-x72` live at `https://liminal-sin-server-1071754889104.us-west1.run.app`
+
+---
+
+### Status Delta — March 14, 2026
+
+- All 6 IMPLEMENTATION_PLAN sections (A–F) fully implemented and deployed.
+- `IMPLEMENTATION_PLAN.txt` deleted after implementation confirmed.
+- **Section A** — Acecard reveal mechanic: `startAcecardKeywordTimer`, `handleAcecardReveal`, `startCardPickup02Timer` added to `server.ts`; `triggerAcecardReveal` tool added to `gmTools.ts`; `onAcecardReveal` callback wired through `gameMaster.ts`.
+- **Section B** — Step machine: steps 24/26/28/31 added to `STEP_MEDIA_TRIGGER`; autoplay chain extended to 7→9→11→13→17→19→21→23→24→25→26→27→28→29→31 (step ≥31 terminal).
+- **Section C** — Timer corrections: steps 13 and 25 corrected from 22s→30s in `STEP_MEDIA_TRIGGER`.
+- **Section D/E** — `gmTools.ts`: `triggerSceneChange` sceneKey description replaced with exact registry key list (5 new keys added: `park_liminal, elevator_inside, elevator_inside_2, hallway_pov_02, acecard_reveal`); `triggerDreadTimerStart` corrected to 30s/acecard keyword window/step 31 only; `triggerAcecardReveal` Option A broad semantic match made explicit.
+- **Section F** — `docs/SHOT_SCRIPT.md` doc fixes F1–F7 applied; Appendix E step registry replaced; WS Event Registry updated with 4 acecard events.
+- **Phase narrative docs (A2)** — SHOT_SCRIPT.md Phase 6B rewritten (park_liminal chained_auto); Phase 6C added (park_shaft_view decision beat); Phase 7 rewritten (elevator descent + maintenance corridor, steps 26/27/28/29); Phase 7B added (acecard keyword gate, both outcome paths).
+- **Media Filename Registry** — 8 stale timeout/trigger values corrected (card_joker_01: 22→30; park_liminal_01: hold_for_input/22→chained_auto/30; shaft_maintenance_01: 22→30; elevator_inside_01/02: 15→30; hallway_pov_02: 15→30; acecard_reveal_01: 22→conditional/—; card_pickup_02: 25→15).
+- TypeScript type-check and ESLint: zero errors on all modified files.
+- Cloud Run revision `liminal-sin-server-00045-x72` deployed and serving 100% of traffic.
 
 ---

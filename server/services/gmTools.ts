@@ -74,7 +74,7 @@ export const gameMasterTools: Tool[] = [
           properties: {
             sceneKey: {
               type: Type.STRING,
-              description: 'The scene key that maps to a pre-generated FMV clip. Canonical format: {character}_{emotion}_{context}_{action} — e.g. "jason_afraid_tunnel_looking", "jason_calm_tunnel_investigates", "audrey_distant_echo_warning", "josh_bravado_echo_joke", "slotsky_cards_tunnel_wall". Never invent freeform keys outside this format.'
+              description: 'Canonical Act 1 zone key from the Scene Key Registry. Use only these exact keys: flashlight_beam, generator_area_start, generator_area_operational, generator_card_reveal, card1_pickup_pov, tunnel_to_park_transition, park_transition_reveal, park_entrance, park_walkway, park_liminal, park_shaft_view, elevator_inside, maintenance_entry, elevator_inside_2, maintenance_panel, hallway_pov_02, card2_pickup_pov, acecard_reveal. Do not invent freeform keys. Do not use underscore-separated character/emotion/action formats.'
             }
           },
           required: ['sceneKey']
@@ -163,16 +163,24 @@ export const gameMasterTools: Tool[] = [
       },
       {
         name: 'triggerDreadTimerStart',
-        description: 'Start the invisible dread countdown timer at the beginning of Phase 7 (maintenance area). If timer expires before card2 is collected, the session ends in Game Over. Duration: 90000ms (90 seconds).',
+        description: 'Start the acecard keyword window timer at the hallway_pov_02 step. Player must say the correct keyword phrase before this timer expires or the session ends in Game Over. Duration: 30000ms (30 seconds). Only call this at step 31 — do not call during earlier maintenance steps.',
         parameters: {
           type: Type.OBJECT,
           properties: {
             durationMs: {
               type: Type.NUMBER,
-              description: 'Duration of the dread timer in milliseconds. Typical value: 90000 (90 seconds).'
+              description: 'Duration of the keyword window in milliseconds. Typical value: 30000 (30 seconds).'
             }
           },
           required: ['durationMs']
+        }
+      },
+      {
+        name: 'triggerAcecardReveal',
+        description: 'Call this at step 31 (hallway_pov_02) when the player gives any instruction to grab, pick up, take, or retrieve an object — e.g. "grab it", "take the card", "get it", "pick it up", "there — take that", "Jason grab the card". Any semantically broad instruction to acquire or retrieve something counts. This unlocks the acecard_reveal_01 clip and begins the final 15-second card pickup countdown. Do not call outside the 30-second keyword window. Do not call if no such instruction has been given.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {}
         }
       }
     ]

@@ -230,6 +230,9 @@ wss.on("connection", (ws: WebSocket) => {
   let card1Collected = false;
   let card1AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
   let card2AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
+  let acecardKeywordTimer: ReturnType<typeof setTimeout> | null = null;
+  let acecardKeywordReceived = false;
+  let cardPickup02Timer: ReturnType<typeof setTimeout> | null = null;
   let latestPlayerFrame: string | null = null;
   let wildcardVisionPreparing = false;
   let wildcardVisionRequested = false;
@@ -283,7 +286,7 @@ wss.on("connection", (ws: WebSocket) => {
     13: {
       mediaId: "card_joker_01",
       triggerType: "hold_for_input",
-      timeoutSeconds: 22,
+      timeoutSeconds: 30,
     },
     17: {
       mediaId: "tunnel_transition_01",
@@ -305,20 +308,40 @@ wss.on("connection", (ws: WebSocket) => {
       triggerType: "chained_auto",
       timeoutSeconds: 30,
     },
+    24: {
+      mediaId: "park_liminal_01",
+      triggerType: "chained_auto",
+      timeoutSeconds: 30,
+    },
     25: {
       mediaId: "shaft_maintenance_01",
       triggerType: "hold_for_input",
-      timeoutSeconds: 22,
+      timeoutSeconds: 30,
+    },
+    26: {
+      mediaId: "elevator_inside_01",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 30,
     },
     27: {
       mediaId: "elevator_entry_01",
       triggerType: "hold_for_input",
       timeoutSeconds: 15,
     },
+    28: {
+      mediaId: "elevator_inside_02",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 30,
+    },
     29: {
       mediaId: "hallway_pov_01",
       triggerType: "hold_for_input",
       timeoutSeconds: 15,
+    },
+    31: {
+      mediaId: "hallway_pov_02",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 30,
     },
   };
 
@@ -360,6 +383,14 @@ wss.on("connection", (ws: WebSocket) => {
     if (wildcardGoodEndingEndTimer) {
       clearTimeout(wildcardGoodEndingEndTimer);
       wildcardGoodEndingEndTimer = null;
+    }
+    if (acecardKeywordTimer) {
+      clearTimeout(acecardKeywordTimer);
+      acecardKeywordTimer = null;
+    }
+    if (cardPickup02Timer) {
+      clearTimeout(cardPickup02Timer);
+      cardPickup02Timer = null;
     }
   };
 
@@ -622,6 +653,61 @@ wss.on("connection", (ws: WebSocket) => {
         err.message,
       );
     });
+  };
+
+  const startAcecardKeywordTimer = (
+    wsConn: typeof ws,
+    jason: typeof jasonManager,
+    sid: string,
+  ) => {
+    if (acecardKeywordTimer !== null) return; // idempotent — don't start twice
+    wsConn.send(
+      JSON.stringify({
+        type: "acecard_keyword_timer_start",
+        payload: { durationMs: 30_000 },
+      }),
+    );
+    console.log(`[WS] acecard keyword timer started — session=${sid}`);
+    acecardKeywordTimer = setTimeout(() => {
+      acecardKeywordTimer = null;
+      if (acecardKeywordReceived) return;
+      console.log(`[WS] acecard keyword timer expired — game over — session=${sid}`);
+      void emitWildcardGameOverBranch();
+    }, 30_000);
+  };
+
+  const handleAcecardReveal = (wsConn: typeof ws) => {
+    if (acecardKeywordTimer !== null) {
+      clearTimeout(acecardKeywordTimer);
+      acecardKeywordTimer = null;
+    }
+    acecardKeywordReceived = true;
+    wsConn.send(
+      JSON.stringify({
+        type: "acecard_reveal_start",
+        payload: { mediaId: "acecard_reveal_01" },
+      }),
+    );
+    console.log(`[WS] acecard_reveal_start sent`);
+  };
+
+  const startCardPickup02Timer = (
+    wsConn: typeof ws,
+    _jason: typeof jasonManager,
+    sid: string,
+  ) => {
+    wsConn.send(
+      JSON.stringify({
+        type: "card_pickup_02_ready",
+        payload: { mediaId: "card_pickup_02", durationMs: 15_000 },
+      }),
+    );
+    console.log(`[WS] card_pickup_02 timer started — session=${sid}`);
+    cardPickup02Timer = setTimeout(() => {
+      cardPickup02Timer = null;
+      console.log(`[WS] card_pickup_02 timer expired — game over — session=${sid}`);
+      void emitWildcardGameOverBranch();
+    }, 15_000);
   };
 
   const scheduleWildcardPrewarmFromHallwayStill = () => {
@@ -914,6 +1000,8 @@ wss.on("connection", (ws: WebSocket) => {
 
       void (async () => {
         const fromStep = currentSequenceStep;
+        // Step 31 is the terminal advance node — acecard keyword timer owns all progression from here.
+        if (fromStep >= 31) return;
         const toStep =
           fromStep === 7
             ? 9
@@ -930,12 +1018,20 @@ wss.on("connection", (ws: WebSocket) => {
                       : fromStep === 21
                         ? 23
                         : fromStep === 23
-                          ? 25
-                          : fromStep === 25
-                            ? 27
-                            : fromStep === 27
-                              ? 29
-                              : currentSequenceStep + 1;
+                          ? 24
+                          : fromStep === 24
+                            ? 25
+                            : fromStep === 25
+                              ? 26
+                              : fromStep === 26
+                                ? 27
+                                : fromStep === 27
+                                  ? 28
+                                  : fromStep === 28
+                                    ? 29
+                                    : fromStep === 29
+                                      ? 31
+                                      : currentSequenceStep + 1;
         currentSequenceStep = toStep;
         lastPlayerSpeechAt = Date.now();
 
@@ -1117,6 +1213,26 @@ wss.on("connection", (ws: WebSocket) => {
 
         if (fromStep === 23 && gmGated) {
           jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You pass through the liminal area between the waterpark and the shaft entrance.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "park_liminal" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "park_liminal" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        if (fromStep === 24 && gmGated) {
+          jasonManager.sendText(
             "[AUTOPLAY_TIMEOUT: No player response. A maintenance shaft comes into view across the park.]",
           );
           await handleGmFunctionCall(
@@ -1137,6 +1253,26 @@ wss.on("connection", (ws: WebSocket) => {
 
         if (fromStep === 25 && gmGated) {
           jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You step into the elevator and the doors close behind you.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "elevator_inside" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "elevator_inside" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        if (fromStep === 26 && gmGated) {
+          jasonManager.sendText(
             "[AUTOPLAY_TIMEOUT: No player response. You leave the park and commit to the maintenance corridor.]",
           );
           await handleGmFunctionCall(
@@ -1156,6 +1292,26 @@ wss.on("connection", (ws: WebSocket) => {
         }
 
         if (fromStep === 27 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. The elevator descends and you see the corridor below.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "elevator_inside_2" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "elevator_inside_2" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        if (fromStep === 28 && gmGated) {
           jasonManager.sendText(
             "[AUTOPLAY_TIMEOUT: No player response. You inspect the maintenance panel and force it open.]",
           );
@@ -1203,6 +1359,20 @@ wss.on("connection", (ws: WebSocket) => {
             clearTimeout(card2AutoPickTimer);
             card2AutoPickTimer = null;
           }
+        }
+
+        if (fromStep === 29 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You push deeper down the maintenance corridor until you reach the far end.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "hallway_pov_02" },
+            ws,
+            jasonManager,
+          );
+          startAcecardKeywordTimer(ws, jasonManager, sessionId);
         }
       })().catch((err: Error) => {
         console.error(
@@ -1281,6 +1451,15 @@ wss.on("connection", (ws: WebSocket) => {
         }
         // Track scene changes for B11 hint timer.
         if (name === "triggerSceneChange") sceneChangeCount++;
+        // If acecard keyword timer is already running and the GM calls triggerDreadTimerStart,
+        // treat it as a no-op — startAcecardKeywordTimer() already owns this timer slot at step 31.
+        if (name === "triggerDreadTimerStart" && acecardKeywordTimer !== null) {
+          console.log(
+            `[GM] triggerDreadTimerStart skipped — acecard keyword timer already running for session ${sessionId}`,
+          );
+          gmManager.sendToolResponse(id, name);
+          return;
+        }
         // Always ACK the tool call back to Gemini - even if the WS is closed.
         // If we skip the ACK, Gemini hangs permanently waiting for a response.
         // handleGmFunctionCall already guards ws.readyState internally before sending.
@@ -1313,6 +1492,9 @@ wss.on("connection", (ws: WebSocket) => {
           },
           async () => {
             await emitWildcardGameOverBranch();
+          },
+          () => {
+            handleAcecardReveal(ws);
           },
         ).finally(() => {
           gmManager.sendToolResponse(id, name);
@@ -1415,6 +1597,9 @@ wss.on("connection", (ws: WebSocket) => {
           async () => {
             await emitWildcardGameOverBranch();
           },
+          () => {
+            handleAcecardReveal(ws);
+          },
         );
         return;
       }
@@ -1443,8 +1628,17 @@ wss.on("connection", (ws: WebSocket) => {
 
       // Frontend marker: hallway_pov_02 still is now active.
       // This is the earliest anchor for background pre-generation of wildcard2/wildcard3.
+      // Also starts the acecard keyword window timer (30s).
       if (data.type === "hallway_pov_02_ready") {
         scheduleWildcardPrewarmFromHallwayStill();
+        startAcecardKeywordTimer(ws, jasonManager, sessionId);
+        return;
+      }
+
+      // Frontend signals the acecard_reveal_01.mp4 clip has finished playing.
+      // Backend starts the 15s card_pickup_02 click window.
+      if (data.type === "acecard_reveal_complete") {
+        startCardPickup02Timer(ws, jasonManager, sessionId);
         return;
       }
 
@@ -1461,6 +1655,10 @@ wss.on("connection", (ws: WebSocket) => {
           if (card2AutoPickTimer) {
             clearTimeout(card2AutoPickTimer);
             card2AutoPickTimer = null;
+          }
+          if (cardPickup02Timer !== null) {
+            clearTimeout(cardPickup02Timer);
+            cardPickup02Timer = null;
           }
         }
         handleCardCollected(data.cardId, sessionId, jasonManager, ws, {
