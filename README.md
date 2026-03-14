@@ -4,7 +4,7 @@
 
 **"The House Always Wins. Even in the Unreality."**
 
-A first-person, multi-agent FMV psychological horror prototype built for the **Gemini Live Agent Challenge**. Developed by **Mycelia Interactive** (**J.W. or Jeremy w. Robards**), with a focus on pushing the boundaries of real-time AI-driven narrative, bidirectional voice architecture, and multimodal player agency.
+A first-person, multi-agent FMV psychological horror prototype built for the **Gemini Live Agent Challenge**. Developed by **Mycelia Interactive** (**J.W. or Jeremy w. Robards** with the help of **A.L. or Adrianna Loya** as creative consultant), with a focus on pushing the boundaries of real-time AI-driven narrative, bidirectional voice architecture, and multimodal player agency.
 
 ## **👁️ The Vision**
 
@@ -12,7 +12,7 @@ A first-person, multi-agent FMV psychological horror prototype built for the **G
 
 You play as a disembodied presence, a "voice from the static." Communicating through an experimental radio feed, your goal is to guide a group of trapped survivors back to the surface. But the system is designed to test your ethics. An ever-watchful "Director" observes your real-world behavior. If you falter, lie, or panic, the probability engine known only as **[Redacted]** will warp their reality and tear their sanity apart in real time.
 
-**⚠️ Content & Safety Disclosure**: This project is a strictly **psychological horror** experience. There is no gore, blood, or physical violence. The tension is derived entirely from isolation, spatial disorientation, and the unpredictable, emergent behavior of AI agents. Atmospheric dread and the uncanny valley take precedence over cheap scares.
+**⚠️ Content & Safety Disclosure**: This project is a strictly **psychological horror** experience. There is no gore, blood, or physical violence. The tension is derived entirely from isolation, spatial disorientation, and the unpredictable, emergent behavior of enhanced NPCs. Atmospheric dread and the uncanny valley take precedence over cheap scares.
 
 ## **⚙️ Core Pillars & The [Redacted] Stack**
 
