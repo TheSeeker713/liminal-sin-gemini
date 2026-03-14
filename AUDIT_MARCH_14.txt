@@ -1,0 +1,252 @@
+BACKEND AUDIT — Liminal Sin Gemini
+Generated: March 14, 2026
+Scope: Full backend project — source files, assets, docs, deps, and line-cap compliance.
+
+================================================================================
+COMPLETED THIS SESSION (before audit ran)
+================================================================================
+
+- server.ts split: extracted stepMachine.ts (194 lines) + acecardGate.ts (112 lines)
+  server.ts reduced from 1712 → 1276 lines  (-436 lines)
+- public/ directory deleted (9 files, ~120KB stale frontend artifacts)
+- gameMaster.ts holdIds set fixed: added hallway_pov_02, elevator_inside_01, elevator_inside_02
+- gameMaster.ts resolveTimeoutSeconds() corrected (card_joker=30, card_pickup_02=15, hallway_pov_01=15)
+- imagen.ts: vision_flash entry removed from ZONE_PROMPTS; fallback fixed → wildcard_vision_feed
+- veo.ts: vision_flash entry removed from ANIMATION_HINTS; fallback fixed → wildcard_vision_feed
+- imagen.ts: stale JSDoc format-hint comment replaced with accurate text
+- jason.ts: dangling prompts/jason.demo.md comment removed
+- Characters.md: all 4 model names updated + Imagen 3 → Imagen 4 (2 occurrences)
+- CURRENT_STATE.md: rewritten from 191-line append-log to 70-line compact snapshot
+- gemini.ts GM playbook: Beat 7 dread timer qualifier, Beat 7B acecard gate block, scene key list updated
+- TypeScript: zero errors. ESLint: zero errors. Committed to main.
+
+================================================================================
+SECTION 1 — FILE LINE COUNTS (source files)
+================================================================================
+
+Cap policy (per AGENTS.md §4):
+  - Source modules:  400 lines max
+  - Script files:    no hard cap (dev/test only, not deployed)
+  - Doc exception files (CURRENT_STATE, README, AGENTS, SHOT_SCRIPT): 800 lines max
+
+OVER CAP — SOURCE FILES:
+  1276  server/server.ts           [CRITICAL — 3x over 400-line cap]
+   588  server/services/gameMaster.ts  [HIGH — over 400-line cap]
+   421  server/services/veo.ts     [LOW — slightly over 400-line cap]
+
+WITHIN CAP — SOURCE FILES:
+   345  server/services/imagen.ts
+   334  server/services/gemini.ts
+   194  server/services/stepMachine.ts    ← new this session
+   189  server/services/db.ts
+   188  server/services/gmTools.ts
+   112  server/services/acecardGate.ts    ← new this session
+   105  server/services/dreadTimer.ts
+    80  server/services/npc/jason.ts
+    77  server/types/state.ts
+    64  scripts/frameExtract.ts
+    51  server/services/sessionEndings.ts
+    24  server/services/npc/audrey.ts
+     3  server/services/mediaSafety.ts
+
+SCRIPT FILES (dev/diagnostic only — not deployed):
+   529  scripts/pipeline-variant-benchmark.ts
+   187  scripts/test-wildcard-pipelines.ts
+   151  scripts/save-audio.ts
+   144  scripts/test-audio.ts
+   129  scripts/test-wildcard-vision.ts
+
+DOC FILES:
+  1004  docs/SHOT_SCRIPT.md        [MEDIUM — exceeds 800-line exception cap]
+   461  docs/Characters.md
+   443  docs/WORLD_BIBLE.md
+   353  docs/Gamemaster.md
+   230  docs/Contest.md            [expires March 16 5PM PDT — see Section 4]
+   193  AGENTS.md
+   190  TEAM_CONTRACT.md
+   148  CURRENT_STATE.md
+    90  PRIVACY_POLICY.md
+    86  README.md
+
+================================================================================
+SECTION 2 — ACTION ITEMS (ordered by severity)
+================================================================================
+
+--------------------------------------------------------------------------------
+ITEM A — CRITICAL: server.ts still at 1276 lines
+--------------------------------------------------------------------------------
+Status: Over 400-line source cap by 3x.
+Root cause: Wildcard branch functions are the next large logical unit.
+  The following closures together are ~450 lines and can be extracted to
+  server/services/wildcardBranches.ts:
+    - maybeEmitPreparedWildcardVision()
+    - maybePrepareWildcardVision()
+    - queueWildcardVisionPlayback()
+    - waitForPreparedWildcard()
+    - maybePrepareWildcardGameOver()
+    - maybePrepareWildcardGoodEnding()
+    - emitWildcardGameOverBranch()
+    - queueWildcardGoodEndingPlayback()
+    - playCard1PickupThenQueueWildcard()
+    - scheduleWildcardPrewarmFromHallwayStill()
+  These all follow the same state-object pattern used for acecardGate.ts.
+  Requires user confirmation per AGENTS.md §3 (multi-file change).
+  Estimated reduction: server.ts → ~820 lines after extraction.
+  wildcardBranches.ts: ~420 lines.
+
+--------------------------------------------------------------------------------
+ITEM B — HIGH: gameMaster.ts at 588 lines
+--------------------------------------------------------------------------------
+Status: Over 400-line source cap.
+Root cause: resolveMediaId() is a large switch (~55 lines), handleGmFunctionCall()
+  is the full GM dispatch (~300 lines), plus resolution helpers and Firestore logic.
+  Candidate split:
+    - server/services/mediaRegistry.ts: resolveMediaId() + the 3 resolve* helpers
+      (resolveTriggerType, resolveTimeoutSeconds, resolveAudioMode) — ~100 lines
+    - gameMaster.ts remaining: handleGmFunctionCall dispatch only — ~480 lines
+  Full split would still leave gameMaster.ts over cap; needs further sub-division.
+  Lower priority than server.ts; schedule for a dedicated session.
+  Requires user confirmation per AGENTS.md §3.
+
+--------------------------------------------------------------------------------
+ITEM C — MEDIUM: SHOT_SCRIPT.md at 1004 lines
+--------------------------------------------------------------------------------
+Status: Exceeds the 800-line doc exception cap defined in AGENTS.md.
+Cause: Phase additions in previous sessions pushed it past the cap.
+Action: Review for consolidation opportunities. Duplicate header/registry rows
+  between the Scene Key Registry and the Act 1 Media Registry could be merged.
+  No code changes required; doc cleanup only.
+
+--------------------------------------------------------------------------------
+ITEM D — MEDIUM: shaft_maintenance_01.png missing from generated_stills/
+--------------------------------------------------------------------------------
+Status: asset gap — clip exists, still does not.
+  assets/generated_clips/shaft_maintenance_01.mp4  ✓ present
+  assets/generated_stills/shaft_maintenance_01.png  ✗ MISSING
+Impact: The park_shaft_view scene (step 25) has no Morphic still.
+  The frontend will receive a scene_change event for park_shaft_view with no
+  corresponding still image to display. Behavior depends on frontend fallback logic.
+Action: Generate or export shaft_maintenance_01.png from Morphic and stage it
+  in assets/generated_stills/ before final contest submission.
+
+--------------------------------------------------------------------------------
+ITEM E — MEDIUM: hallway_pov_02.mp4 missing from generated_clips/
+--------------------------------------------------------------------------------
+Status: asset gap — still exists, clip does not.
+  assets/generated_stills/hallway_pov_02.png  ✓ present
+  assets/generated_clips/hallway_pov_02.mp4   ✗ MISSING
+Impact: Step 31 (the acecard keyword gate) is a hold_for_input node. The backend
+  never sends a video trigger for it — only a still is shown. The acecard keyword
+  timer and triggerAcecardReveal drive all subsequent transitions. So at step 31 a
+  missing clip does NOT block the critical path. Functionally safe for contest.
+  However the backend step machine will attempt to serve this media_id if the GM
+  calls triggerVideoGen for hallway_pov_02 independently. Low risk.
+Action: Nice-to-have — generate hallway_pov_02.mp4 from Morphic.
+
+--------------------------------------------------------------------------------
+ITEM F — LOW: Gamemaster.md has stale model names
+--------------------------------------------------------------------------------
+Status: docs/Gamemaster.md line 44 and line 212 still reference
+  gemini-2.0-flash-live-preview-04-09. Live model is gemini-live-2.5-flash-native-audio.
+  AGENTS.md §9 already flags Gamemaster.md as potentially stale.
+  No runtime impact (doc only).
+Action: Update both lines to gemini-live-2.5-flash-native-audio.
+
+--------------------------------------------------------------------------------
+ITEM G — LOW: veo.ts at 421 lines
+--------------------------------------------------------------------------------
+Status: Slightly over the 400-line service cap.
+Root cause: resolveAnimationHint() keyword fallback chain is ~50 lines.
+  The ANIMATION_HINTS record itself is the primary bulk.
+Action: Can extract ANIMATION_HINTS constant and resolveAnimationHint() to a
+  veoHints.ts (~200 lines), leaving video generation logic in veo.ts (~220 lines).
+  Low priority, low risk.
+
+--------------------------------------------------------------------------------
+ITEM H — RESOLVED THIS SESSION: prompts/ directory deleted
+--------------------------------------------------------------------------------
+Status: prompts/ directory exists but is empty (jason.demo.md was deleted last
+  session). The directory has no remaining files and no references.
+Action: Delete the prompts/ directory.
+  Command: Remove-Item "prompts" -Recurse -Force
+
+--------------------------------------------------------------------------------
+ITEM I — LOW: Contest.md expires March 16 5PM PDT
+--------------------------------------------------------------------------------
+Status: As planned in the previous session. Do not touch until after the deadline.
+Action: After March 16 5PM PDT — rename or delete docs/Contest.md.
+
+--------------------------------------------------------------------------------
+ITEM J — VERIFIED THIS SESSION: tsconfig.tsbuildinfo already in .gitignore (*.tsbuildinfo)
+--------------------------------------------------------------------------------
+Status: TypeScript incremental build artifact. Harmless if .gitignore covers it.
+Verify: Confirm tsconfig.tsbuildinfo is in .gitignore. If not, add it.
+Action: Check and add to .gitignore if needed.
+
+================================================================================
+SECTION 3 — ASSETS INVENTORY CHECK
+================================================================================
+
+Canonical counts (per SHOT_SCRIPT.md):
+  Expected: 16 stills + 18 clips (pre-built Morphic)
+
+Actual on disk:
+  Stills (generated_stills/): 16 ✓
+  Clips (generated_clips/):   19 (includes acecard_reveal_01.mp4 which is in SHOT_SCRIPT)
+
+Stills-only (no matching clip) — intentional:
+  hallway_pov_02.png        — clip-only gap (see Item E)
+
+Clips-only (no matching still):
+  acecard_reveal_01.mp4     — EXPECTED: SHOT_SCRIPT explicitly marks as clip-only
+  maintenance_reveal_01.mp4 — EXPECTED: SHOT_SCRIPT marks as clip-only (wildcard_game_over)
+  shaft_maintenance_01.mp4  — UNEXPECTED: still is missing (see Item D)
+
+================================================================================
+SECTION 4 — DEPENDENCIES AUDIT
+================================================================================
+
+All production dependencies are minimal and purposeful:
+  @google-cloud/firestore ^8.3.0  — session state
+  @google/genai ^1.44.0           — Gemini Live + Imagen + Veo
+  dotenv ^17.3.1                  — env config
+  express ^5.2.1                  — HTTP + debug endpoints
+  firebase-admin ^13.7.0          — Firestore admin SDK
+  ws ^8.19.0                      — WebSocket server
+
+No heavy or unnecessary production dependencies detected.
+No hardcoded API keys found in any source file (confirmed by grepping all .ts files).
+
+================================================================================
+SECTION 5 — SECURITY / CORRECTNESS NOTES
+================================================================================
+
+- Debug endpoints (/debug/fire-gm-event, /debug/test-wildcard-vision) are correctly
+  gated behind NODE_ENV !== 'production' || DEBUG_GM_ENDPOINT=true. Safe for Cloud Run.
+- All secrets use environment variables (GEMINI_API_KEY, GM_LIVE_MODEL, etc).
+- No SQL, no eval, no dynamic code execution paths outside of Gemini SDK calls.
+- Input validation present on /log-client-error and /debug endpoints.
+- Rate limiting is NOT implemented on debug endpoints (only env-var gated). Not a
+  critical concern pre-contest but worth noting for post-contest hardening.
+
+================================================================================
+SECTION 6 — IMMEDIATE NEXT SESSION ACTIONS
+================================================================================
+
+Priority order (by deadline impact):
+
+  1. [BEFORE MARCH 16] Add shaft_maintenance_01.png to assets/generated_stills/   — Item D
+  2. [BEFORE MARCH 16] Fix Gamemaster.md model names                               — Item F
+  3. [RESOLVED]     prompts/ empty directory deleted this session                           — Item H
+  4. [VERIFIED]     tsconfig.tsbuildinfo already in .gitignore                            — Item J
+
+  5. [AFTER MARCH 16 5PM] Delete/rename docs/Contest.md                            — Item I
+
+  6. [POST-CONTEST] Extract wildcard branch functions → wildcardBranches.ts        — Item A
+  7. [POST-CONTEST] Extract mediaRegistry.ts from gameMaster.ts                    — Item B
+  8. [POST-CONTEST] Trim SHOT_SCRIPT.md below 800-line cap                         — Item C
+  9. [POST-CONTEST] Extract veoHints.ts from veo.ts                                — Item G
+ 10. [POST-CONTEST] Generate hallway_pov_02.mp4 clip                               — Item E
+
+================================================================================
+EOF
