@@ -22,6 +22,33 @@ import type { LiveSessionManager } from "./gemini";
 const lastGlitchMs = new Map<string, number>();
 const GLITCH_COOLDOWN_MS = 3000; // minimum 3 seconds between consecutive glitch events per session
 
+/**
+ * Morphic clip IDs — pre-built GCS media the frontend loads directly.
+ * scene_image for these is unnecessary for the client (causes React batching
+ * race that hides the playing video). Jason still receives the frame directly.
+ */
+const MORPHIC_CLIP_IDS = new Set([
+  "tunnel_darkness_01",
+  "tunnel_flashlight_01",
+  "tunnel_generator_01",
+  "card_joker_01",
+  "card_pickup_01",
+  "card_pickup_02",
+  "tunnel_transition_01",
+  "park_reveal_01",
+  "park_walkway_01",
+  "park_walkway_02",
+  "park_liminal_01",
+  "shaft_maintenance_01",
+  "maintenance_reveal_01",
+  "elevator_entry_01",
+  "elevator_inside_01",
+  "elevator_inside_02",
+  "hallway_pov_01",
+  "hallway_pov_02",
+  "acecard_reveal_01",
+]);
+
 type TriggerType = "chained_auto" | "hold_for_input";
 type AudioMode = "native_audio" | "muted" | "silent_source";
 
@@ -316,36 +343,25 @@ export async function handleGmFunctionCall(
         type: "scene_change",
         payload: { sceneKey, mediaId, triggerType, timeoutSeconds },
       };
-      // Try the pre-warm cache first; fall back to live Imagen 4 generation.
-      const cachedBase64 = getCachedImage(sessionId, sceneKey);
-      if (cachedBase64) {
-        if (clientWs.readyState === WebSocket.OPEN) {
-          clientWs.send(
-            JSON.stringify({
-              type: "scene_image",
-              agent: "gm",
-              sessionId,
-              payload: {
-                sceneKey,
-                mediaId,
-                triggerType,
-                timeoutSeconds,
-                data: cachedBase64,
-              },
-              timestamp: Date.now(),
-            }),
-          );
-          console.log(
-            `[GM] Broadcast scene_image (cache hit) — sceneKey="${sceneKey}"`,
-          );
-          if (jasonManager) {
-            jasonManager.sendFrame(cachedBase64);
-          }
+      // For Morphic clips the frontend loads directly from GCS — skip scene_image
+      // to the client (prevents React batching race that hides the playing video).
+      // Jason still receives the frame directly for visual context.
+      if (MORPHIC_CLIP_IDS.has(mediaId)) {
+        const cachedBase64 = getCachedImage(sessionId, sceneKey);
+        if (cachedBase64 && jasonManager) {
+          jasonManager.sendFrame(cachedBase64);
+        } else if (!cachedBase64) {
+          void generateSceneImage(sceneKey).then((base64) => {
+            if (base64 && jasonManager) {
+              jasonManager.sendFrame(base64);
+            }
+          });
         }
       } else {
-        // Cache miss — generate on demand (non-blocking)
-        void generateSceneImage(sceneKey).then((base64) => {
-          if (base64 && clientWs.readyState === WebSocket.OPEN) {
+        // Wildcard / non-Morphic — send scene_image to client for display
+        const cachedBase64 = getCachedImage(sessionId, sceneKey);
+        if (cachedBase64) {
+          if (clientWs.readyState === WebSocket.OPEN) {
             clientWs.send(
               JSON.stringify({
                 type: "scene_image",
@@ -356,19 +372,45 @@ export async function handleGmFunctionCall(
                   mediaId,
                   triggerType,
                   timeoutSeconds,
-                  data: base64,
+                  data: cachedBase64,
                 },
                 timestamp: Date.now(),
               }),
             );
             console.log(
-              `[GM] Broadcast scene_image (generated) — sceneKey="${sceneKey}"`,
+              `[GM] Broadcast scene_image (cache hit) — sceneKey="${sceneKey}"`,
             );
-            if (jasonManager) {
+          }
+          if (jasonManager) {
+            jasonManager.sendFrame(cachedBase64);
+          }
+        } else {
+          void generateSceneImage(sceneKey).then((base64) => {
+            if (base64 && clientWs.readyState === WebSocket.OPEN) {
+              clientWs.send(
+                JSON.stringify({
+                  type: "scene_image",
+                  agent: "gm",
+                  sessionId,
+                  payload: {
+                    sceneKey,
+                    mediaId,
+                    triggerType,
+                    timeoutSeconds,
+                    data: base64,
+                  },
+                  timestamp: Date.now(),
+                }),
+              );
+              console.log(
+                `[GM] Broadcast scene_image (generated) — sceneKey="${sceneKey}"`,
+              );
+            }
+            if (base64 && jasonManager) {
               jasonManager.sendFrame(base64);
             }
-          }
-        });
+          });
+        }
       }
       break;
     }
