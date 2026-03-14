@@ -12,7 +12,7 @@
 
 This is the authoritative director's blueprint for the Liminal Sin Act 1 experience. It defines the complete game flow from onboarding through both possible endings, specifying scripted dialogue, SFX cues, scene keys, and WebSocket event sequences.
 
-Scripted scenes are served from pre-built Morphic files on disk. Imagen 4 and Veo 3.1 are invoked **ONLY** for the 3 wildcard live-generation events (`wildcard_vision_feed`, `wildcard_game_over`, `wildcard_good_ending`).
+Scripted scenes are served from pre-built Morphic files hosted on GCS (`gs://liminal-sin-assets`). Imagen 4 and Veo 3.1 are invoked **ONLY** for the 3 wildcard live-generation events (`wildcard_vision_feed`, `wildcard_game_over`, `wildcard_good_ending`).
 
 **Architecture reference:**
 | File | Purpose |
@@ -24,8 +24,8 @@ Scripted scenes are served from pre-built Morphic files on disk. Imagen 4 and Ve
 | `server/services/veo.ts` | Veo 3.1 animation hints — wildcard live-gen only; `ANIMATION_HINTS` dict (historical) |
 | `server/services/npc/jason.ts` | Jason NPC system prompt |
 | `server/services/gemini.ts` | GM 6-beat playbook — `getGameMasterSystemPrompt()` |
-| `assets/generated_stills/` | 16 canonical pre-built Morphic `.png` files |
-| `assets/generated_clips/` | 18 canonical pre-built Morphic `.mp4` files |
+| `assets/generated_stills/` | 16 canonical pre-built Morphic `.png` files (source; hosted on GCS `liminal-sin-assets/stills/`) |
+| `assets/generated_clips/` | 18 canonical pre-built Morphic `.mp4` files (source; hosted on GCS `liminal-sin-assets/clips/`) |
 | `docs/SHOT_STEPS.md` | Scene key registry, canonical sequencing, media filename registry, step machine |
 | `myceliainteractive` (frontend) | UI, onboarding, card overlay, dread timer SFX |
 
@@ -36,7 +36,7 @@ Scripted scenes are served from pre-built Morphic files on disk. Imagen 4 and Ve
 - **No HUD, no backpack, no smart glasses UI overlay** — deferred to Act 2.
 - The room starts in **total darkness**. No images generate until Beat 2 (flashlight moment).
 - Voicebox lore → **smartglasses app** (affects `jason.ts` and `server.ts`; tracked as separate sprint).
-- **Scripted media is never re-generated at runtime.** All scripted stills and clips are pre-built Morphic files served from disk.
+- **Scripted media is never re-generated at runtime.** All scripted stills and clips are pre-built Morphic files served from GCS (`https://storage.googleapis.com/liminal-sin-assets/`).
 
 ---
 

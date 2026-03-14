@@ -12,37 +12,37 @@
 
 - **Media Filename Registry timeout values** are partially stale (e.g. `tunnel_darkness_01` still shows `22s`; `card_pickup_01` still shows `25s`). Authoritative runtime values live in `server/services/stepMachine.ts → STEP_MEDIA_TRIGGER`.
 - The Step Machine Registry is authoritative. Always cross-check against `stepMachine.ts` if divergence is suspected.
-- **`shaft_maintenance_01` and `maintenance_reveal_01`** are both clip-only steps (no `.png` still required). Neither file needs a still on disk — they auto-chain into the `elevator_entry_01` still hold.
+- **`shaft_maintenance_01` and `maintenance_reveal_01`** are both clip-only steps (no `.png` still required). Neither file needs a still — they auto-chain into the `elevator_entry_01` still hold.
 
 ---
 
 ## SCENE KEY REGISTRY
 
-All scene keys used in this script. Scene keys resolve to Morphic media IDs via `resolveMediaId()` in `gameMaster.ts`. Scripted scenes are served from pre-built Morphic files. Live generation keys are marked explicitly.
+All scene keys used in this script. Scene keys resolve to Morphic media IDs via `resolveMediaId()` in `gameMaster.ts`. Scripted scenes are served from pre-built Morphic files hosted on GCS (`gs://liminal-sin-assets`). Live generation keys are marked explicitly.
 
 | Key                          | Morphic media_id         | Phase    | Source          | Notes                                                  |
 | ---------------------------- | ------------------------ | -------- | --------------- | ------------------------------------------------------ |
-| `tunnel_darkness_01`         | `tunnel_darkness_01`     | Phase 2  | Morphic (disk)  | Pre-session darkness hold — muted                      |
-| `flashlight_beam`            | `tunnel_flashlight_01`   | Phase 5  | Morphic (disk)  | First visual moment                                    |
-| `generator_area_start`       | `tunnel_generator_01`    | Phase 5B | Morphic (disk)  | Generator area first discovered                        |
-| `generator_area_operational` | `tunnel_generator_01`    | Phase 5B | Morphic (disk)  | Same Morphic file as `generator_area_start`             |
-| `generator_card_reveal`      | `card_joker_01`          | Phase 5B | Morphic (disk)  | Joker card visible near generator                      |
-| `card1_pickup_pov`           | `card_pickup_01`         | Phase 5B | Morphic (disk)  | Joker card pickup; no close-up                         |
-| `acecard_reveal_01`          | `acecard_reveal_01`      | Phase 5B | Morphic (disk)  | Clip-only (no still); placement TBD                    |
+| `tunnel_darkness_01`         | `tunnel_darkness_01`     | Phase 2  | Morphic (GCS)   | Pre-session darkness hold — muted                      |
+| `flashlight_beam`            | `tunnel_flashlight_01`   | Phase 5  | Morphic (GCS)   | First visual moment                                    |
+| `generator_area_start`       | `tunnel_generator_01`    | Phase 5B | Morphic (GCS)   | Generator area first discovered                        |
+| `generator_area_operational` | `tunnel_generator_01`    | Phase 5B | Morphic (GCS)   | Same Morphic file as `generator_area_start`             |
+| `generator_card_reveal`      | `card_joker_01`          | Phase 5B | Morphic (GCS)   | Joker card visible near generator                      |
+| `card1_pickup_pov`           | `card_pickup_01`         | Phase 5B | Morphic (GCS)   | Joker card pickup; no close-up                         |
+| `acecard_reveal_01`          | `acecard_reveal_01`      | Phase 5B | Morphic (GCS)   | Clip-only (no still); placement TBD                    |
 | `wildcard_vision_feed`       | _(live gen)_             | Phase 5C | Live Imagen+Veo | Live anomaly image/video from player camera            |
-| `tunnel_to_park_transition`  | `tunnel_transition_01`   | Phase 6  | Morphic (disk)  | Tunnel-to-park push                                    |
-| `park_transition_reveal`     | `park_reveal_01`         | Phase 6  | Morphic (disk)  | Threshold between tunnel and paradise                  |
-| `park_entrance`              | `park_walkway_01`        | Phase 6A | Morphic (disk)  | Full waterpark reveal                                  |
-| `park_walkway`               | `park_walkway_02`        | Phase 6B | Morphic (disk)  | Jason exploring walkways                               |
-| `park_liminal`               | `park_liminal_01`        | Phase 6B | Morphic (disk)  | Liminal park transition beat                           |
-| `park_shaft_view`            | `shaft_maintenance_01`   | Phase 6C | Morphic (disk)  | Clip-only — auto-chains from `maintenance_reveal_01` into `elevator_entry_01` STILL |
-| `maintenance_entry`          | `elevator_entry_01`      | Phase 7  | Morphic (disk)  | Elevator entry — STILL hold after shaft clip chain                 |
-| `elevator_inside`            | `elevator_inside_01`     | Phase 7  | Morphic (disk)  | Elevator interior first view                           |
-| `elevator_inside_2`          | `elevator_inside_02`     | Phase 7  | Morphic (disk)  | Elevator interior continued                            |
-| `maintenance_panel`          | `hallway_pov_01`         | Phase 7  | Morphic (disk)  | Hallway POV — panel area                               |
-| `hallway_pov_02`             | `hallway_pov_02`         | Phase 7  | Morphic (disk)  | Prewarm anchor for wildcard2/3 preparation             |
-| `card2_pickup_pov`           | `card_pickup_02`         | Phase 8  | Morphic (disk)  | Final card pickup; no close-up                         |
-| `wildcard_game_over`         | `maintenance_reveal_01`  | Phase 7B | Partial Morphic | `maintenance_reveal_01.mp4` exists (clip only, no still). Currently served from disk. |
+| `tunnel_to_park_transition`  | `tunnel_transition_01`   | Phase 6  | Morphic (GCS)   | Tunnel-to-park push                                    |
+| `park_transition_reveal`     | `park_reveal_01`         | Phase 6  | Morphic (GCS)   | Threshold between tunnel and paradise                  |
+| `park_entrance`              | `park_walkway_01`        | Phase 6A | Morphic (GCS)   | Full waterpark reveal                                  |
+| `park_walkway`               | `park_walkway_02`        | Phase 6B | Morphic (GCS)   | Jason exploring walkways                               |
+| `park_liminal`               | `park_liminal_01`        | Phase 6B | Morphic (GCS)   | Liminal park transition beat                           |
+| `park_shaft_view`            | `shaft_maintenance_01`   | Phase 6C | Morphic (GCS)   | Clip-only — auto-chains from `maintenance_reveal_01` into `elevator_entry_01` STILL |
+| `maintenance_entry`          | `elevator_entry_01`      | Phase 7  | Morphic (GCS)   | Elevator entry — STILL hold after shaft clip chain                 |
+| `elevator_inside`            | `elevator_inside_01`     | Phase 7  | Morphic (GCS)   | Elevator interior first view                           |
+| `elevator_inside_2`          | `elevator_inside_02`     | Phase 7  | Morphic (GCS)   | Elevator interior continued                            |
+| `maintenance_panel`          | `hallway_pov_01`         | Phase 7  | Morphic (GCS)   | Hallway POV — panel area                               |
+| `hallway_pov_02`             | `hallway_pov_02`         | Phase 7  | Morphic (GCS)   | Prewarm anchor for wildcard2/3 preparation             |
+| `card2_pickup_pov`           | `card_pickup_02`         | Phase 8  | Morphic (GCS)   | Final card pickup; no close-up                         |
+| `wildcard_game_over`         | `maintenance_reveal_01`  | Phase 7B | Partial Morphic | `maintenance_reveal_01.mp4` exists (clip only, no still). Served from GCS. |
 | `wildcard_good_ending`       | _(live gen)_             | Phase 8  | Live Imagen+Veo | Live image-to-video wildcard branch for good ending    |
 
 ---
@@ -51,8 +51,8 @@ All scene keys used in this script. Scene keys resolve to Morphic media IDs via 
 
 The canonical Act 1 media plan:
 
-- **16 pre-built stills** (Morphic — `assets/generated_stills/`)
-- **18 pre-built clips** (Morphic — `assets/generated_clips/`)
+- **16 pre-built stills** (Morphic — hosted on GCS `gs://liminal-sin-assets/stills/`)
+- **18 pre-built clips** (Morphic — hosted on GCS `gs://liminal-sin-assets/clips/`)
 - **2 live wildcard images** (Imagen 4 img2img — `wildcard_vision_feed`, `wildcard_good_ending`)
 - **2–3 live wildcard videos** (Veo 3.1 img2vid — `wildcard_vision_feed`, `wildcard_game_over` if not using disk override, `wildcard_good_ending`)
 
@@ -63,7 +63,7 @@ The canonical Act 1 media plan:
 - **No close-up shots** are allowed anywhere in Act 1.
 - Darkness phase has **zero visual generations**. Screen remains black until flashlight activation.
 - Jason must not be given environmental visual knowledge before flashlight activation.
-- All scripted stills and clips are pre-built Morphic files. No Imagen or Veo calls are made for scripted scenes.
+- All scripted stills and clips are pre-built Morphic files hosted on GCS. No Imagen or Veo calls are made for scripted scenes.
 - The Morphic pipeline was constructed so that each still is conceptually the last frame extracted from the previous scripted video. At runtime the backend simply serves the next file in sequence.
 - The missing `v5` is intentional. That slot is replaced by the **live wildcard smartglasses anomaly video**.
 - Every still-frame gameplay node has a **per-step timeout** (see Step Machine Registry below). Timeout consequence is auto-advance for exploration steps, and `game_over` for the card2 beat.
@@ -93,12 +93,14 @@ The canonical Act 1 media plan:
 | 16    | `maintenance_panel`        | `hallway_pov_01`         | Hallway POV — panel area                                              |
 | 17    | `hallway_pov_02`           | `hallway_pov_02`         | Prewarm anchor — wildcard2/3 background preparation begins here       |
 | 18    | `card2_pickup_pov`         | `card_pickup_02`         | Final card pickup / collection; no close-up                           |
-| 19    | `wildcard_game_over`       | `maintenance_reveal_01`  | Bad-ending branch (served from Morphic clip on disk)                  |
+| 19    | `wildcard_game_over`       | `maintenance_reveal_01`  | Bad-ending branch (served from GCS Morphic clip)                  |
 | 20    | `wildcard_good_ending`     | _(live gen)_             | Live anomaly good-ending branch                                       |
 
 ### Media Filename Registry (Morphic Import)
 
-Use basename as trigger id. Frontend resolves `.png` for hold frames and `.mp4` for clip playback.
+Use basename as trigger id. Frontend resolves stills and clips via GCS:
+- Stills: `https://storage.googleapis.com/liminal-sin-assets/stills/<media_id>.png`
+- Clips: `https://storage.googleapis.com/liminal-sin-assets/clips/<media_id>.mp4`
 
 > **Note:** `generator_area_start` and `generator_area_operational` both resolve to the same Morphic file (`tunnel_generator_01`).
 > **⚠️ Timeout values here may be stale.** Authoritative runtime timeouts live in `server/services/stepMachine.ts → STEP_MEDIA_TRIGGER`.
