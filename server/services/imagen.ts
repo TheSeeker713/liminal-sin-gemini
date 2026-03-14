@@ -1,3 +1,4 @@
+import { RawReferenceImage, SafetyFilterLevel } from "@google/genai";
 import { getAiClient } from "./gemini";
 import { NEGATIVES } from "./mediaSafety";
 
@@ -9,49 +10,91 @@ import { NEGATIVES } from "./mediaSafety";
 // ---------------------------------------------------------------------------
 const ZONE_PROMPTS: Record<string, string> = {
   flashlight_beam: `First-person POV in total darkness underground, a single flashlight beam shooting
-forward through absolute blackness, Jason's right hand visible at the bottom of
-frame gripping a heavy rubberized flashlight, beam illuminating wet concrete floor
-ahead and catching water droplets suspended in mid-air, walls beyond the beam edge
-barely visible in peripheral darkness as faint grey, cold white light source, pure
-black surround, no ambient lighting anywhere, photorealistic horror photography,
-wide angle 16mm, high contrast, cinematic horror, 8K`,
+forward through pure blackness inside a Boring Company tunnel under Las Vegas,
+smooth white cylindrical concrete tunnel walls just barely caught where the beam
+passes, offscreen headlight projection only, no visible hands, no visible body,
+no ambient fill light, wide environmental framing only, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
 
-  generator_area: `First-person POV looking toward an industrial diesel generator unit set against
-rough dark concrete wall underground, warm amber flashlight glow from below
-illuminating the battered metal generator housing and surrounding concrete floor,
-a single joker playing card — face-up, pristine, vivid colorful illustration —
-lying flat on wet concrete at the base of the generator, isolated in a tight
-flashlight spotlight as if placed deliberately, no other people, photorealistic,
-wide angle 16mm, brutalist industrial concrete, oil-stained floor, cinematic horror, 8K`,
+  generator_area_start: `First-person POV stepping into a dim industrial bay underground,
+continuation of the same Boring Company tunnel under Las Vegas after getting bearings,
+offscreen headlight projection reaches farther down the tunnel, smooth cylindrical
+concrete geometry continues ahead, industrial equipment begins to emerge in the far
+distance, generator only faintly suggested at end of beam path, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
 
-  park_entrance: `First-person POV standing at the threshold where a Boring Company tunnel wall has
-ruptured open, the broken concrete arch frames a vast underground water park in full
-vibrant operation beyond — bright turquoise pool water under full-spectrum artificial
-sunlight, clean white and cobalt-blue fiberglass slides curving overhead, working neon
-signs in pink and tropical green casting vivid color reflections across the water
-surface, real tropical palms and bird-of-paradise plants thriving, the park looks
-completely intact and operational with no visible damage or decay, no people,
-photorealistic, wide angle 16mm, vibrant saturated color palette, cinematic, 8K`,
+  generator_area_operational: `First-person POV facing the same generator after initial inspection,
+continuation from deeper inside the same Boring Company tunnel, offscreen headlight
+projection now lands clearly on an industrial generator still a little distance ahead,
+generator framed inside the tunnel cylinder with floor and tunnel curvature still visible,
+lights in the tunnel remain off, no card visible yet, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
 
-  park_walkway: `First-person POV walking along a dry concrete promenade path through a massive
-underground water park, operational turquoise pools extending wide on both sides,
-clean white and cobalt fiberglass slides spiraling high above, a cascading waterfall
-thundering over artificial rock formations ahead, a lazy river circuit visible through
-a palm-lined walkway to the right, the cavern ceiling is lost in the distance above the
-artificial lighting, the park interior is enormous — fully operational and immaculate,
-no guests, in the far background a recessed maintenance corridor entrance is cut into
-the cavern rock wall barely visible beyond the park lights, no people, photorealistic,
-wide angle 16mm, vibrant color palette, cinematic, 8K`,
+  generator_card_reveal: `First-person POV in generator bay with flashlight angled down,
+standing at the generator inside the same Boring Company tunnel after power-on,
+tunnel practical lights are now on, headlamp is off, generator fills near-mid frame,
+a single Joker card is now visible on the floor near the base of the generator,
+environment remains fully readable, no close-up framing, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
 
-  maintenance_area: `First-person POV standing in an industrial maintenance corridor branching off an
-underground water park, exposed pipe clusters and electrical conduit running along
-low brutalist concrete ceiling, faded yellow safety signage barely legible on damp
-walls, flashlight cone cutting forward into the industrial dark, through an open
-arched doorway in the background the park's aquamarine neon glow bleeds into frame —
-a sliver of paradise behind the industrial grimness, decorative arch frame with
-moisture-stained painted tropical mural barely visible through the staining, no
-people, photorealistic, wide angle 16mm, industrial concrete with neon bleed,
-cinematic horror, 8K`,
+  card1_pickup_pov: `First-person POV crouching naturally near generator base,
+continuation after generator activation, Joker card visible on the tunnel floor near
+the generator with full environmental context preserved, framing remains natural POV
+from Jason's eye line in the Boring tunnel, no close-up framing, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
+
+  vision_flash: `Deprecated alias. Use wildcard_vision_feed for the live anomaly event.`,
+
+  tunnel_to_park_transition: `First-person POV moving forward from industrial tunnel into a larger
+continuation from the generator tunnel, moving deeper through the same Boring tunnel
+toward an impossible opening ahead where waterpark color and humidity begin to invade
+the industrial space, tunnel still dominates the frame, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
+
+  park_transition_reveal: `First-person POV paused at threshold where tunnel concrete meets
+continuation from the end of the preceding tunnel-to-park video, Boring tunnel concrete
+still present in foreground while the impossible underground waterpark now opens wider
+ahead, humid light, reflective surfaces, clean architecture, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
+
+  park_entrance: `First-person POV at a ruptured tunnel wall framing a vast underground
+waterpark in full operation, bright turquoise pools, clean white-and-cobalt slides,
+working neon accents, living tropical foliage, immaculate maintenance state,
+no decay, no abandonment, no people, photorealistic cinematic image,
+wide angle 16mm, 16:9, 8K`,
+
+  park_walkway: `First-person POV walking dry promenade paths through a huge
+operational underground waterpark, slides overhead, lazy river channels,
+cascading waterfalls, lit pool systems, far-depth cavern scale,
+no people, photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
+
+  park_shaft_view: `First-person POV from waterpark interior looking toward a distant
+maintenance shaft entry inset beyond pools and walkways,
+foreground remains paradise architecture while the target shaft is clearly visible,
+no people, photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
+
+  maintenance_entry: `First-person POV crossing from park edge into industrial
+maintenance corridor, exposed piping, damp concrete, utility fixtures,
+park glow lingering behind through doorway, no people,
+photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
+
+  maintenance_panel: `First-person POV deeper in maintenance facing a movable
+utility panel and disturbed floor pattern suggesting hidden access,
+flashlight scanning seams and handles, full corridor context visible,
+no close-up framing, no people, photorealistic cinematic image,
+wide angle 16mm, 16:9, 8K`,
+
+  card2_pickup_pov: `First-person POV in maintenance after hidden compartment reveal,
+final card now revealed in maintenance area after panel removal, card visible within
+full corridor context with panel, floor, and geometry preserved in frame,
+no close-up framing, no people, photorealistic cinematic image,
+wide angle 16mm, 16:9, 8K`,
+
+  wildcard_vision_feed: `This is a real photograph of a real room. Do not change anything about the room, the walls, the furniture, the lighting, or the person in the photograph. Preserve every pixel of the original scene. Add only this: a dark human-shaped shadow cast onto the wall or surface directly behind and slightly to the side of the person. The shadow must look like a real shadow cast by a light source — not a cartoon, not a cutout, not a silhouette pasted on top of the person. It should appear as part of the existing lighting on the wall itself. The shadow figure is taller than the person and slightly more menacing in posture. It must appear physically real, photographic, and deeply unsettling. No new objects, no masks, no faces, no costumes, no text, no borders.`,
+
+  wildcard_game_over: `POV of Jason (offscreen), an industrial Boring company tunnel connecting to a series of labyrinthine tunnels, walls are peeling, some distortion glitches on the edges of the screen. Image is heavy with film-grade noise. Liminal spaces. No people, no faces, no hands, no bodies. Photorealistic cinematic image, 16:9, 8K`,
+
+  wildcard_good_ending: `POV of Jason (offscreen), at a perfect and awe inspiring deep underground highly functional waterpark. He is standing in front of a lounge chair overlooking the beautiful majestic scenery. Liminal spaces. No people, no faces, no hands, no bodies. Shot on 35mm film, photographic grain, real location photography, not CGI, not 3D rendered, 16:9`,
 };
 
 export type SceneImageGeneration = {
@@ -73,12 +116,40 @@ function resolvePrompt(sceneKey: string): string {
   }
 
   // Keyword fallbacks for coarse scene_key contexts
-  if (key.includes("park") || key.includes("shore") || key.includes("shallow") || key.includes("slide") || key.includes("deep"))
+  if (key.includes("wildcard") || key.includes("vision_feed"))
+    return ZONE_PROMPTS["wildcard_vision_feed"];
+  if (key.includes("good_ending")) return ZONE_PROMPTS["wildcard_good_ending"];
+  if (key.includes("game_over")) return ZONE_PROMPTS["wildcard_game_over"];
+  if (key.includes("card2") || key.includes("final_card"))
+    return ZONE_PROMPTS["card2_pickup_pov"];
+  if (key.includes("panel") || key.includes("hidden"))
+    return ZONE_PROMPTS["maintenance_panel"];
+  if (key.includes("maintenance_entry") || key.includes("maintenance"))
+    return ZONE_PROMPTS["maintenance_entry"];
+  if (key.includes("shaft")) return ZONE_PROMPTS["park_shaft_view"];
+  if (key.includes("park_transition"))
+    return ZONE_PROMPTS["park_transition_reveal"];
+  if (
+    key.includes("park") ||
+    key.includes("shore") ||
+    key.includes("shallow") ||
+    key.includes("slide") ||
+    key.includes("deep")
+  )
     return ZONE_PROMPTS["park_walkway"];
-  if (key.includes("maintenance") || key.includes("card") || key.includes("slotsky"))
-    return ZONE_PROMPTS["maintenance_area"];
-  if (key.includes("generator"))
-    return ZONE_PROMPTS["generator_area"];
+  if (key.includes("card") || key.includes("joker"))
+    return ZONE_PROMPTS["card1_pickup_pov"];
+  if (key.includes("vision") || key.includes("flash"))
+    return ZONE_PROMPTS["vision_flash"];
+  if (key.includes("transition") || key.includes("tunnel"))
+    return ZONE_PROMPTS["tunnel_to_park_transition"];
+  if (key.includes("generator_operational"))
+    return ZONE_PROMPTS["generator_area_operational"];
+  if (key.includes("generator_card"))
+    return ZONE_PROMPTS["generator_card_reveal"];
+  if (key.includes("generator_start"))
+    return ZONE_PROMPTS["generator_area_start"];
+  if (key.includes("generator")) return ZONE_PROMPTS["generator_area_start"];
 
   // Default: flashlight (where the visual session always begins)
   return ZONE_PROMPTS["flashlight_beam"];
@@ -113,6 +184,7 @@ export async function generateSceneImageWithMeta(
       prompt,
       config: {
         numberOfImages: 1,
+        aspectRatio: "16:9",
         outputMimeType: "image/jpeg",
         negativePrompt: NEGATIVES,
       },
@@ -147,6 +219,67 @@ export async function generateSceneImageWithMeta(
   }
 }
 
+/**
+ * Edits a provided reference JPEG using Imagen image editing.
+ * Used for wildcard player-camera anomaly generations.
+ */
+export async function generateEditedSceneImage(
+  sceneKey: string,
+  referenceBase64Jpeg: string,
+): Promise<SceneImageGeneration | null> {
+  const prompt = resolvePrompt(sceneKey);
+  console.log(`[Imagen] Editing image for sceneKey="${sceneKey}"`);
+
+  try {
+    const response = await getAiClient().models.editImage({
+      model: process.env.IMAGEN_EDIT_MODEL || "imagen-3.0-capability-001",
+      prompt,
+      referenceImages: (() => {
+        const ref = new RawReferenceImage();
+        ref.referenceImage = { imageBytes: referenceBase64Jpeg, mimeType: "image/jpeg" };
+        ref.referenceId = 1;
+        return [ref];
+      })(),
+      config: {
+        numberOfImages: 1,
+        aspectRatio: "16:9",
+        outputMimeType: "image/jpeg",
+        negativePrompt: NEGATIVES,
+        safetyFilterLevel: SafetyFilterLevel.BLOCK_ONLY_HIGH,
+        addWatermark: false,
+        includeRaiReason: true,
+      },
+    });
+
+    const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
+    if (!imageBytes) {
+      console.warn(
+        `[Imagen] No edited imageBytes in response for sceneKey="${sceneKey}"`,
+      );
+      return null;
+    }
+
+    const first = response.generatedImages?.[0] as
+      | { seed?: number; image?: { seed?: number } }
+      | undefined;
+    const seed =
+      typeof first?.seed === "number"
+        ? first.seed
+        : typeof first?.image?.seed === "number"
+          ? first.image.seed
+          : null;
+
+    console.log(`[Imagen] Edited image generated - sceneKey="${sceneKey}"`);
+    return { imageBytes, seed };
+  } catch (err) {
+    console.error(
+      `[Imagen] editImage failed for sceneKey="${sceneKey}":`,
+      (err as Error).message,
+    );
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Image pre-load cache — keyed sessionId → sceneKey → base64JPEG
 // Populated at session start to eliminate first-scene latency.
@@ -155,7 +288,7 @@ const imageCache = new Map<string, Map<string, string>>();
 
 const PREWARM_SCENE_KEYS = [
   "flashlight_beam",
-  "generator_area",
+  "generator_area_start",
   "park_entrance",
 ] as const;
 

@@ -100,7 +100,7 @@
 npx tsc --noEmit path/to/file.tsx
 
 # Format a single file
-npm run prettier --write path/to/file.tsx
+npm run prettier -- --write path/to/file.tsx
 
 # Lint a single file
 npx eslint --fix path/to/file.tsx
@@ -129,7 +129,7 @@ Follow this exact, unbreakable protocol for every feature, component, or integra
 - Always ask before removing code or deleting files.
 
 **STEP 3 — Mandatory Testing**
-- Run `npx tsc --noEmit`, `npm run prettier --write <file>`, and `npx eslint` on modified files only.
+- Run `npx tsc --noEmit`, `npm run prettier -- --write <file>`, and `npx eslint` on modified files only.
 - If errors occur, stop and fix them. Do not advance to Step 4.
 
 **STEP 4 — Commit and Push**

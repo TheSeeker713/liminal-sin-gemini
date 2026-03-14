@@ -1,18 +1,11 @@
-import { WebSocket } from 'ws';
-import { LiveSessionManager } from './gemini';
-import { cancelDreadTimer } from './dreadTimer';
+import { WebSocket } from "ws";
+import { LiveSessionManager } from "./gemini";
+import { cancelDreadTimer } from "./dreadTimer";
 
 /**
  * Session ending handlers: card collection logic, SITUATION_UPDATE injection,
  * and good_ending emission.
  */
-
-export const CARD1_SITUATION_UPDATE_TEMPLATE = `[SITUATION_UPDATE: GM_VISION — You have a sudden disorienting flash of partial sight
-through the device. You sense — or see — the person on the other end for one moment.
-Describe exactly ONE specific visual detail about them: what they are wearing, their
-hair, one concrete thing you noticed. Then ask: "Are you wearing a ___?" or
-"I saw— are you [descriptive detail]?" React as if this is real and shocking.
-One moment of recognition, then it is gone. Maximum 2 sentences total.]`;
 
 /**
  * Handle the card_collected event from the frontend.
@@ -27,24 +20,29 @@ export async function handleCardCollected(
   cardId: string,
   sessionId: string,
   jasonManager: LiveSessionManager,
-  clientWs: WebSocket
+  clientWs: WebSocket,
+  options?: { deferGoodEnding?: boolean },
 ): Promise<void> {
-  console.log(`[SessionEndings] card_collected received: cardId="${cardId}", sessionId="${sessionId}"`);
+  console.log(
+    `[SessionEndings] card_collected received: cardId="${cardId}", sessionId="${sessionId}"`,
+  );
 
-  if (cardId === 'card1') {
-    // Card 1 (Jack of Clubs) collected in Phase 5B
-    // Inject SITUATION_UPDATE into Jason
-    console.log(`[SessionEndings] Injecting SITUATION_UPDATE for card1 collection`);
-    jasonManager.sendText(CARD1_SITUATION_UPDATE_TEMPLATE);
-  } else if (cardId === 'card2') {
+  if (cardId === "card1") {
+    // Card 1 collection now resolves into the wildcard live-feed pipeline.
+    console.log(
+      `[SessionEndings] card1 collected - wildcard live-feed pipeline should follow`,
+    );
+  } else if (cardId === "card2") {
     // Card 2 (Queen of Spades) collected in Phase 8
     // Cancel dread timer + emit good_ending
     console.log(`[SessionEndings] Cancelling dread timer for card2 collection`);
     cancelDreadTimer(sessionId);
 
-    if (clientWs.readyState === WebSocket.OPEN) {
-      clientWs.send(JSON.stringify({ type: 'good_ending' }));
-      console.log(`[SessionEndings] good_ending event sent to client for session="${sessionId}"`);
+    if (!options?.deferGoodEnding && clientWs.readyState === WebSocket.OPEN) {
+      clientWs.send(JSON.stringify({ type: "good_ending" }));
+      console.log(
+        `[SessionEndings] good_ending event sent to client for session="${sessionId}"`,
+      );
     }
 
     // Optional: Log session completion to Firestore (deferred for now)

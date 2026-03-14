@@ -17,7 +17,13 @@ import {
   handleGmFunctionCall,
   clearGlitchThrottle,
 } from "./services/gameMaster";
-import { prewarmImageCache, clearImageCache } from "./services/imagen";
+import {
+  prewarmImageCache,
+  clearImageCache,
+  generateEditedSceneImage,
+  generateSceneImage,
+} from "./services/imagen";
+import { generateSceneVideo } from "./services/veo";
 import { handleCardCollected } from "./services/sessionEndings";
 
 const app = express();
@@ -26,7 +32,7 @@ const wss = new WebSocketServer({ server });
 
 const PORT = process.env.PORT || 3001;
 
-app.use(express.json());
+app.use(express.json({ limit: "20mb" }));
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "liminal-sin-mock-ws" });
@@ -89,6 +95,84 @@ app.post("/debug/fire-gm-event", async (req, res) => {
 });
 
 /**
+ * POST /debug/test-wildcard-vision
+ * Pipeline smoke-test: accepts a base64 JPEG in the request body, runs the exact
+ * same wildcard_vision_feed pipeline the server executes on a live player_frame
+ * (generateEditedSceneImage → generateSceneVideo), and returns all results plus
+ * any error detail so caller can distinguish server-side issues from RAI blocks.
+ * Gated behind DEBUG_GM_ENDPOINT=true.
+ */
+app.post("/debug/test-wildcard-vision", async (req, res) => {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.DEBUG_GM_ENDPOINT !== "true"
+  ) {
+    res.status(403).json({ error: "Debug endpoint disabled. Set DEBUG_GM_ENDPOINT=true." });
+    return;
+  }
+  const { jpeg } = req.body as { jpeg?: string };
+  if (!jpeg) {
+    res.status(400).json({ error: "Body must contain { jpeg: '<base64 string>' }" });
+    return;
+  }
+
+  const t0 = Date.now();
+  let editedImageBytes: string | null = null;
+  let editDurationMs = 0;
+  let videoUri: string | null = null;
+  let videoDurationMs = 0;
+  let editError: string | null = null;
+  let videoError: string | null = null;
+
+  // Step 1 — Imagen edit
+  try {
+    const t1 = Date.now();
+    const edited = await generateEditedSceneImage("wildcard_vision_feed", jpeg);
+    editDurationMs = Date.now() - t1;
+    if (edited) {
+      editedImageBytes = edited.imageBytes;
+    } else {
+      editError = "generateEditedSceneImage returned null (possible RAI block — check server logs)";
+    }
+  } catch (err) {
+    editError = String(err);
+  }
+
+  // Step 2 — Veo (only if edit succeeded)
+  if (editedImageBytes) {
+    try {
+      const t2 = Date.now();
+      videoUri = await generateSceneVideo("wildcard_vision_feed", editedImageBytes);
+      videoDurationMs = Date.now() - t2;
+      if (!videoUri) {
+        videoError = "generateSceneVideo returned null (possible RAI block — check server logs)";
+      }
+    } catch (err) {
+      videoError = String(err);
+    }
+  }
+
+  res.json({
+    ok: !editError && !videoError,
+    totalDurationMs: Date.now() - t0,
+    steps: {
+      imagenEdit: {
+        success: !!editedImageBytes,
+        durationMs: editDurationMs,
+        imageBytes: editedImageBytes,   // base64 JPEG
+        error: editError,
+      },
+      veoVideo: {
+        success: !!videoUri,
+        durationMs: videoDurationMs,
+        videoUri,                        // data URI or GCS URI
+        error: videoError,
+      },
+    },
+  });
+});
+
+/**
  * POST /log-client-error
  * Frontend error reporting endpoint. Writes one doc to Firestore client_error_logs.
  * No auth - errors only, no secrets. AbortSignal.timeout(3000) on the frontend side.
@@ -139,14 +223,107 @@ wss.on("connection", (ws: WebSocket) => {
   let jasonReadyTimer: ReturnType<typeof setTimeout> | null = null; // Flips jasonReadyForPlayer after ~18s
   let sceneChangeCount = 0; // Tracks GM-triggered scene changes (used by hint timer)
   let hintTimer: ReturnType<typeof setTimeout> | null = null; // B11: flashlight hint fallback
-  let npcIdleNudgeTimer: ReturnType<typeof setInterval> | null = null; // 15s silence nudge loop
-  let autoplayAdvanceTimer: ReturnType<typeof setInterval> | null = null; // 60s inactivity auto-advance loop
+  let npcIdleNudgeTimer: ReturnType<typeof setInterval> | null = null; // 9s silence nudge loop
+  let autoplayAdvanceTimer: ReturnType<typeof setInterval> | null = null; // per-step inactivity auto-advance loop
   let lastPlayerSpeechAt = Date.now();
   let currentSequenceStep = 7; // Phase 4 interaction-open baseline step
   let card1Collected = false;
-  let card2Collected = false;
   let card1AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
   let card2AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
+  let latestPlayerFrame: string | null = null;
+  let wildcardVisionPreparing = false;
+  let wildcardVisionRequested = false;
+  let wildcardVisionTriggered = false;
+  let preparedWildcardVision: {
+    imageBytes: string;
+    videoUri: string | null;
+  } | null = null;
+  let wildcardVisionStartTimer: ReturnType<typeof setTimeout> | null = null;
+  let wildcardVisionEndTimer: ReturnType<typeof setTimeout> | null = null;
+  let wildcardGameOverPreparing = false;
+  let wildcardGameOverTriggered = false;
+  let preparedWildcardGameOver: {
+    imageBytes: string;
+    videoUri: string | null;
+  } | null = null;
+  let wildcardGameOverStartTimer: ReturnType<typeof setTimeout> | null = null;
+  let wildcardGameOverEndTimer: ReturnType<typeof setTimeout> | null = null;
+  let wildcardGoodEndingPreparing = false;
+  let wildcardGoodEndingTriggered = false;
+  let preparedWildcardGoodEnding: {
+    imageBytes: string;
+    videoUri: string | null;
+  } | null = null;
+  let wildcardGoodEndingStartTimer: ReturnType<typeof setTimeout> | null = null;
+  let wildcardGoodEndingEndTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const STEP_MEDIA_TRIGGER: Record<
+    number,
+    {
+      mediaId: string;
+      triggerType: "chained_auto" | "hold_for_input";
+      timeoutSeconds: number;
+    }
+  > = {
+    7: {
+      mediaId: "tunnel_flashlight_01",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 30,
+    },
+    9: {
+      mediaId: "tunnel_generator_01",
+      triggerType: "chained_auto",
+      timeoutSeconds: 30,
+    },
+    11: {
+      mediaId: "tunnel_generator_01",
+      triggerType: "chained_auto",
+      timeoutSeconds: 30,
+    },
+    13: {
+      mediaId: "card_joker_01",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 22,
+    },
+    17: {
+      mediaId: "tunnel_transition_01",
+      triggerType: "chained_auto",
+      timeoutSeconds: 30,
+    },
+    19: {
+      mediaId: "park_reveal_01",
+      triggerType: "chained_auto",
+      timeoutSeconds: 30,
+    },
+    21: {
+      mediaId: "park_walkway_01",
+      triggerType: "chained_auto",
+      timeoutSeconds: 30,
+    },
+    23: {
+      mediaId: "park_walkway_02",
+      triggerType: "chained_auto",
+      timeoutSeconds: 30,
+    },
+    25: {
+      mediaId: "shaft_maintenance_01",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 22,
+    },
+    27: {
+      mediaId: "elevator_entry_01",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 15,
+    },
+    29: {
+      mediaId: "hallway_pov_01",
+      triggerType: "hold_for_input",
+      timeoutSeconds: 15,
+    },
+  };
+
+  const getStepTimeoutSeconds = (step: number): number =>
+    STEP_MEDIA_TRIGGER[step]?.timeoutSeconds ?? 30;
 
   const clearCardAutoPickTimers = () => {
     if (card1AutoPickTimer) {
@@ -157,6 +334,526 @@ wss.on("connection", (ws: WebSocket) => {
       clearTimeout(card2AutoPickTimer);
       card2AutoPickTimer = null;
     }
+  };
+
+  const clearWildcardTimers = () => {
+    if (wildcardVisionStartTimer) {
+      clearTimeout(wildcardVisionStartTimer);
+      wildcardVisionStartTimer = null;
+    }
+    if (wildcardVisionEndTimer) {
+      clearTimeout(wildcardVisionEndTimer);
+      wildcardVisionEndTimer = null;
+    }
+    if (wildcardGameOverStartTimer) {
+      clearTimeout(wildcardGameOverStartTimer);
+      wildcardGameOverStartTimer = null;
+    }
+    if (wildcardGameOverEndTimer) {
+      clearTimeout(wildcardGameOverEndTimer);
+      wildcardGameOverEndTimer = null;
+    }
+    if (wildcardGoodEndingStartTimer) {
+      clearTimeout(wildcardGoodEndingStartTimer);
+      wildcardGoodEndingStartTimer = null;
+    }
+    if (wildcardGoodEndingEndTimer) {
+      clearTimeout(wildcardGoodEndingEndTimer);
+      wildcardGoodEndingEndTimer = null;
+    }
+  };
+
+  const maybeEmitPreparedWildcardVision = () => {
+    if (
+      !wildcardVisionRequested ||
+      wildcardVisionTriggered ||
+      !preparedWildcardVision ||
+      ws.readyState !== WebSocket.OPEN
+    ) {
+      return;
+    }
+
+    wildcardVisionTriggered = true;
+    clearWildcardTimers();
+
+    ws.send(
+      JSON.stringify({
+        type: "hud_glitch",
+        intensity: "high",
+        duration_ms: 1200,
+      }),
+    );
+    ws.send(
+      JSON.stringify({
+        type: "slotsky_trigger",
+        payload: { anomalyType: "wildcard_vision_feed_start" },
+      }),
+    );
+
+    wildcardVisionStartTimer = setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN || !preparedWildcardVision) return;
+
+      jasonManager.sendText(
+        "There's a feed coming in through my glasses. I did not activate this myself.",
+      );
+
+      ws.send(
+        JSON.stringify({
+          type: "scene_change",
+          payload: { sceneKey: "wildcard_vision_feed" },
+        }),
+      );
+      ws.send(
+        JSON.stringify({
+          type: "scene_image",
+          agent: "gm",
+          sessionId,
+          payload: {
+            sceneKey: "wildcard_vision_feed",
+            data: preparedWildcardVision.imageBytes,
+          },
+          timestamp: Date.now(),
+        }),
+      );
+
+      if (preparedWildcardVision.videoUri) {
+        ws.send(
+          JSON.stringify({
+            type: "slotsky_trigger",
+            payload: { anomalyType: "wildcard_scare_sfx" },
+          }),
+        );
+        ws.send(
+          JSON.stringify({
+            type: "scene_video",
+            agent: "gm",
+            sessionId,
+            payload: {
+              sceneKey: "wildcard_vision_feed",
+              mediaId: "hallway_pov_01",
+              triggerType: "hold_for_input",
+              timeoutSeconds: 15,
+              audioMode: "native_audio",
+              url: preparedWildcardVision.videoUri,
+            },
+            timestamp: Date.now(),
+          }),
+        );
+      }
+
+      wildcardVisionEndTimer = setTimeout(() => {
+        if (ws.readyState !== WebSocket.OPEN) return;
+        currentSequenceStep = 17;
+        lastPlayerSpeechAt = Date.now();
+        ws.send(
+          JSON.stringify({
+            type: "hud_glitch",
+            intensity: "medium",
+            duration_ms: 900,
+          }),
+        );
+        void (async () => {
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "tunnel_to_park_transition" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "tunnel_to_park_transition" },
+            ws,
+            jasonManager,
+          );
+        })().catch((err: Error) => {
+          console.error(
+            `[WS] wildcard transition follow-through failed for session ${sessionId}:`,
+            err.message,
+          );
+        });
+      }, 8_500);
+    }, 700);
+  };
+
+  const maybePrepareWildcardVision = () => {
+    if (
+      wildcardVisionPreparing ||
+      preparedWildcardVision ||
+      !latestPlayerFrame
+    ) {
+      return;
+    }
+
+    wildcardVisionPreparing = true;
+    console.log(`[WS] Starting wildcard vision prep for session ${sessionId}`);
+
+    void (async () => {
+      const edited = await generateEditedSceneImage(
+        "wildcard_vision_feed",
+        latestPlayerFrame!,
+      );
+      if (!edited) {
+        wildcardVisionPreparing = false;
+        return;
+      }
+
+      const videoUri = await generateSceneVideo(
+        "wildcard_vision_feed",
+        edited.imageBytes,
+      );
+      preparedWildcardVision = {
+        imageBytes: edited.imageBytes,
+        videoUri,
+      };
+      wildcardVisionPreparing = false;
+      console.log(`[WS] Wildcard vision prep ready for session ${sessionId}`);
+      maybeEmitPreparedWildcardVision();
+    })().catch((err: Error) => {
+      wildcardVisionPreparing = false;
+      console.error(
+        `[WS] wildcard vision prep failed for session ${sessionId}:`,
+        err.message,
+      );
+    });
+  };
+
+  const queueWildcardVisionPlayback = () => {
+    wildcardVisionRequested = true;
+    maybePrepareWildcardVision();
+    maybeEmitPreparedWildcardVision();
+  };
+
+  const waitForPreparedWildcard = async (
+    kind: "wildcard_game_over" | "wildcard_good_ending",
+    timeoutMs = 25_000,
+    pollMs = 500,
+  ): Promise<boolean> => {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+      if (
+        kind === "wildcard_game_over" &&
+        preparedWildcardGameOver &&
+        preparedWildcardGameOver.videoUri
+      ) {
+        return true;
+      }
+      if (
+        kind === "wildcard_good_ending" &&
+        preparedWildcardGoodEnding &&
+        preparedWildcardGoodEnding.videoUri
+      ) {
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+    }
+    return false;
+  };
+
+  const maybePrepareWildcardGameOver = () => {
+    if (wildcardGameOverPreparing || preparedWildcardGameOver) {
+      return;
+    }
+
+    wildcardGameOverPreparing = true;
+    console.log(
+      `[WS] Starting wildcard_game_over prep for session ${sessionId}`,
+    );
+
+    void (async () => {
+      const imageBytes = await generateSceneImage("wildcard_game_over");
+      if (!imageBytes) {
+        wildcardGameOverPreparing = false;
+        return;
+      }
+
+      const videoUri = await generateSceneVideo("wildcard_game_over", imageBytes);
+      preparedWildcardGameOver = {
+        imageBytes,
+        videoUri,
+      };
+      wildcardGameOverPreparing = false;
+      console.log(
+        `[WS] wildcard_game_over prep ready for session ${sessionId}`,
+      );
+    })().catch((err: Error) => {
+      wildcardGameOverPreparing = false;
+      console.error(
+        `[WS] wildcard_game_over prep failed for session ${sessionId}:`,
+        err.message,
+      );
+    });
+  };
+
+  const maybePrepareWildcardGoodEnding = () => {
+    if (wildcardGoodEndingPreparing || preparedWildcardGoodEnding) {
+      return;
+    }
+
+    wildcardGoodEndingPreparing = true;
+    console.log(
+      `[WS] Starting wildcard_good_ending prep for session ${sessionId}`,
+    );
+
+    void (async () => {
+      const imageBytes = await generateSceneImage("wildcard_good_ending");
+      if (!imageBytes) {
+        wildcardGoodEndingPreparing = false;
+        return;
+      }
+
+      const videoUri = await generateSceneVideo(
+        "wildcard_good_ending",
+        imageBytes,
+      );
+      preparedWildcardGoodEnding = {
+        imageBytes,
+        videoUri,
+      };
+      wildcardGoodEndingPreparing = false;
+      console.log(
+        `[WS] wildcard_good_ending prep ready for session ${sessionId}`,
+      );
+    })().catch((err: Error) => {
+      wildcardGoodEndingPreparing = false;
+      console.error(
+        `[WS] wildcard_good_ending prep failed for session ${sessionId}:`,
+        err.message,
+      );
+    });
+  };
+
+  const scheduleWildcardPrewarmFromHallwayStill = () => {
+    // Hallway hold is the earliest reliable point to begin pre-building both ending branches.
+    // We kick preparation now and also at +90s to satisfy the late-prewarm guardrail.
+    maybePrepareWildcardGameOver();
+    maybePrepareWildcardGoodEnding();
+
+    setTimeout(() => {
+      maybePrepareWildcardGameOver();
+      maybePrepareWildcardGoodEnding();
+    }, 90_000);
+  };
+
+  const emitWildcardGameOverBranch = async () => {
+    if (wildcardGameOverTriggered) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "game_over" }));
+      }
+      return;
+    }
+
+    wildcardGameOverTriggered = true;
+    if (!preparedWildcardGameOver) {
+      maybePrepareWildcardGameOver();
+      const ready = await waitForPreparedWildcard("wildcard_game_over");
+      if (!ready) {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "game_over" }));
+        }
+        return;
+      }
+    }
+
+    if (ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    ws.send(
+      JSON.stringify({
+        type: "hud_glitch",
+        intensity: "high",
+        duration_ms: 1200,
+      }),
+    );
+    ws.send(
+      JSON.stringify({
+        type: "slotsky_trigger",
+        payload: { anomalyType: "wildcard_game_over_loading" },
+      }),
+    );
+    ws.send(
+      JSON.stringify({
+        type: "slotsky_trigger",
+        payload: { anomalyType: "wildcard_game_over_start" },
+      }),
+    );
+
+    wildcardGameOverStartTimer = setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN || !preparedWildcardGameOver) return;
+
+      ws.send(
+        JSON.stringify({
+          type: "scene_change",
+          payload: { sceneKey: "wildcard_game_over" },
+        }),
+      );
+      ws.send(
+        JSON.stringify({
+          type: "scene_image",
+          agent: "gm",
+          sessionId,
+          payload: {
+            sceneKey: "wildcard_game_over",
+            mediaId: "wildcard_game_over",
+            triggerType: "hold_for_input",
+            timeoutSeconds: 8,
+            data: preparedWildcardGameOver.imageBytes,
+          },
+          timestamp: Date.now(),
+        }),
+      );
+
+      if (preparedWildcardGameOver.videoUri) {
+        ws.send(
+          JSON.stringify({
+            type: "scene_video",
+            agent: "gm",
+            sessionId,
+            payload: {
+              sceneKey: "wildcard_game_over",
+              mediaId: "wildcard_game_over",
+              triggerType: "hold_for_input",
+              timeoutSeconds: 8,
+              audioMode: "native_audio",
+              url: preparedWildcardGameOver.videoUri,
+            },
+            timestamp: Date.now(),
+          }),
+        );
+      }
+
+      wildcardGameOverEndTimer = setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "game_over" }));
+        }
+      }, 8_500);
+    }, 700);
+  };
+
+  const queueWildcardGoodEndingPlayback = async () => {
+    if (wildcardGoodEndingTriggered || ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    wildcardGoodEndingTriggered = true;
+
+    if (!preparedWildcardGoodEnding) {
+      maybePrepareWildcardGoodEnding();
+      const ready = await waitForPreparedWildcard("wildcard_good_ending");
+      if (!ready) {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "good_ending" }));
+        }
+        return;
+      }
+    }
+
+    ws.send(
+      JSON.stringify({
+        type: "hud_glitch",
+        intensity: "high",
+        duration_ms: 1100,
+      }),
+    );
+    ws.send(
+      JSON.stringify({
+        type: "slotsky_trigger",
+        payload: { anomalyType: "wildcard_good_ending_loading" },
+      }),
+    );
+    ws.send(
+      JSON.stringify({
+        type: "wildcard3_trigger",
+        payload: { sceneKey: "wildcard_good_ending" },
+      }),
+    );
+
+    wildcardGoodEndingStartTimer = setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN || !preparedWildcardGoodEnding)
+        return;
+
+      jasonManager.sendText(
+        "What the hell... I am not where I was. Audrey, I can hear you.",
+      );
+      audreyManager.sendText(
+        "[AUDREY_TRIGGER: trust=0.65. One short relieved line, distant and echoing.]",
+      );
+
+      ws.send(
+        JSON.stringify({
+          type: "scene_change",
+          payload: { sceneKey: "wildcard_good_ending" },
+        }),
+      );
+      ws.send(
+        JSON.stringify({
+          type: "scene_image",
+          agent: "gm",
+          sessionId,
+          payload: {
+            sceneKey: "wildcard_good_ending",
+            mediaId: "wildcard_good_ending",
+            triggerType: "hold_for_input",
+            timeoutSeconds: 8,
+            data: preparedWildcardGoodEnding.imageBytes,
+          },
+          timestamp: Date.now(),
+        }),
+      );
+
+      if (preparedWildcardGoodEnding.videoUri) {
+        ws.send(
+          JSON.stringify({
+            type: "scene_video",
+            agent: "gm",
+            sessionId,
+            payload: {
+              sceneKey: "wildcard_good_ending",
+              mediaId: "wildcard_good_ending",
+              triggerType: "hold_for_input",
+              timeoutSeconds: 8,
+              audioMode: "native_audio",
+              url: preparedWildcardGoodEnding.videoUri,
+            },
+            timestamp: Date.now(),
+          }),
+        );
+      }
+
+      wildcardGoodEndingEndTimer = setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "good_ending" }));
+        }
+      }, 8_500);
+    }, 700);
+  };
+
+  const playCard1PickupThenQueueWildcard = () => {
+    void (async () => {
+      await handleGmFunctionCall(
+        sessionId,
+        "triggerSceneChange",
+        { sceneKey: "card1_pickup_pov" },
+        ws,
+        jasonManager,
+      );
+      await handleGmFunctionCall(
+        sessionId,
+        "triggerVideoGen",
+        { sceneKey: "card1_pickup_pov" },
+        ws,
+        jasonManager,
+      );
+      setTimeout(() => {
+        queueWildcardVisionPlayback();
+      }, 6_500);
+    })().catch((err: Error) => {
+      console.error(
+        `[WS] card1 pickup transition failed for session ${sessionId}:`,
+        err.message,
+      );
+    });
   };
 
   const stopInteractionTimers = () => {
@@ -180,8 +877,8 @@ wss.on("connection", (ws: WebSocket) => {
       const secondsSilent = Math.floor(
         (Date.now() - lastPlayerSpeechAt) / 1000,
       );
-      if (secondsSilent < 15) return;
-      const urgency = secondsSilent >= 30 ? "urgent" : "soft";
+      if (secondsSilent < 9) return;
+      const urgency = secondsSilent >= 18 ? "urgent" : "soft";
 
       ws.send(
         JSON.stringify({
@@ -205,14 +902,15 @@ wss.on("connection", (ws: WebSocket) => {
           },
         }),
       );
-    }, 15_000);
+    }, 9_000);
 
     autoplayAdvanceTimer = setInterval(() => {
       if (!jasonReadyForPlayer || ws.readyState !== WebSocket.OPEN) return;
       const secondsSilent = Math.floor(
         (Date.now() - lastPlayerSpeechAt) / 1000,
       );
-      if (secondsSilent < 60) return;
+      const holdTimeoutSeconds = getStepTimeoutSeconds(currentSequenceStep);
+      if (secondsSilent < holdTimeoutSeconds) return;
 
       void (async () => {
         const fromStep = currentSequenceStep;
@@ -224,10 +922,20 @@ wss.on("connection", (ws: WebSocket) => {
               : fromStep === 11
                 ? 13
                 : fromStep === 13
-                  ? 15
-                  : fromStep === 15
-                    ? 17
-                    : currentSequenceStep + 1;
+                  ? 17
+                  : fromStep === 17
+                    ? 19
+                    : fromStep === 19
+                      ? 21
+                      : fromStep === 21
+                        ? 23
+                        : fromStep === 23
+                          ? 25
+                          : fromStep === 25
+                            ? 27
+                            : fromStep === 27
+                              ? 29
+                              : currentSequenceStep + 1;
         currentSequenceStep = toStep;
         lastPlayerSpeechAt = Date.now();
 
@@ -237,6 +945,10 @@ wss.on("connection", (ws: WebSocket) => {
             payload: {
               fromStep,
               toStep,
+              mediaId: STEP_MEDIA_TRIGGER[fromStep]?.mediaId ?? null,
+              triggerType:
+                STEP_MEDIA_TRIGGER[fromStep]?.triggerType ?? "hold_for_input",
+              timeoutSeconds: holdTimeoutSeconds,
               reason: "timeout",
             },
           }),
@@ -263,22 +975,57 @@ wss.on("connection", (ws: WebSocket) => {
           );
         }
 
-        // Second inactivity autoplay action: Jason moves toward the generator and discovers card1.
+        // Second inactivity autoplay action: Jason explores farther down the tunnel.
         if (fromStep === 9 && gmGated) {
           jasonManager.sendText(
-            "[AUTOPLAY_TIMEOUT: No player response. You move toward the generator and investigate the floor nearby.]",
+            "[AUTOPLAY_TIMEOUT: No player response. You push farther down the tunnel and a generator comes into view ahead.]",
           );
           await handleGmFunctionCall(
             sessionId,
             "triggerSceneChange",
-            { sceneKey: "generator_area" },
+            { sceneKey: "generator_area_start" },
             ws,
             jasonManager,
           );
           await handleGmFunctionCall(
             sessionId,
             "triggerVideoGen",
-            { sceneKey: "generator_area" },
+            { sceneKey: "generator_area_start" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        // Third inactivity autoplay action: Jason walks toward the generator.
+        if (fromStep === 11 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You walk toward the generator at the end of the tunnel.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "generator_area_operational" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "generator_area_operational" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        // Fourth inactivity autoplay action: Jason powers on the generator and reveals the card.
+        if (fromStep === 13 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You start the generator, the tunnel lights come on, and something appears on the floor by the machine.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "generator_card_reveal" },
             ws,
             jasonManager,
           );
@@ -294,22 +1041,43 @@ wss.on("connection", (ws: WebSocket) => {
             card1AutoPickTimer = setTimeout(() => {
               if (card1Collected) return;
               card1Collected = true;
-              void handleCardCollected("card1", sessionId, jasonManager, ws).catch(
-                (err: Error) => {
+              void handleCardCollected("card1", sessionId, jasonManager, ws)
+                .then(() => {
+                  playCard1PickupThenQueueWildcard();
+                })
+                .catch((err: Error) => {
                   console.error(
                     `[WS] card1 auto-pick failed for session ${sessionId}:`,
                     err.message,
                   );
-                },
-              );
+                });
             }, 60_000);
           }
         }
 
-        // Third inactivity autoplay action: Jason starts the generator and reveals the waterpark.
-        if (fromStep === 11 && gmGated) {
+        if (fromStep === 17 && gmGated) {
           jasonManager.sendText(
-            "[AUTOPLAY_TIMEOUT: No player response. You power on the generator and follow the light spill into the wider chamber.]",
+            "[AUTOPLAY_TIMEOUT: No player response. You keep moving and the tunnel opens toward something impossible ahead.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "park_transition_reveal" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "park_transition_reveal" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        if (fromStep === 19 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You step through the breach and the whole park opens up in front of you.]",
           );
           await handleGmFunctionCall(
             sessionId,
@@ -327,10 +1095,9 @@ wss.on("connection", (ws: WebSocket) => {
           );
         }
 
-        // Fourth inactivity autoplay action: Jason explores deeper into the waterpark.
-        if (fromStep === 13 && gmGated) {
+        if (fromStep === 21 && gmGated) {
           jasonManager.sendText(
-            "[AUTOPLAY_TIMEOUT: No player response. You keep moving, following the walkways deeper into the park.]",
+            "[AUTOPLAY_TIMEOUT: No player response. You follow the walkways deeper into the park.]",
           );
           await handleGmFunctionCall(
             sessionId,
@@ -348,29 +1115,75 @@ wss.on("connection", (ws: WebSocket) => {
           );
         }
 
-        // Late-session autoplay action: move to maintenance and start dread/card2 branch.
-        if (fromStep === 15 && gmGated) {
+        if (fromStep === 23 && gmGated) {
           jasonManager.sendText(
-            "[AUTOPLAY_TIMEOUT: No player response. You commit to the maintenance path and keep moving.]",
+            "[AUTOPLAY_TIMEOUT: No player response. A maintenance shaft comes into view across the park.]",
           );
           await handleGmFunctionCall(
             sessionId,
             "triggerSceneChange",
-            { sceneKey: "maintenance_area" },
+            { sceneKey: "park_shaft_view" },
             ws,
             jasonManager,
           );
           await handleGmFunctionCall(
             sessionId,
             "triggerVideoGen",
-            { sceneKey: "maintenance_area" },
+            { sceneKey: "park_shaft_view" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        if (fromStep === 25 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You leave the park and commit to the maintenance corridor.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "maintenance_entry" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "maintenance_entry" },
+            ws,
+            jasonManager,
+          );
+        }
+
+        if (fromStep === 27 && gmGated) {
+          jasonManager.sendText(
+            "[AUTOPLAY_TIMEOUT: No player response. You inspect the maintenance panel and force it open.]",
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "maintenance_panel" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerVideoGen",
+            { sceneKey: "maintenance_panel" },
+            ws,
+            jasonManager,
+          );
+          await handleGmFunctionCall(
+            sessionId,
+            "triggerSceneChange",
+            { sceneKey: "card2_pickup_pov" },
             ws,
             jasonManager,
           );
           await handleGmFunctionCall(
             sessionId,
             "triggerDreadTimerStart",
-            { durationMs: 60_000 },
+            { durationMs: 30_000 },
             ws,
             jasonManager,
           );
@@ -382,19 +1195,13 @@ wss.on("connection", (ws: WebSocket) => {
             jasonManager,
           );
 
-          if (!card2Collected && !card2AutoPickTimer) {
-            card2AutoPickTimer = setTimeout(() => {
-              if (card2Collected) return;
-              card2Collected = true;
-              void handleCardCollected("card2", sessionId, jasonManager, ws).catch(
-                (err: Error) => {
-                  console.error(
-                    `[WS] card2 auto-pick failed for session ${sessionId}:`,
-                    err.message,
-                  );
-                },
-              );
-            }, 60_000);
+          // Fallback prewarm in case hallway still notification was not received.
+          maybePrepareWildcardGameOver();
+          maybePrepareWildcardGoodEnding();
+
+          if (card2AutoPickTimer) {
+            clearTimeout(card2AutoPickTimer);
+            card2AutoPickTimer = null;
           }
         }
       })().catch((err: Error) => {
@@ -403,7 +1210,7 @@ wss.on("connection", (ws: WebSocket) => {
           err.message,
         );
       });
-    }, 60_000);
+    }, 1_000);
   };
 
   console.log(`[WS] Client connected - session ${sessionId}`);
@@ -504,6 +1311,9 @@ wss.on("connection", (ws: WebSocket) => {
           (trustLevel) => {
             audreyCallback(trustLevel);
           },
+          async () => {
+            await emitWildcardGameOverBranch();
+          },
         ).finally(() => {
           gmManager.sendToolResponse(id, name);
         });
@@ -601,6 +1411,10 @@ wss.on("connection", (ws: WebSocket) => {
           data.args ?? {},
           ws,
           jasonManager,
+          undefined,
+          async () => {
+            await emitWildcardGameOverBranch();
+          },
         );
         return;
       }
@@ -621,7 +1435,16 @@ wss.on("connection", (ws: WebSocket) => {
 
       // Player webcam frame - base64 JPEG from browser to Game Master (1 FPS, GM vision)
       if (data.type === "player_frame" && data.jpeg) {
+        latestPlayerFrame = data.jpeg;
+        if (jasonReadyForPlayer) maybePrepareWildcardVision();
         if (gmGated && jasonReadyForPlayer) gmManager.sendFrame(data.jpeg); // Camera feed enters gameplay only after interaction opens
+        return;
+      }
+
+      // Frontend marker: hallway_pov_02 still is now active.
+      // This is the earliest anchor for background pre-generation of wildcard2/wildcard3.
+      if (data.type === "hallway_pov_02_ready") {
+        scheduleWildcardPrewarmFromHallwayStill();
         return;
       }
 
@@ -635,20 +1458,24 @@ wss.on("connection", (ws: WebSocket) => {
           }
         }
         if (data.cardId === "card2") {
-          card2Collected = true;
           if (card2AutoPickTimer) {
             clearTimeout(card2AutoPickTimer);
             card2AutoPickTimer = null;
           }
         }
-        handleCardCollected(data.cardId, sessionId, jasonManager, ws).catch(
-          (err: Error) => {
+        handleCardCollected(data.cardId, sessionId, jasonManager, ws, {
+          deferGoodEnding: data.cardId === "card2",
+        })
+          .then(() => {
+            if (data.cardId === "card1") queueWildcardVisionPlayback();
+            if (data.cardId === "card2") queueWildcardGoodEndingPlayback();
+          })
+          .catch((err: Error) => {
             console.error(
               `[WS] card_collected handler error for session ${sessionId}:`,
               err.message,
             );
-          },
-        );
+          });
         return;
       }
 
@@ -669,6 +1496,7 @@ wss.on("connection", (ws: WebSocket) => {
     if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
     stopInteractionTimers();
     clearCardAutoPickTimers();
+    clearWildcardTimers();
     debugSessions.delete(sessionId);
     clearImageCache(sessionId);
     clearGlitchThrottle(sessionId);

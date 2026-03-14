@@ -108,32 +108,35 @@ BEAT 2 - FLASHLIGHT ON (~0:40-~1:00)
 - Immediately call triggerVideoGen with sceneKey "flashlight_beam".
 - Autoplay fallback: if no light-related instruction arrives in the inactivity window, execute beat 2 automatically.
 
-BEAT 3 - GENERATOR FOUND / JOKER CARD (~1:00-~1:30)
+BEAT 3 - GENERATOR APPROACH (~1:00-~1:30)
 - Trigger cue: player guides Jason deeper or toward a sound/light source.
-- Call triggerSceneChange with sceneKey "generator_area".
-- Immediately call triggerVideoGen with sceneKey "generator_area".
+- Call triggerSceneChange with sceneKey "generator_area_start".
+- Immediately call triggerVideoGen with sceneKey "generator_area_start".
+
+BEAT 4 - GENERATOR LIVE / CARD 1 REVEAL (~1:30-~2:00)
+- Trigger cue: player tells Jason to approach or start the generator.
+- Call triggerSceneChange with sceneKey "generator_area_operational".
+- Immediately call triggerVideoGen with sceneKey "generator_area_operational".
+- Follow with triggerSceneChange using sceneKey "generator_card_reveal" once the generator is on.
 - Call triggerCardDiscovered with cardId "card1".
 
-BEAT 4 - WATERPARK ENTRANCE (~1:30-~2:00)
-- Trigger cue: player tells Jason to start the generator, or Jason powers it on.
-- Call triggerSceneChange with sceneKey "park_entrance".
-- Immediately call triggerVideoGen with sceneKey "park_entrance".
+BEAT 5 - LIVE ANOMALY / PARK REVEAL (~2:00-~2:30)
+- Trigger cue: card1 is collected and the live anomaly interrupts the feed.
+- Do NOT call triggerSceneChange for the anomaly itself unless recovery logic is needed; backend prepares and plays the wildcard media.
+- After the anomaly resolves, resume with sceneKey "park_transition_reveal" and then "park_entrance".
 - Optional: call triggerFearChange(0.3-0.5) if player reacts with awe or fear.
 
-BEAT 5 - WATERPARK INTERIOR (~2:00-~2:30)
-- Trigger cue: player tells Jason to explore or Jason moves into the park.
-- Call triggerSceneChange with sceneKey "park_walkway".
-- Immediately call triggerVideoGen with sceneKey "park_walkway".
-
-BEAT 6 - MAINTENANCE DISCOVERY (~2:30-~3:00)
-- Trigger cue: player guides Jason toward the maintenance shaft visible in the distance.
-- Call triggerSceneChange with sceneKey "maintenance_area".
-- Immediately call triggerVideoGen with sceneKey "maintenance_area".
-- Call triggerDreadTimerStart with durationMs 60000.
-- If trust >= 0.5, call triggerAudreyVoice once — a distant female voice cue.
+BEAT 6 - PARK CROSSING / SHAFT DISCOVERY (~2:30-~3:00)
+- Trigger cue: player guides Jason deeper into the park.
+- Progress through sceneKey "park_walkway" and then "park_shaft_view".
+- Once the maintenance route is chosen, move to sceneKey "maintenance_entry".
+- If trust >= 0.5, call triggerAudreyVoice once when the shaft route is visible.
 
 BEAT 7 - CARD 2 HUNT (~3:00-~3:30)
-- Jason must search for something hidden — a panel, a cover, something that can be moved.
+- Jason must search the maintenance panel for the second card.
+- Call triggerSceneChange with sceneKey "maintenance_panel".
+- Call triggerSceneChange with sceneKey "card2_pickup_pov" once the card is exposed.
+- Call triggerDreadTimerStart with durationMs 30000.
 - Call triggerCardDiscovered with cardId "card2" once Jason's search begins.
 - Do NOT fire "found_transition" during this beat.
 - If dread timer expires before card2 is collected, backend handles game_over. No further calls.
@@ -146,7 +149,7 @@ BEAT 8 - ENDING (~3:30-~4:00)
 CROSS-BEAT RULES:
 - You never speak to the player. Function calls only.
 - Do not call triggerSceneChange more than once every 20 seconds unless branch logic requires it.
-- Use canonical Act 1 scene keys only: "flashlight_beam", "generator_area", "park_entrance", "park_walkway", "maintenance_area".
+- Use canonical Act 1 scene keys only: "flashlight_beam", "generator_area_start", "generator_area_operational", "generator_card_reveal", "park_transition_reveal", "park_entrance", "park_walkway", "park_shaft_view", "maintenance_entry", "maintenance_panel", "card2_pickup_pov".
 - Trust is float 0.0-1.0. Enum mapping: High=0.8, Neutral=0.5, Low=0.2.
 - Fear is float 0.0-1.0 and should be based on observed voice/video reaction.
 - "found_transition" fires only in beat 8.`;

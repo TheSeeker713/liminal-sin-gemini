@@ -25,10 +25,10 @@
 - Global no-god-code policy remains active.
 - Standard source-file caps remain 300/400-line policy per module category.
 - Exception files allowed up to 800 lines:
-	- CURRENT_STATE.md
-	- README.md
-	- AGENTS.md
-	- docs/SHOT_SCRIPT.md
+  - CURRENT_STATE.md
+  - README.md
+  - AGENTS.md
+  - docs/SHOT_SCRIPT.md
 
 ---
 
@@ -102,6 +102,53 @@
 
 > **Context note:** The backend game logic (gmTools, dreadTimer, sessionEndings, card_collected, WS handlers) is 100% complete. The current sprint is focused exclusively on validating and hardening the Imagen 4 + Veo 3.1 Fast media generation pipeline.
 
+### Status Delta — March 12, 2026
+
+- `docs/SHOT_SCRIPT.md` is now the authoritative spec for the expanded Act 1 media plan.
+- Canonical scope is no longer the reduced 5-scene interpretation.
+- Audio playback policy clarified: all pregenerated `scene_video` clips must be muted during gameplay (even if source files contain audio tracks). Allowed runtime audio channels are ambient audio, JASON live-agent NPC audio (`agent_speech`), SFX events, and background music only.
+- Canonical Act 1 media scope is now:
+  - 13 scripted images
+  - 13 scripted videos
+  - 2 wildcard images
+  - 2 wildcard videos
+- Scripted sequencing rule: `i1` is the opening still; all later scripted stills are conceptually chained from the last frame of the preceding scripted video.
+- `v5` is intentionally absent and replaced by the live wildcard smartglasses anomaly event.
+- All still-frame gameplay nodes after TALK opens require a 60-second autoplay path to the paired video trigger.
+- The two live-generation candidates are reserved for wildcard anomaly events, not the main scripted media chain.
+- Backend prompt libraries and generation pipeline are not yet fully aligned to this expanded registry and still require implementation work.
+
+### Status Delta — March 13, 2026
+
+- Morphic Studio media import completed and canonicalized under `assets/generated_stills` and `assets/generated_clips`.
+- Asset naming now follows lowercase two-digit convention using shared media ids (e.g. `tunnel_flashlight_01`).
+- Runtime payloads now include media metadata for FE sequencing: `mediaId`, `triggerType`, and `timeoutSeconds`.
+- Timer policy shifted from 60s global hold to per-step hold defaults:
+  - exploration: 30s
+  - decision beats: 22s
+  - high-tension beats: 15s
+  - card windows: 25s
+- Idle nudge cadence shifted from 15s to 9s, escalating urgency after 18s silence.
+- Per-clip audio policy introduced (`native_audio`, `muted`, `silent_source`) with explicit mute override for `tunnel_darkness_01.mp4`.
+- Wildcard branch architecture expanded:
+  - `wildcard_game_over` and `wildcard_good_ending` are now pre-generated in background from `hallway_pov_02` still anchor.
+  - Backend re-attempts both prewarms at +90s as a safety pass.
+  - Dread timer expiry now routes through wildcard2 playback before `game_over` emission.
+  - Card2 collection now routes through wildcard3 playback before `good_ending` emission.
+
+### Frontend Integration Tasks (Required)
+
+- Emit `hallway_pov_02_ready` to backend exactly once when `hallway_pov_02.png` still is first rendered.
+- Keep processing `scene_image` and `scene_video` for scene keys:
+  - `wildcard_game_over`
+  - `wildcard_good_ending`
+- On `wildcard3_trigger`, execute frontend glitch transition treatment before/around wildcard3 media playback.
+- On `slotsky_trigger` with `anomalyType: "wildcard_game_over_loading"` or `"wildcard_good_ending_loading"`, immediately start CSS glitch/loading animation loops and keep them active until the matching `scene_video` event arrives.
+- For `wildcard_game_over` and `wildcard_good_ending` playback, keep soundtrack and SFX on the frontend mix bus; generated clip audio is expected to be ambient-only (no music).
+- Do not emit local `game_over` UI until backend sends `game_over`.
+- Do not emit local `good_ending` UI until backend sends `good_ending`.
+- Preserve existing CSS HUD/smartglasses framing behavior as frontend-only effects (never baked into generated media).
+
 ### What We Are Trying To Do
 
 Build a chained, FPV-immersive, RAI-safe image→video pipeline for all 12 scene keys. The pipeline must:
@@ -118,15 +165,15 @@ The experience must feel like first-person smartglasses footage (Jason's POV) �
 
 ### Infrastructure Context
 
-| Item | Value |
-|---|---|
-| GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
-| Org | `digitalartifact11-org` (165684325504) |
-| Imagen model | `imagen-4.0-generate-001` / `us-west1` |
-| Veo model | `veo-3.1-fast-generate-001` / `us-central1` (NOT us-west1 — NOT_FOUND otherwise) |
-| SDK | `@google/genai` — `getVeoAiClient()` in `gemini.ts` → returns GoogleGenAI for `us-central1` |
-| Auth | Service account (Vertex AI) — API key approach NOT needed; org policy `Block service account API key bindings` blocks it at org level and Edit is grayed out for this account — **irrelevant, SA auth works fine** |
-| ffmpeg | NOT YET INTEGRATED — required for last-frame extraction |
+| Item         | Value                                                                                                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GCP Project  | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive)                                                                                                                                                             |
+| Org          | `digitalartifact11-org` (165684325504)                                                                                                                                                                             |
+| Imagen model | `imagen-4.0-generate-001` / `us-west1`                                                                                                                                                                             |
+| Veo model    | `veo-3.1-fast-generate-001` / `us-central1` (NOT us-west1 — NOT_FOUND otherwise)                                                                                                                                   |
+| SDK          | `@google/genai` — `getVeoAiClient()` in `gemini.ts` → returns GoogleGenAI for `us-central1`                                                                                                                        |
+| Auth         | Service account (Vertex AI) — API key approach NOT needed; org policy `Block service account API key bindings` blocks it at org level and Edit is grayed out for this account — **irrelevant, SA auth works fine** |
+| ffmpeg       | NOT YET INTEGRATED — required for last-frame extraction                                                                                                                                                            |
 
 ---
 
@@ -143,11 +190,13 @@ The experience must feel like first-person smartglasses footage (Jason's POV) �
 These are the exact tasks to execute in the next session, in order:
 
 **1 — Relax safety filters**
+
 - Add `safetyFilterLevel: "block_only_high"` to Veo `generateVideos` config in both `veo.ts` (production) and `pipeline-variant-benchmark.ts` (test script).
 - Also add `addWatermark: false` if the SDK accepts it.
 - Also fix `veo.ts`: strip string `"horror"` from any prompt template; add `console.warn('[VEO] RAI filter blocked:', ...)` instead of silently returning null.
 
 **2 — Negative prompt system**
+
 - Create a centralized `NEGATIVES` constant (shared between imagen.ts, veo.ts, and benchmark script):
   ```
   "people, faces, person, human, body, hands, crowd, watermark, logo, text, UI, blurry, low quality, overexposed, cartoon, anime, CGI, rendered"
@@ -155,17 +204,20 @@ These are the exact tasks to execute in the next session, in order:
 - Apply as `negativePrompt` param to all Imagen 4 and Veo calls.
 
 **3 — Chained pipeline (last-frame extraction)**
+
 - Integrate ffmpeg via `fluent-ffmpeg` or direct `child_process.spawn` to extract the last frame of a video buffer as JPEG.
 - Create a helper `extractLastFrame(videoPath: string): Promise<Buffer>` in a new `scripts/frameExtract.ts`.
 - Update `pipeline-variant-benchmark.ts` so that after scene[N] video succeeds, it extracts the last frame and uses it as the reference image for scene[N+1] video (not a fresh Imagen call).
 - Scene[0] still uses Imagen for the initial reference. All subsequent scenes chain from the last frame.
 
 **4 — Seed monitor + logging**
+
 - Log the seed value returned by Imagen 4 in the benchmark output (`SceneResult` type + `benchmark.json`).
 - Log the seed value returned by Veo if the API exposes it.
 - This enables reproducibility and debugging of specific frames.
 
 **5 — FPV/POV video prompts**
+
 - Rewrite ALL 12 `VIDEO_HINTS` entries in `pipeline-variant-benchmark.ts` to include:
   `"point-of-view through smartglasses visor, subtle head-bob from walking motion, slight handheld tremor, natural breathing rhythm visible in frame movement"`
 - Remove any language that could imply a person/human is visible.
