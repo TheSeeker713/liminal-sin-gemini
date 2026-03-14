@@ -236,6 +236,7 @@ wss.on("connection", (ws: WebSocket) => {
   let jasonReadyTimer: ReturnType<typeof setTimeout> | null = null; // Flips jasonReadyForPlayer after ~18s
   let sceneChangeCount = 0; // Tracks GM-triggered scene changes (used by hint timer)
   let hintTimer: ReturnType<typeof setTimeout> | null = null; // B11: flashlight hint fallback
+  let flashlightAutoFireTimer: ReturnType<typeof setTimeout> | null = null; // 15s wall-clock flashlight failsafe
   let npcIdleNudgeTimer: ReturnType<typeof setInterval> | null = null; // 9s silence nudge loop
   let autoplayAdvanceTimer: ReturnType<typeof setInterval> | null = null; // per-step inactivity auto-advance loop
   let lastPlayerSpeechAt = Date.now();
@@ -803,6 +804,13 @@ wss.on("connection", (ws: WebSocket) => {
     });
   };
 
+  const clearFlashlightTimer = () => {
+    if (flashlightAutoFireTimer) {
+      clearTimeout(flashlightAutoFireTimer);
+      flashlightAutoFireTimer = null;
+    }
+  };
+
   const stopInteractionTimers = () => {
     if (npcIdleNudgeTimer) {
       clearInterval(npcIdleNudgeTimer);
@@ -812,6 +820,7 @@ wss.on("connection", (ws: WebSocket) => {
       clearInterval(autoplayAdvanceTimer);
       autoplayAdvanceTimer = null;
     }
+    clearFlashlightTimer();
   };
 
   const startInteractionTimers = () => {
@@ -850,6 +859,32 @@ wss.on("connection", (ws: WebSocket) => {
         }),
       );
     }, 9_000);
+
+    // ── Flashlight auto-fire: deterministic 15s wall-clock timer ──────────
+    // The GM is supposed to detect flashlight cues from player audio and call
+    // triggerSceneChange, but it's unreliable. Meanwhile the autoplay silence
+    // timer can't fire because the player IS speaking. This timer fires the
+    // flashlight scene change regardless of speech activity.
+    if (currentSequenceStep === 7) {
+      flashlightAutoFireTimer = setTimeout(() => {
+        flashlightAutoFireTimer = null;
+        if (currentSequenceStep !== 7 || ws.readyState !== WebSocket.OPEN) return;
+        console.log(`[WS] Flashlight auto-fire — 15s wall-clock timer hit for session ${sessionId}`);
+        currentSequenceStep = 9;
+        lastPlayerSpeechAt = Date.now();
+        if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+        void (async () => {
+          const action = STEP_AUTOPLAY_ACTIONS[7];
+          if (!action) return;
+          jasonManager.sendText(action.autoplayText);
+          for (const call of action.gmCalls) {
+            await handleGmFunctionCall(sessionId, call.fnName, call.args, ws, jasonManager);
+          }
+        })().catch((err: Error) => {
+          console.error(`[WS] flashlight auto-fire failed for session ${sessionId}:`, err.message);
+        });
+      }, 15_000);
+    }
 
     autoplayAdvanceTimer = setInterval(() => {
       if (!jasonReadyForPlayer || ws.readyState !== WebSocket.OPEN) return;
@@ -1013,7 +1048,17 @@ wss.on("connection", (ws: WebSocket) => {
           return;
         }
         // Track scene changes for B11 hint timer.
-        if (name === "triggerSceneChange") sceneChangeCount++;
+        if (name === "triggerSceneChange") {
+          sceneChangeCount++;
+          // Sync step machine when GM fires flashlight — prevents autoplay from re-firing step 7.
+          if ((args.sceneKey as string) === "flashlight_beam" && currentSequenceStep === 7) {
+            currentSequenceStep = 9;
+            lastPlayerSpeechAt = Date.now();
+            clearFlashlightTimer();
+            if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+            console.log(`[WS] GM fired flashlight_beam — step synced to 9 for session ${sessionId}`);
+          }
+        }
         // If acecard keyword timer is already running and the GM calls triggerDreadTimerStart,
         // treat it as a no-op — startAcecardKeywordTimer() already owns this timer slot at step 31.
         if (name === "triggerDreadTimerStart" && acecardGateState.acecardKeywordTimer !== null) {
@@ -1263,6 +1308,7 @@ wss.on("connection", (ws: WebSocket) => {
     console.log(`[WS] Client disconnected - session ${sessionId}`);
     if (hintTimer) clearTimeout(hintTimer);
     if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
+    clearFlashlightTimer();
     stopInteractionTimers();
     clearCardAutoPickTimers();
     clearWildcardTimers();
