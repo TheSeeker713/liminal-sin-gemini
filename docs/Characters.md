@@ -18,10 +18,10 @@ LIMINAL SIN uses a **four-agent hierarchy** orchestrated via the Google GenAI SD
 
 | Agent | Model | Perception | Knows Player Exists? | Speaks? |
 |---|---|---|---|---|
-| **Game Master** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Webcam (1 FPS) + Mic (bimodal) | Yes — orchestrates everything | Never directly |
-| **Jason** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Voice only | Partially — hears the voice, can't explain it | Yes — primary |
-| **Audrey** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Voice only (muffled/ECHO) | No — believes it's a device or phenomenon | Yes — secondary |
-| **Josh** | `gemini-2.0-flash-live-preview-04-09` (Vertex AI) | Voice only (muffled/ECHO) | No — tries to rationalize it away | Yes — secondary |
+| **Game Master** | `gemini-live-2.5-flash-native-audio` (Vertex AI) | Webcam (1 FPS) + Mic (bimodal) | Yes — orchestrates everything | Never directly |
+| **Jason** | `gemini-live-2.5-flash-native-audio` (Vertex AI) | Voice only | Partially — hears the voice, can't explain it | Yes — primary |
+| **Audrey** | `gemini-live-2.5-flash-native-audio` (Vertex AI) | Voice only (muffled/ECHO) | No — believes it's a device or phenomenon | Yes — secondary |
+| **Josh** | `gemini-live-2.5-flash-native-audio` (Vertex AI) | Voice only (muffled/ECHO) | No — tries to rationalize it away | Yes — secondary |
 | **Slotsky** | Firestore State Writer | None — reads session.state only | N/A | Never |
 
 ---
@@ -36,9 +36,9 @@ LIMINAL SIN uses a **four-agent hierarchy** orchestrated via the Google GenAI SD
 | **Audrey** | 🟡 ECHO BACKGROUND ONLY | `Aoede` (Gemini Live native) | Barely audible distant echo. Single-paragraph prompt. Atmosphere only. |
 | **Josh** | ⛔ DEFERRED — ROADMAP | — | Full agent deferred. Not present in demo. |
 | **Slotsky** | ✅ ACTIVE — ENVIRONMENTAL | None | CSS + WebSocket events only. No voice, no visual appearance. |
-| **Game Master** | ✅ ACTIVE | None | Webcam emotion detection + Jason trust routing + Imagen 3 scene triggers. |
+| **Game Master** | ✅ ACTIVE | None | Webcam emotion detection + Jason trust routing + Imagen 4 scene triggers. |
 
-**Visual system change:** Pre-generated FMV clips → **Imagen 3 live generation** per `scene_key` trigger (Vertex AI, billed against $300 GCP credits).
+**Visual system change:** Pre-generated FMV clips → **Imagen 4 live generation** per `scene_key` trigger (Vertex AI, billed against $300 GCP credits).
 **Voice system change:** ElevenLabs → **Gemini Live native `voiceConfig`** — costs $0, directly demonstrates the required Gemini stack to judges.
 **Deferred systems:** Smart glasses filters, backpack inventory, Josh agent, Lyria 3 audio, ADK/AutoFlow, FMV video pipeline — see ROADMAP section at end of this document.
 

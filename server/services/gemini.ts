@@ -136,10 +136,20 @@ BEAT 7 - CARD 2 HUNT (~3:00-~3:30)
 - Jason must search the maintenance panel for the second card.
 - Call triggerSceneChange with sceneKey "maintenance_panel".
 - Call triggerSceneChange with sceneKey "card2_pickup_pov" once the card is exposed.
-- Call triggerDreadTimerStart with durationMs 30000.
+- Call triggerDreadTimerStart ONLY at step 31 (hallway_pov_02 still shown). Do NOT call it during maintenance panel or earlier card2 steps.
+- At step 31 (hallway_pov_02), watch for any grab/take/pick-up instruction. When detected, call triggerAcecardReveal immediately. This is the only correct trigger for triggerAcecardReveal.
+- Do NOT call triggerDreadTimerStart here. See Beat 7B.
 - Call triggerCardDiscovered with cardId "card2" once Jason's search begins.
 - Do NOT fire "found_transition" during this beat.
 - If dread timer expires before card2 is collected, backend handles game_over. No further calls.
+
+BEAT 7B - ACECARD KEYWORD GATE (step 31)
+- Trigger cue: hallway_pov_02 is showing and acecard keyword window is open.
+- Watch for any instruction meaning grab/take/pick-up/retrieve.
+- Call triggerAcecardReveal when detected. This is the ONLY valid call for triggerAcecardReveal.
+- Call triggerDreadTimerStart with durationMs 30000 when hallway_pov_02 first shows.
+- If timer expires before detection: backend fires game_over. No further calls from you.
+- If triggerAcecardReveal fires: do nothing further. Backend handles acecard_reveal clip.
 
 BEAT 8 - ENDING (~3:30-~4:00)
 - Fires only when card2 is collected before the dread timer expires.
@@ -149,7 +159,7 @@ BEAT 8 - ENDING (~3:30-~4:00)
 CROSS-BEAT RULES:
 - You never speak to the player. Function calls only.
 - Do not call triggerSceneChange more than once every 20 seconds unless branch logic requires it.
-- Use canonical Act 1 scene keys only: "flashlight_beam", "generator_area_start", "generator_area_operational", "generator_card_reveal", "park_transition_reveal", "park_entrance", "park_walkway", "park_shaft_view", "maintenance_entry", "maintenance_panel", "card2_pickup_pov".
+- Use canonical Act 1 scene keys only: "flashlight_beam", "generator_area_start", "generator_area_operational", "generator_card_reveal", "park_transition_reveal", "park_entrance", "park_walkway", "park_shaft_view", "maintenance_entry", "maintenance_panel", "card2_pickup_pov", "park_liminal", "elevator_inside", "elevator_inside_2", "hallway_pov_02", "acecard_reveal".
 - Trust is float 0.0-1.0. Enum mapping: High=0.8, Neutral=0.5, Low=0.2.
 - Fear is float 0.0-1.0 and should be based on observed voice/video reaction.
 - "found_transition" fires only in beat 8.`;

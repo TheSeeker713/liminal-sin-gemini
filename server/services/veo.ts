@@ -28,9 +28,6 @@ const ANIMATION_HINTS: Record<string, string> = {
   card1_pickup_pov:
     "The card remains visible near the generator in full tunnel context until either the player clicks the frontend card overlay or the one-minute timer expires, then Jason crouches and picks it up in natural POV without any close framing",
 
-  vision_flash:
-    "Deprecated alias. Use wildcard_vision_feed for the live anomaly feed sequence",
-
   tunnel_to_park_transition:
     "This video begins from the still after the wildcard feed resolves. Jason moves forward through the Boring tunnel toward the impossible opening ahead, and the shot only plays when the correct player phrase is spoken or the one-minute autoplay timer expires",
 
@@ -97,7 +94,7 @@ function resolveAnimationHint(sceneKey: string): string {
   if (key.includes("card") || key.includes("joker"))
     return ANIMATION_HINTS["card1_pickup_pov"];
   if (key.includes("vision") || key.includes("flash"))
-    return ANIMATION_HINTS["vision_flash"];
+    return ANIMATION_HINTS["wildcard_vision_feed"];
   if (key.includes("transition") || key.includes("tunnel"))
     return ANIMATION_HINTS["tunnel_to_park_transition"];
   if (key.includes("generator_operational"))

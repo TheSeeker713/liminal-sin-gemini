@@ -43,8 +43,6 @@ the generator with full environmental context preserved, framing remains natural
 from Jason's eye line in the Boring tunnel, no close-up framing, no people,
 photorealistic cinematic image, wide angle 16mm, 16:9, 8K`,
 
-  vision_flash: `Deprecated alias. Use wildcard_vision_feed for the live anomaly event.`,
-
   tunnel_to_park_transition: `First-person POV moving forward from industrial tunnel into a larger
 continuation from the generator tunnel, moving deeper through the same Boring tunnel
 toward an impossible opening ahead where waterpark color and humidity begin to invade
@@ -105,7 +103,7 @@ export type SceneImageGeneration = {
 /**
  * Maps a GM-issued scene_key to a zone prompt.
  * Tries direct substring match on zone IDs first, then keyword fallbacks.
- * Format reminder: {character}_{emotion}_{context}_{action}
+ * Canonical Act 1 scene keys only. See gmTools.ts triggerSceneChange.
  */
 function resolvePrompt(sceneKey: string): string {
   const key = sceneKey.toLowerCase();
@@ -140,7 +138,7 @@ function resolvePrompt(sceneKey: string): string {
   if (key.includes("card") || key.includes("joker"))
     return ZONE_PROMPTS["card1_pickup_pov"];
   if (key.includes("vision") || key.includes("flash"))
-    return ZONE_PROMPTS["vision_flash"];
+    return ZONE_PROMPTS["wildcard_vision_feed"];
   if (key.includes("transition") || key.includes("tunnel"))
     return ZONE_PROMPTS["tunnel_to_park_transition"];
   if (key.includes("generator_operational"))

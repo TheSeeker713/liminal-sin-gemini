@@ -82,20 +82,22 @@ function resolveTriggerType(mediaId: string): TriggerType {
     "card_pickup_01",
     "card_pickup_02",
     "hallway_pov_01",
+    "hallway_pov_02",
+    "elevator_inside_01",
+    "elevator_inside_02",
     "maintenance_reveal_01",
   ]);
   return holdIds.has(mediaId) ? "hold_for_input" : "chained_auto";
 }
 
 function resolveTimeoutSeconds(mediaId: string): number {
-  if (
-    mediaId === "card_joker_01" ||
-    mediaId === "card_pickup_01" ||
-    mediaId === "card_pickup_02"
-  ) {
-    return 25;
+  if (mediaId === "card_joker_01" || mediaId === "card_pickup_01") {
+    return 30;
   }
-  if (mediaId.includes("maintenance") || mediaId.includes("hallway")) {
+  if (mediaId === "card_pickup_02") {
+    return 15;
+  }
+  if (mediaId === "hallway_pov_01") {
     return 15;
   }
   return 30;

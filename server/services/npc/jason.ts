@@ -5,7 +5,6 @@
  * Trust level (float 0.0–1.0) and fear index (float 0.0–1.0) are injected at
  * session start from Firestore.
  *
- * Canonical prompt source: prompts/jason.demo.md
  * Do NOT add smartglasses/backpack/HUD references here - those are Act 2 roadmap.
  */
 
