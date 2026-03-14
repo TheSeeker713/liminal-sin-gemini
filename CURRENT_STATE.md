@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **UPDATE RULE:** When updating this file, REPLACE the previous content and write a single current-state snapshot. Do NOT append. Historical logs belong in git history.
-> Last updated: March 15, 2026 (post-frontend implementation + full FE/BE audit).
+> Last updated: March 14, 2026 (post-onboarding fix + credits rewrite).
 
 ---
 
@@ -31,9 +31,9 @@
 
 ---
 
-## Current Live State (March 15, 2026 — POST-FE IMPLEMENTATION + FULL AUDIT)
+## Current Live State (March 14, 2026 — POST-ONBOARDING FIX + CREDITS REWRITE)
 
-### Backend (unchanged since March 14)
+### Backend (unchanged since March 14 audit)
 - All backend game logic complete and audited: gmTools, dreadTimer, sessionEndings, card_collected, WS handlers.
 - Morphic media canonicalized: 16 stills + 18 clips uploaded to GCS bucket `liminal-sin-assets`.
   - Stills: `https://storage.googleapis.com/liminal-sin-assets/stills/<mediaId>.png`
@@ -46,21 +46,18 @@
 - RAI safety level set to `BLOCK_ONLY_HIGH` in Veo config (unblocked pipeline).
 - Zero dead-code issues (minor: ~50 lines unused functions in gameMaster.ts lines 96–146, safe to remove post-contest).
 
-### Frontend (NEW — March 15, 2026)
-- **FRONTEND_PLAN.txt fully implemented.** All P0, P1, and P2 items complete.
-- **2 critical P0 bugs fixed:**
-  - `found_transition` was prematurely ending session → now cosmetic CSS pulse only.
-  - `anomaly_cards` was triggering full card overlay → now CSS VHS distortion only.
-- **GCS Morphic media integration live:** Frontend loads stills/clips from GCS bucket on `scene_change` events. No longer relies solely on base64 `scene_image` payloads for Morphic scenes.
-- **All WS event types synchronized** between frontend and backend — 100% contract compliance.
-- **7 wildcard slotsky handlers** implemented (vision feed start/end, scare SFX, game_over loading/start, good_ending loading/start).
-- **Acecard flow fully wired:** keyword timer (30s heartbeat escalation), reveal (plays clip from GCS + sends `acecard_reveal_complete`), card pickup (shows still + card2 overlay).
-- **Wildcard3 trigger handler** implemented.
-- **DemoEndOverlay updated:** Play Again for both endings, "to be continued" text for good_ending.
-- **WS reconnect backoff** added (3 attempts: 1s, 3s, 5s).
-- **Dead code removed:** `fmv_trigger`/`fmv_stop` handlers, `handleEndSession`, unused types.
-- **New CSS classes:** slotsky-cards-vhs, slotsky-scan-pulse, wildcard2-loading/active, wildcard3-loading/active, wildcard-hud-active.
-- TypeScript: zero errors. ESLint: zero errors, zero warnings.
+### Frontend (Updated March 14, 2026 — Onboarding + Credits)
+- **Onboarding flow fully fixed.** Root cause: PLAY click was starting credits before WS open; backend gates Jason + GM behind `intro_complete` which was silently dropped.
+- **New phase flow:** `waiting → connecting → intro → active`
+  - `waiting`: Single consolidated screen. Auto-detects permissions — shows PLAY directly if granted, GRANT PERMISSIONS otherwise. Privacy disclaimer inline.
+  - `connecting`: Black "connecting…" screen until backend sends `session_ready`.
+  - `intro`: Credits start only after `session_ready`. `intro_complete` now always arrives over an open WS.
+- **Credits rewritten.** New 9-line script in 3 fade blocks + title card:
+  - Block 1 (t=1s): `MYCELIA INTERACTIVE / PRESENTS`
+  - Block 2 (t=5s): `LIMINAL SIN / A voice psychological-horror experience. / Powered by Google Gemini.`
+  - Block 3 (t=9.5s): `Directed by J.W. / Written by J.W. and A.L. / Music by THE S33K3R`
+  - Title card (t=14s) → fade (t=17s) → `intro_complete` (t=19s)
+- **All prior frontend work still live:** GCS Morphic media, WS contract sync, wildcard/acecard handlers, reconnect backoff, wildcard CSS, end screens.
 
 ---
 
@@ -142,12 +139,16 @@ Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-se
 
 ---
 
-## Frontend Status — 100% COMPLETE (March 15, 2026)
+## Frontend Status — 100% COMPLETE (March 14, 2026)
 
 Zero TypeScript errors. Zero ESLint errors. Zero warnings.
 
 | System | Status |
 |---|---|
+| Onboarding (permissions gate + PLAY flow) | ✅ Live — Single consolidated screen, auto-detects granted perms |
+| Connecting screen | ✅ Live — Black screen with pulse; waits for `session_ready` |
+| Credits sequence (correct 9-line script, 19s) | ✅ Live — 3 fade blocks + title card, starts only after WS open |
+| `session_ready` → intro trigger | ✅ Live — `intro_complete` guaranteed over open WS |
 | WS transport (GameWSContext) | ✅ Live — all event types, reconnect backoff |
 | GCS Morphic media loading | ✅ Live — 16 stills + 18 clips from bucket |
 | Scenario effects (slotsky, cards, timers) | ✅ Live — all handlers wired |
@@ -159,6 +160,15 @@ Zero TypeScript errors. Zero ESLint errors. Zero warnings.
 | Demo end overlay | ✅ Live — Play Again for both endings |
 | Audio SFX manifest | ✅ Live — scare_wildcard added |
 | Preload first 3 Morphic stills | ✅ Live |
+
+---
+
+## Files Modified — March 14, 2026 (Onboarding + Credits Fix)
+
+| File | Change |
+|---|---|
+| `app/ls/game/page.tsx` | **REWRITTEN** — Removed PermissionsGate, collapsed 5 phases to 4 (`waiting→connecting→intro→active`), `handleGrantPermissions()`, `handlePlay()` calls `connect()`, `session_ready` fires `intro` |
+| `app/ls/game/IntroSequence.tsx` | **REWRITTEN** — New `IntroPhase` type, 3 fade blocks + title card, correct 9-line credits script, 19s total, audio fade at t=17s, `intro_complete` at t=19s |
 
 ---
 
@@ -174,6 +184,16 @@ Zero TypeScript errors. Zero ESLint errors. Zero warnings.
 | `app/ls/game/GameHUD.tsx` | Removed dead handleEndSession, replaced with handleReload |
 | `app/styles/game-effects.css` | 7 new wildcard CSS classes |
 | `app/ls/game/audioManifest.ts` | Added scare_wildcard SFX key |
+
+---
+
+## Status Delta — March 14, 2026 (Onboarding + Credits Fix)
+
+- **CRITICAL race condition fixed:** PLAY click was calling `setSessionPhase("intro")` before WS established. `intro_complete` fired at t=11.5s into a connecting WS → backend dropped it silently (readyState !== OPEN). Jason never spoke, no scene events ever emitted.
+- **`session_ready` now gates the intro.** WS opens on PLAY click; credits start only after backend confirms the session is live.
+- **Credits fully rewritten.** 5-phase animated sequence replacing the old single-block. Correct 9-line script per user spec.
+- **Onboarding consolidated.** 3-screen flow (PermissionsGate component + 2 more screens) collapsed to 1 screen with in-place button state change.
+- TSC: EXIT:0. ESLint: EXIT:0. Deployed to Cloudflare Pages (version `cc735cb5`). Pushed to main (`dfd6c60`).
 
 ---
 
