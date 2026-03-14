@@ -155,10 +155,10 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
   },
   25: {
     autoplayText:
-      "[AUTOPLAY: Entering the maintenance corridor. Fluorescent lights flicker overhead.]",
+      "[AUTOPLAY: Moving down the maintenance shaft access corridor. The waterpark recedes behind you.]",
     gmCalls: [
-      { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_entry" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "maintenance_entry" } },
+      { fnName: "triggerSceneChange", args: { sceneKey: "park_shaft_view" } },
+      { fnName: "triggerVideoGen",    args: { sceneKey: "park_shaft_view" } },
     ],
   },
   26: {
@@ -181,16 +181,16 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
     autoplayText:
       "[AUTOPLAY: The elevator carries you down. Steel walls close in around you.]",
     gmCalls: [
-      { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "elevator_inside" } },
+      { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside_2" } },
+      { fnName: "triggerVideoGen",    args: { sceneKey: "elevator_inside_2" } },
     ],
   },
   29: {
     autoplayText:
       "[AUTOPLAY: Descent continues. The maintenance level comes into view below.]",
     gmCalls: [
-      { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside_2" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "elevator_inside_2" } },
+      { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_panel" } },
+      { fnName: "triggerVideoGen",    args: { sceneKey: "maintenance_panel" } },
     ],
   },
   30: {

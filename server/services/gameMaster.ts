@@ -50,7 +50,7 @@ function resolveMediaId(sceneKey: string): string {
     case "maintenance_entry":
       return "elevator_entry_01";
     case "maintenance_panel":
-      return "elevator_inside_01";
+      return "hallway_pov_01"; // Beat 7 maintenance panel = hallway_pov_01 Morphic file
     case "card2_pickup_pov":
       return "card_pickup_02";
     case "wildcard_vision_feed":
@@ -77,30 +77,25 @@ function resolveMediaId(sceneKey: string): string {
 }
 
 function resolveTriggerType(mediaId: string): TriggerType {
+  // STILL hold steps only — all chained_auto clips are NOT in this set.
+  // Keep in sync with STEP_MEDIA_TRIGGER in stepMachine.ts.
   const holdIds = new Set([
-    "card_joker_01",
-    "card_pickup_01",
-    "card_pickup_02",
-    "hallway_pov_01",
-    "hallway_pov_02",
-    "elevator_inside_01",
-    "elevator_inside_02",
-    "maintenance_reveal_01",
+    "tunnel_generator_01",   // step 11 — generator_area_operational STILL
+    "card_joker_01",         // step 13 — joker card STILL
+    "tunnel_transition_01",  // step 17 — tunnel-to-park STILL
+    "park_liminal_01",       // step 24 — liminal park STILL
+    "elevator_entry_01",     // step 27 — elevator entry STILL
+    "hallway_pov_02",        // step 31 — hallway STILL + game_over timer
+    "card_pickup_02",        // acecard flow — card2 STILL
   ]);
   return holdIds.has(mediaId) ? "hold_for_input" : "chained_auto";
 }
 
 function resolveTimeoutSeconds(mediaId: string): number {
-  if (mediaId === "card_joker_01" || mediaId === "card_pickup_01") {
-    return 30;
-  }
   if (mediaId === "card_pickup_02") {
-    return 15;
+    return 15; // urgent 15s window for card2 acecard flow
   }
-  if (mediaId === "hallway_pov_01") {
-    return 15;
-  }
-  return 30;
+  return 30; // default for all STILL holds and chained clips
 }
 
 function resolveAudioMode(mediaId: string): AudioMode {
