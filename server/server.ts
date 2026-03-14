@@ -920,7 +920,16 @@ wss.on("connection", (ws: WebSocket) => {
             clearTimeout(card2AutoPickTimer);
             card2AutoPickTimer = null;
           }
-        } else if (action.extra === "hallway_pov_02_acecard") {
+        } else if (action.extra === "hallway_pov_02_all") {
+          // Combined: card2_hunt_and_prewarm + hallway_pov_02_acecard.
+          // NOTE: wildcard2 (game_over branch) is now frontend CSS/SFX only — prewarm
+          // still runs for wildcard3 (good_ending) which may still use live gen.
+          maybePrepareWildcardGameOver();
+          maybePrepareWildcardGoodEnding();
+          if (card2AutoPickTimer) {
+            clearTimeout(card2AutoPickTimer);
+            card2AutoPickTimer = null;
+          }
           startAcecardKeywordTimer(
             acecardGateState,
             ws,
