@@ -1,10 +1,10 @@
 # SHOT_SCRIPT.md — Liminal Sin Act 1 Director's Blueprint
 
-## Version 2.0 | March 13, 2026
+## Version 3.0 | March 15, 2026
 
-### Status: PRODUCTION — Morphic assets canonicalized, step machine documented
+### Status: PRODUCTION — Revised against LS_VIDEO_PIPELINE.md
 
-### Cross-reference: AGENTS.md | WORLD_BIBLE.md | Gamemaster.md | Characters.md | SHOT_STEPS.md | imagen.ts | veo.ts
+### Cross-reference: AGENTS.md | WORLD_BIBLE.md | Gamemaster.md | Characters.md | SHOT_STEPS.md | LS_VIDEO_PIPELINE.md | imagen.ts | veo.ts
 
 ---
 
@@ -24,8 +24,8 @@ Scripted scenes are served from pre-built Morphic files hosted on GCS (`gs://lim
 | `server/services/veo.ts` | Veo 3.1 animation hints — wildcard live-gen only; `ANIMATION_HINTS` dict (historical) |
 | `server/services/npc/jason.ts` | Jason NPC system prompt |
 | `server/services/gemini.ts` | GM 6-beat playbook — `getGameMasterSystemPrompt()` |
-| `assets/generated_stills/` | 16 canonical pre-built Morphic `.png` files (source; hosted on GCS `liminal-sin-assets/stills/`) |
-| `assets/generated_clips/` | 18 canonical pre-built Morphic `.mp4` files (source; hosted on GCS `liminal-sin-assets/clips/`) |
+| `assets/generated_stills/` | 15 canonical pre-built Morphic `.png` files (source; hosted on GCS `liminal-sin-assets/stills/`) — darkness phase is CSS black screen, no still |
+| `assets/generated_clips/` | 18 canonical pre-built Morphic `.mp4` files (source; hosted on GCS `liminal-sin-assets/clips/`) — includes `flashlight_sweep_01` |
 | `docs/SHOT_STEPS.md` | Scene key registry, canonical sequencing, media filename registry, step machine |
 | `myceliainteractive` (frontend) | UI, onboarding, card overlay, dread timer SFX |
 
@@ -34,7 +34,7 @@ Scripted scenes are served from pre-built Morphic files hosted on GCS (`gs://lim
 - All imagery is **Jason's first-person POV** — what Jason sees; never a third-person camera.
 - The experience **never pauses**. No menus. No titles mid-session. No game-over UI that breaks tone.
 - **No HUD, no backpack, no smart glasses UI overlay** — deferred to Act 2.
-- The room starts in **total darkness**. No images generate until Beat 2 (flashlight moment).
+- The room starts in **total darkness** — CSS black screen only, no media file. No images generate until the player triggers the flashlight keyword.
 - Voicebox lore → **smartglasses app** (affects `jason.ts` and `server.ts`; tracked as separate sprint).
 - **Scripted media is never re-generated at runtime.** All scripted stills and clips are pre-built Morphic files served from GCS (`https://storage.googleapis.com/liminal-sin-assets/`).
 
@@ -54,107 +54,13 @@ Scripted scenes are served from pre-built Morphic files hosted on GCS (`gs://lim
 
 ## WS EVENT REGISTRY
 
-Extends the contract defined in `CURRENT_STATE.md`.
-
-| Event                  | Direction | Payload                                                                                                                                               | Status      |
-| ---------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `intro_complete`       | FE→BE     | `{}`                                                                                                                                                  | ✅ Existing |
-| `player_speech`        | FE→BE     | `{ audio: base64 }`                                                                                                                                   | ✅ Existing |
-| `player_frame`         | FE→BE     | `{ jpeg: base64 }`                                                                                                                                    | ✅ Existing |
-| `hallway_pov_02_ready` | FE→BE     | `{}`                                                                                                                                                  | ✅ Existing |
-| `session_ready`        | BE→FE     | `{ session_id: string }`                                                                                                                              | ✅ Existing |
-| `agent_speech`         | BE→FE     | `{ agent: 'jason'\|'audrey', audio: base64 }`                                                                                                         | ✅ Existing |
-| `agent_interrupt`      | BE→FE     | `{ agent: 'jason' }`                                                                                                                                  | ✅ Existing |
-| `trust_update`         | BE→FE     | `{ trust_level: number, fear_index: number }`                                                                                                         | ✅ Existing |
-| `hud_glitch`           | BE→FE     | `{ intensity: string, duration_ms: number }`                                                                                                          | ✅ Existing |
-| `scene_change`         | BE→FE     | `{ payload: { sceneKey: string, mediaId: string, triggerType: string, timeoutSeconds: number } }`                                                     | ✅ Existing |
-| `scene_image`          | BE→FE     | `{ payload: { sceneKey, mediaId, triggerType, timeoutSeconds, data: base64 } }`                                                                       | ✅ Existing |
-| `scene_video`          | BE→FE     | `{ payload: { sceneKey, mediaId, triggerType, timeoutSeconds, audioMode, url: string } }`                                                             | ✅ Existing |
-| `video_gen_started`    | BE→FE     | `{ payload: { sceneKey, mediaId, triggerType, timeoutSeconds, audioMode } }`                                                                          | ✅ Existing |
-| `slotsky_trigger`      | BE→FE     | `{ payload: { anomalyType: string } }`                                                                                                                | ✅ Existing |
-| `hint`                 | BE→FE     | `{ text: string }`                                                                                                                                    | ✅ Existing |
-| `player_speak_prompt`  | BE→FE     | `{}`                                                                                                                                                  | ✅ Existing |
-| `overlay_text`         | BE→FE     | `{ payload: { text: string, variant: string, durationMs: number } }`                                                                                  | ✅ Existing |
-| `npc_idle_nudge`       | BE→FE     | `{ payload: { phase: string, secondsSilent: number, urgency: 'soft'\|'urgent' } }`                                                                    | ✅ Existing |
-| `autoplay_advance`     | BE→FE     | `{ payload: { fromStep: number, toStep: number, mediaId?: string, triggerType?: string, timeoutSeconds?: number, reason: 'timeout'\|'npc_choice' } }` | ✅ Existing |
-| `audience_update`      | BE→FE     | `{ payload: { personCount, groupDynamic, observedEmotions } }`                                                                                        | ✅ Existing |
-| `card_discovered`      | BE→FE     | `{ cardId: 'card1'\|'card2' }`                                                                                                                        | ✅ Existing |
-| `card_collected`       | FE→BE     | `{ cardId: 'card1'\|'card2' }`                                                                                                                        | ✅ Existing |
-| `dread_timer_start`    | BE→FE     | `{ durationMs: number }`                                                                                                                              | ✅ Existing |
-| `game_over`            | BE→FE     | `{}`                                                                                                                                                  | ✅ Existing |
-| `good_ending`          | BE→FE     | `{}`                                                                                                                                                  | ✅ Existing |
-| `wildcard3_trigger`    | BE→FE     | `{ payload: { sceneKey: 'wildcard_good_ending' } }`                                                                                                   | ✅ Existing |
-| `acecard_keyword_timer_start` | BE→FE | `{ payload: { durationMs: 30000 } }`                                                                                                           | ✅ Section A |
-| `acecard_reveal_start` | BE→FE     | `{ payload: { mediaId: 'acecard_reveal_01' } }`                                                                                                       | ✅ Section A |
-| `card_pickup_02_ready` | BE→FE     | `{ payload: { mediaId: 'card_pickup_02', durationMs: 15000 } }`                                                                                       | ✅ Section A |
-| `acecard_reveal_complete` | FE→BE  | `{}`                                                                                                                                                  | ✅ Section A |
-
-### `slotsky_trigger` anomalyType Values
-
-All 13 valid `anomalyType` values for the `slotsky_trigger` event:
-
-**GM-controlled** (declared in `gmTools.ts`, fired by Gemini function calls):
-
-| # | anomalyType               | Description                                                            |
-|---|---------------------------|------------------------------------------------------------------------|
-| 1 | `anomaly_cards`           | Subtle escalation — card-related visual anomaly                        |
-| 2 | `anomaly_bells`           | Subtle escalation — audio bell anomaly                                 |
-| 3 | `anomaly_lights`          | Subtle escalation — lighting flicker anomaly                           |
-| 4 | `anomaly_geometry`        | Removes an exit — geometric impossibility                              |
-| 5 | `fourth_wall_correction`  | Full three-bells + strobe sequence at fourth_wall_count >= 3           |
-| 6 | `found_transition`        | Cosmetic Slotsky pulse when characters reach FOUND state               |
-
-**Backend-controlled** (fired by `server.ts` sequencer, never by GM):
-
-| #  | anomalyType                     | Description                                                      |
-|----|---------------------------------|------------------------------------------------------------------|
-| 7  | `wildcard_vision_feed_start`    | Signals wildcard vision feed playback is beginning               |
-| 8  | `wildcard_vision_feed_end`      | Signals wildcard vision feed playback has ended                  |
-| 9  | `wildcard_scare_sfx`            | Triggers scare SFX during wildcard vision video                  |
-| 10 | `wildcard_game_over_loading`    | Frontend CSS glitch/loading animation for game_over prep         |
-| 11 | `wildcard_game_over_start`      | Signals wildcard game_over media playback is beginning           |
-| 12 | `wildcard_good_ending_loading`  | Frontend CSS glitch/loading animation for good_ending prep       |
-| 13 | `wildcard_good_ending_start`    | Signals wildcard good_ending media playback is beginning         |
-
-> **SFX CONVENTION — Universal Scene Transition:** `glitch_low` (random variant) fires on every `scene_change`, `scene_image`, and `scene_video` event, and on every VHS-swap (video-to-still) transition. It is the **only** SFX used for visual scene transitions. No other SFX replaces this role.
+→ **[WS_EVENTS.md — WebSocket Events, Slotsky anomalyTypes, SFX Convention](WS_EVENTS.md)**
 
 ---
 
-## ⚠️ FRONTEND NOTE — JASON TRUST METER (PERMANENT UI)
+## FRONTEND SPEC
 
-> **Priority: HIGH — Permanent UI feature. Do NOT remove during any refactor.**
-
-A **Trust Meter** widget must be rendered in the **lower-right corner** of the screen at all times during active gameplay. It is a minimal, always-on overlay that displays Jason's current emotional state in real time.
-
-**Data source:** `trust_update` WS event — `{ trust_level: number, fear_index: number }`
-
-- `trust_level` — float `0.0–1.0`. Drives the Trust bar.
-- `fear_index` — float `0.0–1.0`. Drives the Fear bar.
-
-**Visual spec:**
-
-- Two labeled bars stacked vertically, lower-right corner, fixed position.
-- Labels: `TRUST` and `FEAR` (all caps, monospace or horror-adjacent font to match game aesthetic).
-- Bar fill reflects the float value (e.g. `0.75` = 75% fill).
-- Color suggestion: Trust = cold blue or green; Fear = deep red or amber.
-- No border, no background panel — blends into the scene, never breaks immersion.
-
-**Animation — slow pulse (fade in / fade out only):**
-
-- The entire widget pulses with a slow, continuous CSS `opacity` animation — fade in to full opacity, hold briefly, fade out to ~20% opacity, repeat.
-- Suggested timing: ~5s per full cycle (e.g. `animation: trust-pulse 5s ease-in-out infinite`).
-- The pulse is **cosmetic only** — it runs continuously while the widget is active, regardless of data changes. A data change does NOT reset or interrupt the pulse cycle.
-
-**Activation gate — Phase 3 / Phase 4 boundary:**
-
-- The widget is **hidden** (opacity: 0, no animation) during Phase 1 (onboarding) and Phase 2 (credits).
-- The widget **activates** (becomes visible and begins pulsing) when the frontend receives the `player_speak_prompt` event (the Phase 3 → Phase 4 transition).
-- Initial values before the first `trust_update` arrives: `trust_level = 0.5`, `fear_index = 0.3` (neutral defaults).
-
-**Data updates:**
-
-- On every `trust_update` event received over WS, animate the bar fill smoothly to the new value (CSS transition ~500ms).
-- The pulse animation runs on top of/independently from the bar fill transition.
+→ **[FRONTEND_SPEC.md — Jason Trust Meter UI](FRONTEND_SPEC.md)**
 
 ---
 
@@ -166,7 +72,7 @@ Updating the GM playbook is tracked as a separate backend sprint. Do not modify 
 | Beat                       | Trigger                                  | GM Function Calls                                                                                                                                                                             | Duration    |
 | -------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | 1 — DARKNESS               | Session start                            | `triggerAudienceUpdate`, `triggerTrustChange` (once)                                                                                                                                          | 0:00–~0:40  |
-| 2 — FLASHLIGHT ON          | Player mentions light / visibility       | `triggerSceneChange("flashlight_beam")`, `triggerVideoGen("flashlight_beam")` (Scripted — backend serves Morphic file from disk. No live Imagen/Veo generation.)                               | ~0:40–~1:00 |
+| 2 — FLASHLIGHT ON          | Player mentions light / visibility       | `triggerSceneChange("flashlight_beam")`, `triggerVideoGen("flashlight_beam")` (Scripted — backend serves Morphic file `flashlight_sweep_01` from GCS. No live Imagen/Veo generation.)                               | ~0:40–~1:00 |
 | 3 — GENERATOR / JOKER CARD | Player guides Jason to generator         | `triggerSceneChange("generator_area_start")`, `triggerVideoGen("generator_area_start")`, `triggerSceneChange("generator_area_operational")`, `triggerVideoGen("generator_area_operational")`, `card_discovered({cardId:'card1'})` (Scripted — Morphic `tunnel_generator_01` from disk.) | ~1:00–~1:30 |
 | 4 — WATERPARK ENTRANCE     | Player tells Jason to start generator    | `triggerSceneChange("park_entrance")`, `triggerVideoGen("park_entrance")` (Scripted — Morphic from disk.)                                                                                     | ~1:30–~2:00 |
 | 5 — WATERPARK INTERIOR     | Player / Jason explores the park         | `triggerSceneChange("park_walkway")`, `triggerVideoGen("park_walkway")` (Scripted — Morphic from disk.)                                                                                       | ~2:00–~2:30 |
@@ -177,12 +83,12 @@ Updating the GM playbook is tracked as a separate backend sprint. Do not modify 
 **GAME OVER VARIANT (dread timer expires before Card 2 collected):**
 
 - Dread timer expiry → backend routes through `wildcard_game_over` pipeline → `game_over` emission.
-- `wildcard_game_over` resolves `maintenance_reveal_01.mp4` from disk.
+- **WILDCARD 2 is frontend CSS/SFX only** — no backend video generation for the game_over branch.
 - `[SFX: monster_sound]` — loud and close, one hit, in-ear
 - Then: total silence
 - Screen fades to black
 - Text: `GAME OVER. / THANK YOU FOR PLAYING LIMINAL SIN.`
-- Session ends; browser refresh required to restart
+- Frontend presents `[PLAY AGAIN]` and `[QUIT GAME]`
 
 ---
 
@@ -361,20 +267,26 @@ STEP 7 — FIRST AWARENESS:
 1. `triggerSceneChange({ sceneKey: "flashlight_beam" })`
 2. `triggerVideoGen({ sceneKey: "flashlight_beam" })`
 
-(Scripted scene — backend serves Morphic file `tunnel_flashlight_01` from disk. No live Imagen/Veo generation.)
+(Scripted scene — backend serves Morphic file `flashlight_sweep_01` from GCS. No live Imagen/Veo generation.)
 
-**Screen:** Transitions from BLACK to `flashlight_beam` still image. This is the demo's first visual. The still appears immediately (served from prewarm cache).
+**Clip chain — 3 clips auto-chained (per LS_VIDEO_PIPELINE):**
+
+1. **`flashlight_sweep_01`** (10s, **muted** — the only muted clip in Act 1). First visual moment. Jason says: _"the wall says Boring, but this is far from boring."_ Walking SFX + ambient sounds play. Player can interrupt Jason.
+2. **`tunnel_flashlight_01`** (15s, has no baked sound — SFX driven by frontend). Plays immediately after flashlight sweep. At 3s walking SFX starts. At 7s Jason reacts to a white generator moving on its own toward him. At 12s stop walking SFX.
+3. **`tunnel_generator_01`** (10s, has no baked sound). Plays immediately after tunnel flashlight. At 1.5s walking SFX starts. At 6s Jason notices the name on the wall changed to "Bard". Stop walking SFX at end of clip.
+
+**Screen:** Transitions from BLACK to `flashlight_sweep_01` clip. This is the demo's first visual.
 
 **Jason in character (free dialogue — no script):**
 
 - He describes only what the flashlight beam directly touches. Never narrates what is beyond the beam.
 - Tone: relief mixed with disorientation at the scale of the echo
-- Example: _"Okay. I've got the flashlight. I can see— concrete. Just concrete. It goes a long way."_
 
 **SFX:**
 
 - `[SFX: glitch_low]` — fires on scene transition to `flashlight_beam` (universal transition SFX — random variant)
 - `[SFX: drip_loop]` — continues
+- Walking SFX and ambient sounds during `flashlight_sweep_01`
 
 **Flashlight hint (existing):**
 
@@ -386,21 +298,32 @@ STEP 7 — FIRST AWARENESS:
 
 **[Beat 3 — AI Vision Proof mechanic]**
 
-**Trigger (GM):** Player guides Jason deeper / toward the generator area.
+**Trigger (GM):** Player guides Jason toward the generator / says "turn on the generator".
 
 **GM calls (in order):**
 
-1. `triggerSceneChange({ sceneKey: "generator_area_start" })`
-2. `triggerVideoGen({ sceneKey: "generator_area_start" })`
+1. `triggerSceneChange({ sceneKey: "generator_card_reveal" })`
+2. `triggerVideoGen({ sceneKey: "generator_card_reveal" })`
 3. `card_discovered({ cardId: 'card1' })`
 
-(Scripted scene — backend serves Morphic file `tunnel_generator_01` from disk. No live Imagen/Veo generation.)
+(Scripted scene — backend serves Morphic file `card_joker_01` from GCS. No live Imagen/Veo generation.)
 
-**Still image → Video sequence:**
+**Tunnel Generator Idle (`tunnel_generator_01.png`):** Still image extracted from the `tunnel_generator_01` clip. This still is both time TRIGGERED and KEYWORD TRIGGERED. The player must use keywords like "turn on the generator" to trigger the next clip. If they fail to do so, the still auto-advances after timeout.
 
-- `generator_area_start` / `tunnel_generator_01`: Jason continues exploring farther down the same Boring tunnel after getting his bearings; the generator is only discovered at the far end of the beam path
-- `generator_area_operational` / `tunnel_generator_01`: continuation from the end of the previous clip; same Morphic file — the generator is still a little distant and Jason walks toward it
-- `generator_card_reveal` / `card_joker_01`: this is the end-state after generator activation; tunnel lights are now on, Jason's headlamp is off, and only now does the Joker card become visible near the generator base
+**Joker Card Reveal — `card_joker_01` (15s, no baked sound):**
+
+The clip name is misleading — it contains two parts:
+1. First part: Jason turning on the generator
+2. Second part: Jason looks down and sees the Joker card
+
+**Timed SFX cues (per LS_VIDEO_PIPELINE):**
+- At 5s — Jason should say "I'm turning it on now"
+- At 9s — the flashlight CSS overlay should be **removed permanently** from the rest of the game
+- At 13s — Jason should react to the Joker Card on the ground
+
+The card overlay must appear at the **end** of this clip, triggered by a WS `card_discovered` event from the backend. The player can only pick up the card after the reveal clip finishes and the overlay appears.
+
+**Joker Card Idle (`card_joker_01.png`):** Still image extracted from the `card_joker_01` clip. This still is time TRIGGERED, KEYWORD TRIGGERED, and CARD ICON CLICK TRIGGERED. The player must use keywords like "pick up the card" or CLICK the floating card icon to trigger the next scene. Auto-advances after timeout.
 
 **Frontend on `card_discovered({ cardId: 'card1' })`:**
 
@@ -413,428 +336,53 @@ STEP 7 — FIRST AWARENESS:
 - Frontend sends `card_collected({ cardId: 'card1' })` to backend
 - Card overlay disappears; card stored in frontend collected state
 
-**Card timeout (22s — per-step timeout for `card_joker_01` hold):****
+**Card timeout (per-step timeout for `card_joker_01` hold):**
 
 - If card is not clicked within timeout, Jason auto-collects it.
 - During this window, backend emits 9-second silence nudges (`npc_idle_nudge` / `overlay_text`) if player does not speak.
 
+**Card Pickup — `card_pickup_01` (6s, no baked sound):**
+
+- At 0s — Jason should say "okay, I'm picking it up now"
+- Ambient sounds should play
+- Clip shows Jason picking up the Joker card
+- Clip end triggers **WILDCARD 1**
+
 **Backend on `card_collected({ cardId: 'card1' })`:**
 
-- This is no longer a standalone scripted `vision_flash` still.
-- Instead, card collection resolves into the **live wildcard feed pipeline**:
+- Card collection resolves into the **live wildcard feed pipeline**:
   1. glitch transition
   2. brief black/noise hold
   3. Jason says: _"There's a feed coming in through my glasses. I did not activate this myself."_
   4. small-frame feed playback happens with frontend CSS border
   5. scare SFX triggers with the video
-  6. glitch transition out
-  7. cut to the next Boring tunnel / waterpark transition scene
+  6. heavy CSS glitch effects + loud SFX scare at end of clip
+  7. cut to the next scene (tunnel transition)
+
+**WILDCARD 1 (8s, live-generated):** Uses the player's webcam feed as input. Captures a single frame of the player and environment, then applies it to a Veo 3.1 video generation that adds a shadowy figure in the background behind the player. The player and environment are animated with live action webcam quality movement. Frontend SFX scare when the figure first appears.
 
 **SFX:**
 
-- `[SFX: glitch_low]` — fires on scene transition to `generator_area_start` (universal transition SFX — random variant)
+- `[SFX: glitch_low]` — fires on scene transition (universal transition SFX — random variant)
 - `[SFX: card_appear]` — subtle card materialization sound (consistent with Slotsky card SFX family)
 - `[SFX: scare_wildcard]` — triggers with the wildcard feed video playback
 
 ---
 
-## PHASE 6 — GENERATOR ON: WATERPARK ENTRANCE
+## PHASES 6–8
 
-**[Beat 4 — Paradise Reveal]**
-
-**Trigger (GM):** Player speaks the correct progression phrase to move forward from the post-card still, or the per-step autoplay timer expires.
-
-**GM calls (in order):**
-
-1. `triggerSceneChange({ sceneKey: "tunnel_to_park_transition" })`
-2. `triggerVideoGen({ sceneKey: "tunnel_to_park_transition" })`
-3. `triggerSceneChange({ sceneKey: "park_transition_reveal" })`
-4. `triggerVideoGen({ sceneKey: "park_transition_reveal" })`
-5. `triggerSceneChange({ sceneKey: "park_entrance" })`
-6. `triggerVideoGen({ sceneKey: "park_entrance" })`
-
-(Scripted scenes — backend serves Morphic files `tunnel_transition_01`, `park_reveal_01`, `park_walkway_01` from disk. No live Imagen/Veo generation.)
-
-**Screen:** The sequence now moves through three continuity beats:
-
-- `tunnel_to_park_transition`: still in the Boring tunnel, pushing toward the impossible opening
-- `park_transition_reveal`: the threshold hold between tunnel and paradise
-- `park_entrance`: the full reveal of the functional underground waterpark
-
-**Jason in character (free dialogue):**
-
-> _"Oh my god. There's— it's a water park. It's running. The lights are on."_
-> _(beat)_
-> _"...It's beautiful. Why is it down here?"_
-
-**SFX:**
-
-- `[SFX: glitch_low]` — fires on scene transition to `park_entrance` (universal transition SFX — random variant)
-- `[SFX: generator_start]` — industrial generator spool-up, 4 seconds, fires on scene transition
-- `[SFX: neon_hum]` — faint electrical neon hum, low, continuous under this phase
-- `[SFX: drip_loop]` — continues but shifts register (now mixed with the neon environment)
+→ **[SHOT_SCRIPT_PART2.md — Phases 6–8: Waterpark, Elevator, Acecard Gate, Endings](SHOT_SCRIPT_PART2.md)**
 
 ---
 
-## PHASE 6B — WATERPARK INTERIOR
 
-**[Beat 5 — Scale Reveal / Liminal Transition]**
+## APPENDICES
 
-**Trigger (GM):** Player tells Jason to explore deeper into the park / Jason advances on his own after the per-step autoplay window.
-
-**GM calls (in order):**
-
-1. `triggerSceneChange({ sceneKey: "park_walkway" })`
-2. `triggerVideoGen({ sceneKey: "park_walkway" })`
-3. `triggerSceneChange({ sceneKey: "park_liminal" })` — chained_auto; auto-advances after 30s
-4. `triggerVideoGen({ sceneKey: "park_liminal" })`
-
-(Scripted scenes — backend serves Morphic files `park_walkway_02`, `park_liminal_01` from disk. No live Imagen/Veo generation.)
-
-**Screen:** Jason moves through the huge waterpark on dry walkways. `park_liminal` auto-chains as a brief pass through the liminal corridor linking the main park to the maintenance zone approach.
-
-**Jason in character (free dialogue):**
-
-- He describes the park as he moves through it. The scale catches him off-guard.
-- Autoplay fallback: if inactivity hits the per-step timeout, Jason moves through the liminal area on his own and arrives at the shaft view (Phase 6C).
-
-**SFX:**
-
-- `[SFX: glitch_low]` — fires on scene transition to `park_walkway`
-- `[SFX: neon_hum]` — continues
-- `[SFX: waterfall_ambient]` — begins here; vast, low-register cascade sound
-
----
-
-## PHASE 6C — MAINTENANCE SHAFT IN VIEW
-
-**[Beat 5C — Decision point]**
-
-**Trigger (GM):** `park_liminal` auto-chains from Phase 6B and brings Jason to the far edge of the park where the maintenance shaft is visible in the distance.
-
-**GM calls (in order):**
-
-1. `triggerSceneChange({ sceneKey: "park_shaft_view" })`
-2. `triggerVideoGen({ sceneKey: "park_shaft_view" })`
-
-(Scripted scene — backend serves Morphic file `shaft_maintenance_01` from disk. No live Imagen/Veo generation.)
-
-**Screen:** `park_shaft_view` (`shaft_maintenance_01`) — the maintenance shaft access point visible from across the park, emerging from behind waterpark structures.
-
-**Jason in character (free dialogue):**
-
-- He notices the shaft access point in the distance. The park's ambient perfection contrasts sharply with the industrial entrance ahead.
-- He may weigh whether to investigate. The player can guide him or let autoplay advance fire.
-- Autoplay fallback: per-step timeout (30s) fires the `elevator_inside` advance into Phase 7.
-
-**SFX:**
-
-- `[SFX: glitch_low]` — fires on scene transition to `park_shaft_view`
-- `[SFX: waterfall_ambient]` — fades slightly as industrial sounds begin to intrude from the maintenance zone
-
----
-
-## PHASE 7 — ELEVATOR DESCENT & MAINTENANCE CORRIDOR
-
-**[Beat 6 — Descent and approach]**
-
-**Trigger (GM):** Player guides Jason toward the maintenance shaft / Jason moves there on his own after Phase 6C.
-
-**GM calls (in order):**
-
-1. `triggerSceneChange({ sceneKey: "elevator_inside" })`
-2. `triggerVideoGen({ sceneKey: "elevator_inside" })`
-3. `triggerSceneChange({ sceneKey: "maintenance_entry" })`
-4. `triggerVideoGen({ sceneKey: "maintenance_entry" })`
-5. `triggerSceneChange({ sceneKey: "elevator_inside_2" })`
-6. `triggerVideoGen({ sceneKey: "elevator_inside_2" })`
-7. `triggerSceneChange({ sceneKey: "maintenance_panel" })`
-8. `triggerVideoGen({ sceneKey: "maintenance_panel" })`
-9. `triggerAudreyVoice` — distant female voice echo at the maintenance panel beat
-
-(Scripted scenes — backend serves Morphic files `elevator_inside_01`, `elevator_entry_01`, `elevator_inside_02`, `hallway_pov_01` from disk. No live Imagen/Veo generation.)
-
-**Scene Transition SFX:**
-
-- `[SFX: glitch_low]` — fires on each scene transition through this phase
-- `[SFX: waterfall_ambient]` — fades out completely as elevator closes
-- `[SFX: metal_hum]` — low industrial drone, begins in elevator
-
-**Jason in character (free dialogue):**
-
-- He describes entering the maintenance elevator and the descent. The park disappears above.
-- He moves through the maintenance entry into the second elevator car and then into the hallway beyond.
-- Autoplay fallback: per-step timeout fires at 30s (elevator steps) and 15s (entry and panel steps) — Jason advances through each beat on his own if the player is silent.
-
-**State at `maintenance_panel` (step 29):**
-
-- Backend autoplay advance from step 29 → step 31 (`hallway_pov_02`) fires on per-step timeout (15s).
-- No card or dread timer fires here — the acecard keyword gate begins at the next step (Phase 7B).
-
-**Wildcard prewarm (background):**
-
-- At `hallway_pov_02_ready` signal from frontend, backend begins background pre-generation of both `wildcard_game_over` and `wildcard_good_ending` branches.
-- Backend re-attempts both at +90s as a safety pass.
-
----
-
-## PHASE 7B — HALLWAY DEEP PUSH: ACECARD KEYWORD GATE
-
-**[Beat 7 — Terminal node / two-outcome gate]**
-
-**Trigger:** Autoplay advance from step 29 (`maintenance_panel`) fires after 15s and brings Jason to step 31 (`hallway_pov_02`). Backend immediately fires `acecard_keyword_timer_start` (30s, invisible).
-
-**Screen:** `hallway_pov_02.png` still (clip-only — no `.mp4` for this media). Gameplay holds on this image for the duration of the keyword window.
-
-**Backend on step 31 entry:**
-
-- Sends `acecard_keyword_timer_start` → frontend (`{ payload: { durationMs: 30000 } }`)
-- Starts invisible 30s `acecardKeywordTimer` — fires `wildcard_game_over` pipeline on expiry
-- Wildcard prewarm continues in background (started at `hallway_pov_02_ready`)
-
-**Keyword window — 30 seconds, invisible (no UI indicator):**
-
-- Player must give Jason any instruction to grab, take, pick up, or retrieve an object
-- Any semantically broad acquire/retrieve instruction counts — e.g. "grab it", "take the card", "get it", "pick it up", "there — take that", "Jason grab the card"
-- GM detects the instruction → calls `triggerAcecardReveal()`
-
-**SFX during keyword window (frontend-driven):**
-
-- 0–10s: `[SFX: heartbeat_low]` — barely audible, slow pulse
-- 10–20s: `[SFX: heartbeat_mid]` — louder, slightly faster
-- 20–30s: `[SFX: heartbeat_high1]` + `[SFX: heartbeat_high2]` + `[SFX: distant_growl1]` + `[SFX: distant_growl2]` — urgent pressure, rising
-
-**ON KEYWORD DETECTED (before 30s expiry):**
-
-- Backend clears `acecardKeywordTimer` → sends `acecard_reveal_start { payload: { mediaId: "acecard_reveal_01" } }`
-- Frontend plays `acecard_reveal_01.mp4` (clip only — no still for this media)
-- Clip ends → frontend sends `acecard_reveal_complete` to backend
-- Backend sends `card_pickup_02_ready { payload: { mediaId: "card_pickup_02", durationMs: 15000 } }`
-- Frontend displays `card_pickup_02.png` still; floating Queen of Spades card overlay appears
-- 15-second invisible countdown begins (SFX escalation continues)
-- Player clicks overlay **OR** voice-commands Jason to grab it → `card_collected({ cardId: "card2" })` → routes to Phase 8 (good ending)
-- 15s expires without collection → `wildcard_game_over` pipeline → game over
-
-**ON KEYWORD TIMER EXPIRY (30s, no instruction given):**
-
-- Backend fires `wildcard_game_over` pipeline → `game_over`
-- Step 31 is a terminal advance node — no further autoplay advance from here under any path.
-
----
-
-### GAME OVER BRANCH (timer expires before Card 2 collected)
-
-**Trigger:** Backend dread timer reaches 0 — routes through `emitWildcardGameOverBranch()` in `server.ts`.
-
-1. `slotsky_trigger({ anomalyType: "wildcard_game_over_loading" })` — frontend starts CSS glitch loop.
-2. `slotsky_trigger({ anomalyType: "wildcard_game_over_start" })` — media playback begins.
-3. `wildcard_game_over` scene_image + scene_video served (from `maintenance_reveal_01.mp4` on disk).
-4. After 8.5s playback: backend sends `game_over`.
-5. Game over screen fades in (white on black, centered):
-
-   ```
-   GAME OVER.
-
-   THANK YOU FOR PLAYING LIMINAL SIN.
-   ```
-
-5. Frontend presents `[PLAY AGAIN]` and `[QUIT GAME]`.
-6. Session is dead until restart.
-
----
-
-## PHASE 8 — THE ENDING (Card 2 Found)
-
-**[Beat 8 — "To Be Continued"]**
-
-**Trigger:** Frontend sends `card_collected({ cardId: 'card2' })` to backend.
-
-**Backend flow (in order):**
-
-1. `card_collected('card2')` → backend cancels dread timer
-2. `queueWildcardGoodEndingPlayback()` fires in `server.ts`
-3. `slotsky_trigger({ anomalyType: "wildcard_good_ending_loading" })` — frontend starts CSS glitch loop
-4. `wildcard3_trigger({ sceneKey: "wildcard_good_ending" })` — frontend glitch transition treatment
-5. `wildcard_good_ending` scene_image + scene_video served (live Imagen+Veo generation)
-6. After 8.5s playback: backend sends `good_ending`
-
-`found_transition` is a cosmetic Slotsky pulse, NOT the ending trigger.
-
-**No close-up and no detached insert.** The ending remains Jason POV throughout.
-
-**Audrey's voice (trust-adaptive):**
-Note: Jason's trust score is the only input to Audrey's dialogue. Fear index has no impact. Audrey is triggered by `server.ts` during the `wildcard_good_ending` playback (not by GM function call).
-| Trust | Audrey's line |
-|---|---|
-| ≥ 0.7 (High) | _"Jason?"_ — soft, hopeful, as if she just heard something. She says his name. |
-| 0.4–0.69 (Neutral) | One short sentence, muffled and echoing. Scared but present. |
-| < 0.4 (Low) | Quiet crying. No name. A single exhale of despair. She sounds very far away. |
-
-**SFX:**
-
-- static feedback after the card click glitch
-- Jason's running footsteps bridging into the reopened waterpark scene
-- Audrey's voice over the reopened park space
-
-**Screen transition:**
-
-1. Waterpark scene reopens after static feedback.
-2. Audrey's voice is heard.
-3. Fade to black.
-4. Text appears (white on black, centered):
-
-   ```
-   TO BE CONTINUED.
-
-   THANK YOU FOR PLAYING LIMINAL SIN.
-   ```
-
-5. Frontend presents `[QUIT GAME]`.
-
-**Jason (optional closing line — free character choice):**
-
-- He goes quiet as the smartglasses app signal fades to static.
-- He may say nothing. Or: _"...I'll find them."_
-- His choice, in character.
-
----
-
-## APPENDIX A — IMAGEN 4 PROMPTS (WILDCARD LIVE-GENERATION ONLY)
-
-> Only wildcard live-generation prompts are listed here. All scripted scene imagery is served from pre-built Morphic files in `assets/generated_stills/`. The original Imagen 4 prompts for scripted scenes (`flashlight_beam`, `generator_area`, `zone_park_shore`, `maintenance_area`, `card2_closeup`) are preserved in `imagen.ts` as historical reference only. They are NOT active at runtime.
-
----
-
-### `wildcard_vision_feed`
-
-```
-First-person POV through a slightly distorted smartglasses HUD, the player's real
-room visible as photographed but with a tall thin shadowy human-shaped figure standing
-just behind/beside them, figure partially translucent with hard shadow edges as if
-lit by a screen, no face visible, stance unnaturally still, the figure does not
-interact with the environment — it simply watches, subtle chromatic aberration at
-frame edges, photorealistic with minor digital compression artifacts, wide angle
-lens distortion, 8K
-```
-
----
-
-### `wildcard_game_over`
-
-> **Note:** `maintenance_reveal_01.mp4` exists on disk as a partial Morphic override. If served from disk, this prompt is not used at runtime. Retained here for reference if live generation is re-enabled.
-
-```
-First-person POV in a claustrophobic maintenance corridor, emergency red strip
-lighting casting sharp angular shadows from exposed pipe clusters, at the far end
-of the corridor a door that was previously closed is now open revealing absolute
-blackness beyond, a single playing card — queen of spades — lies crushed and torn
-on the wet concrete floor in the foreground, the sense is that something moved
-through here moments ago, photorealistic industrial horror, wide angle 16mm,
-high contrast red emergency lighting, 8K
-```
-
----
-
-### `wildcard_good_ending`
-
-```
-First-person POV standing at the edge of the vast underground waterpark, neon lights
-reflecting in the still dark water, but the space feels different now — warmer,
-the foliage less bleached, a distant figure (Audrey) barely visible at the far end
-of the main pool walkway, her posture suggests she has just turned toward the camera,
-the aquamarine glow from the pool below illuminates the mist between them, no threat,
-no horror — just distance and hope and the enormity of the space between two people,
-photorealistic, wide angle 16mm, cinematic, warm neon palette, 8K
-```
-
----
-
-## APPENDIX B — VEO 3.1 FAST ANIMATION HINTS (WILDCARD LIVE-GENERATION ONLY)
-
-> Only wildcard live-generation animation hints are listed here. All scripted scene clips are served from pre-built Morphic files in `assets/generated_clips/`. The original Veo animation hints for scripted scenes are preserved in `veo.ts` as historical reference only. They are NOT active at runtime.
-
----
-
-### `wildcard_vision_feed`
-
-```
-The shadowy figure behind/beside the player shifts weight almost imperceptibly,
-the room's lighting flickers once as if a bulb is dying, the figure's outline
-ripples with subtle chromatic distortion, the player in the foreground does not
-react — only the viewer sees the movement, duration 8 seconds, no sudden cuts,
-slow dread energy
-```
-
----
-
-### `wildcard_game_over`
-
-> **Note:** If `maintenance_reveal_01.mp4` is served from disk, this hint is not used at runtime.
-
-```
-Emergency red lights begin strobing irregularly, the open door at the corridor end
-yawns wider as if the blackness beyond it is expanding, the crushed queen of spades
-card on the floor is caught in a draft and slides an inch toward the door, a single
-pipe along the ceiling drips faster, the sense of something having just moved through
-intensifies, 8 seconds, no sudden cuts, building claustrophobic tension
-```
-
----
-
-### `wildcard_good_ending`
-
-```
-Slow push-in toward the distant figure (Audrey) at the far end of the waterpark
-walkway, neon reflections in the water ripple gently as if stirred by unseen current,
-the mist between the camera and Audrey thins slightly revealing more of her silhouette,
-she takes one small step forward, the aquamarine glow brightens almost imperceptibly,
-8 seconds, no sudden movement, hope energy
-```
-
----
-
-## APPENDIX C — PREWARM CACHE TARGET
-
-### Morphic Files — Instant Serve
-
-`PREWARM_SCENE_KEYS` in `server/services/imagen.ts` pre-loads these 3 Morphic stills into memory at session start for instant delivery:
-
-| Scene Key            | Morphic media_id         | Morphic File                |
-|----------------------|--------------------------|-----------------------------|
-| `flashlight_beam`    | `tunnel_flashlight_01`   | `tunnel_flashlight_01.png`  |
-| `generator_area_start` | `tunnel_generator_01`  | `tunnel_generator_01.png`   |
-| `park_entrance`      | `park_walkway_01`        | `park_walkway_01.png`       |
-
-### Wildcard Prewarm — Live Generation (~90s Budget)
-
-| Wildcard Key            | Trigger Point                            | Pipeline                    |
-|-------------------------|------------------------------------------|-----------------------------|
-| `wildcard_vision_feed`  | First `player_frame` after `jasonReadyForPlayer` gates open | Imagen img2img → Veo img2vid |
-| `wildcard_game_over`    | `hallway_pov_02_ready` signal from frontend (also triggers acecard keyword timer) | Imagen gen → Veo img2vid (or `maintenance_reveal_01.mp4` from disk) |
-| `wildcard_good_ending`  | `hallway_pov_02_ready` signal from frontend (also triggers acecard keyword timer) | Imagen gen → Veo img2vid    |
-
-Backend re-attempts both `wildcard_game_over` and `wildcard_good_ending` prewarms at +90s as a safety pass.
-
----
-
-## APPENDIX D — CARD COLLECTIBLES SPEC
-
-| Card   | ID      | Visual          | Phase             | Contains                                            |
-| ------ | ------- | --------------- | ----------------- | --------------------------------------------------- |
-| Card 1 | `card1` | Jack of Clubs   | Phase 5B (Beat 3) | AI vision proof — Jason describes player appearance |
-| Card 2 | `card2` | Queen of Spades | Phase 7 (Beat 7)  | Session ending trigger — routes to good ending      |
-
-Both cards are standard playing cards (same visual language as the `slotsky_card` three-card anomaly in Beat 5). The jack of clubs appears alone in the `generator_card_reveal` scene (`card_joker_01`), isolated in the flashlight spotlight. The queen of spades appears as the floating collectible overlay on `card_pickup_02.png` after `acecard_reveal_01.mp4` plays at the hallway end. Player has 15 seconds to click the card overlay or voice-command Jason to grab it. Card collected → good ending. Timer expiry → game over. Clip path: step 31 keyword gate branches to acecard clip, which lands on this card pick still.
-
----
-
-## APPENDIX E — STEP MACHINE REGISTRY
-
-→ **[SHOT_STEPS.md — Step Machine Registry](SHOT_STEPS.md)**
+→ **[WILDCARD_PROMPTS.md — Imagen 4 Prompts, Veo 3.1 Hints, Prewarm Cache, Card Collectibles, Step Machine](WILDCARD_PROMPTS.md)**
 
 ---
 
 _SHOT_SCRIPT.md — LIMINAL SIN_
 _Mycelia Interactive LLC_
-_Version 2.0 | March 13, 2026_
-_Canon. Cross-reference: AGENTS.md | WORLD_BIBLE.md | Gamemaster.md | Characters.md_
+_Version 3.0 | March 15, 2026_
+_Canon. Cross-reference: AGENTS.md | WORLD_BIBLE.md | Gamemaster.md | Characters.md | LS_VIDEO_PIPELINE.md | WS_EVENTS.md | FRONTEND_SPEC.md | SHOT_SCRIPT_PART2.md | WILDCARD_PROMPTS.md_

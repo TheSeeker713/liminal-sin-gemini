@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **UPDATE RULE:** When updating this file, REPLACE the previous content and write a single current-state snapshot. Do NOT append. Historical logs belong in git history.
-> Last updated: March 15, 2026 (Bug 4 fix — joker card scene timing).
+> Last updated: March 15, 2026 (Doc audit — SHOT_SCRIPT split + SHOT_STEPS v2.0 + LS_VIDEO_PIPELINE alignment).
 
 ---
 
@@ -16,7 +16,7 @@
 | Item | Value |
 |---|---|
 | Cloud Run URL | `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| Live revision | `liminal-sin-server-00076-njc` — serving 100% traffic |
+| Live revision | `liminal-sin-server-00082-wzp` — serving 100% traffic |
 | GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
 | Org | `digitalartifact11-org` (165684325504) |
 | GM model | `gemini-live-2.5-flash-native-audio` (via `GM_LIVE_MODEL` env var) |
@@ -31,7 +31,24 @@
 
 ---
 
-## Current Live State (March 15, 2026 — BUG 4 FIX)
+## Current Live State (March 15, 2026 — DOC AUDIT + MEDIA UPDATE)
+
+### Doc Audit — SHOT_SCRIPT split + SHOT_STEPS v2.0 + LS_VIDEO_PIPELINE alignment
+- **SHOT_SCRIPT.md v3.0:** Revised against LS_VIDEO_PIPELINE.md (the authoritative video pipeline doc). All contradictions resolved. Split into 5 focused docs:
+  - `SHOT_SCRIPT.md` (388 lines) — Overview, GM Playbook, Phases 1–5B
+  - `SHOT_SCRIPT_PART2.md` (291 lines) — Phases 6–8 (waterpark through endings)
+  - `WS_EVENTS.md` (80 lines) — WebSocket event registry + Slotsky anomalyTypes
+  - `FRONTEND_SPEC.md` (50 lines) — Jason Trust Meter UI spec
+  - `WILDCARD_PROMPTS.md` (147 lines) — Imagen/Veo prompts, prewarm cache, card collectibles
+- **SHOT_STEPS.md v2.0:** Revised against LS_VIDEO_PIPELINE.md:
+  - Removed `tunnel_darkness_01` from all tables (darkness is CSS black screen only, no media)
+  - Added `flashlight_sweep_01` (10s, muted) to Scene Key, Canonical Sequencing, Media Filename, Step Machine
+  - `flashlight_beam` scene key now maps to `flashlight_sweep_01` (was `tunnel_flashlight_01`)
+  - Step Machine: Step 7 → `flashlight_sweep_01` (muted), new Step 8 → `tunnel_flashlight_01`
+  - Still count 16 → 15, clip count corrected to 18
+  - `maintenance_reveal_01` inserted in Canonical Sequencing between `park_liminal` and `park_shaft_view`
+- **LS_VIDEO_PIPELINE.md:** Added descriptive line 1. Internal contradiction noted: `card_joker_01` listed as 10s in step 7 but 15s in detail section (15s is authoritative).
+- **GCS:** `flashlight_sweep_01.mp4` uploaded to `gs://liminal-sin-assets/clips/`
 
 ### Bug 4 — Joker Card Scene Timing (Fixed, deployed revision 00076-njc)
 - **Root cause:** `triggerCardDiscovered` fired inline with `triggerSceneChange` in step 10 and step 21 gmCalls arrays. The 120ms gap between WS sends was too short — the card overlay appeared before the scene image/clip had loaded on the frontend. Player saw the Joker card floating over the previous tunnel_generator_01 scene, and Jason narrated the card before the visual matched.
@@ -46,7 +63,7 @@
 
 ### Backend Systems (all live)
 - All backend game logic complete and audited.
-- Morphic media canonicalized: 16 stills + 18 clips on GCS bucket `liminal-sin-assets`.
+- Morphic media canonicalized: 15 stills + 18 clips on GCS bucket `liminal-sin-assets` (includes `flashlight_sweep_01.mp4`).
 - Acecard mechanic live: triggerAcecardReveal, step 22 keyword gate.
 - Wildcard prewarm architecture live.
 - RAI safety level set to `BLOCK_ONLY_HIGH` in Veo config.
@@ -54,8 +71,14 @@
 ### Files Modified This Session
 | File | Change |
 |---|---|
-| `server/services/stepMachine.ts` | Removed `triggerCardDiscovered` from step 10 and step 21 gmCalls |
-| `server/server.ts` | Added 3s delayed `card_discovered` emission in card1_auto_pick and hallway_pov_02_all extras |
+| `docs/SHOT_SCRIPT.md` | v3.0 — revised against LS_VIDEO_PIPELINE, split into 5 docs, clip count 19→18 |
+| `docs/SHOT_SCRIPT_PART2.md` | NEW — Phases 6–8 extracted from SHOT_SCRIPT |
+| `docs/WS_EVENTS.md` | NEW — WS event registry extracted from SHOT_SCRIPT |
+| `docs/FRONTEND_SPEC.md` | NEW — Trust Meter UI spec extracted from SHOT_SCRIPT |
+| `docs/WILDCARD_PROMPTS.md` | NEW — Appendices extracted from SHOT_SCRIPT |
+| `docs/SHOT_STEPS.md` | v2.0 — removed tunnel_darkness_01, added flashlight_sweep_01, fixed flashlight_beam mapping, added Step 8, inserted maintenance_reveal_01, still count 16→15 |
+| `docs/LS_VIDEO_PIPELINE.md` | Added descriptive line 1 |
+| `CURRENT_STATE.md` | Updated with doc audit changes |
 
 ---
 
@@ -112,7 +135,7 @@
 
 ## Backend Status — 100% COMPLETE (March 15, 2026)
 
-Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00076-njc`.
+Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00082-wzp`.
 
 | System | Status |
 |---|---|
@@ -132,6 +155,6 @@ Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-se
 | /debug/fire-gm-event | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /debug/test-wildcard-vision | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /log-client-error | ✅ Live |
-| Cloud Run | ✅ revision 00076-njc |
+| Cloud Run | ✅ revision 00082-wzp |
 
 

@@ -1,16 +1,15 @@
 # SHOT_STEPS.md — Liminal Sin Act 1 Step Reference
 
-## Version 1.0 | March 14, 2026
+## Version 2.0 | March 15, 2026
 
 > **Single source of truth for step sequencing, scene keys, media IDs, and the backend step machine.**
-> This file was extracted from `SHOT_SCRIPT.md`. Content is migrated as-is and marked where bugs/inconsistencies are known.
-> Cross-reference: `SHOT_SCRIPT.md` | `AGENTS.md` | `server/services/stepMachine.ts` | `server/services/gameMaster.ts`
+> Revised against `LS_VIDEO_PIPELINE.md`. Cross-reference: `SHOT_SCRIPT.md` | `AGENTS.md` | `server/services/stepMachine.ts` | `server/services/gameMaster.ts` | `LS_VIDEO_PIPELINE.md`
 
 ---
 
 ## ⚠️ KNOWN ISSUES (unresolved — pending review)
 
-- **Media Filename Registry timeout values** are partially stale (e.g. `tunnel_darkness_01` still shows `22s`; `card_pickup_01` still shows `25s`). Authoritative runtime values live in `server/services/stepMachine.ts → STEP_MEDIA_TRIGGER`.
+- **Media Filename Registry timeout values** are partially stale (e.g. `card_pickup_01` still shows `25s`). Authoritative runtime values live in `server/services/stepMachine.ts → STEP_MEDIA_TRIGGER`.
 - The Step Machine Registry is authoritative. Always cross-check against `stepMachine.ts` if divergence is suspected.
 - **`shaft_maintenance_01` and `maintenance_reveal_01`** are both clip-only steps (no `.png` still required). Neither file needs a still — they auto-chain into the `elevator_entry_01` still hold.
 
@@ -22,8 +21,7 @@ All scene keys used in this script. Scene keys resolve to Morphic media IDs via 
 
 | Key                          | Morphic media_id         | Phase    | Source          | Notes                                                  |
 | ---------------------------- | ------------------------ | -------- | --------------- | ------------------------------------------------------ |
-| `tunnel_darkness_01`         | `tunnel_darkness_01`     | Phase 2  | Morphic (GCS)   | Pre-session darkness hold — muted                      |
-| `flashlight_beam`            | `tunnel_flashlight_01`   | Phase 5  | Morphic (GCS)   | First visual moment                                    |
+| `flashlight_beam`            | `flashlight_sweep_01`    | Phase 5  | Morphic (GCS)   | First visual moment — muted; chains to tunnel_flashlight_01 |
 | `generator_area_start`       | `tunnel_generator_01`    | Phase 5B | Morphic (GCS)   | Generator area first discovered                        |
 | `generator_area_operational` | `tunnel_generator_01`    | Phase 5B | Morphic (GCS)   | Same Morphic file as `generator_area_start`             |
 | `generator_card_reveal`      | `card_joker_01`          | Phase 5B | Morphic (GCS)   | Joker card visible near generator                      |
@@ -51,7 +49,7 @@ All scene keys used in this script. Scene keys resolve to Morphic media IDs via 
 
 The canonical Act 1 media plan:
 
-- **16 pre-built stills** (Morphic — hosted on GCS `gs://liminal-sin-assets/stills/`)
+- **15 pre-built stills** (Morphic — hosted on GCS `gs://liminal-sin-assets/stills/`)
 - **18 pre-built clips** (Morphic — hosted on GCS `gs://liminal-sin-assets/clips/`)
 - **2 live wildcard images** (Imagen 4 img2img — `wildcard_vision_feed`, `wildcard_good_ending`)
 - **2–3 live wildcard videos** (Veo 3.1 img2vid — `wildcard_vision_feed`, `wildcard_game_over` if not using disk override, `wildcard_good_ending`)
@@ -74,26 +72,26 @@ The canonical Act 1 media plan:
 
 | Order | Scene Key                  | Morphic media_id         | Meaning                                                               |
 | ----- | -------------------------- | ------------------------ | --------------------------------------------------------------------- |
-| 0     | `tunnel_darkness_01`       | `tunnel_darkness_01`     | Pre-session darkness hold (muted)                                     |
-| 1     | `flashlight_beam`          | `tunnel_flashlight_01`   | Flashlight turns on; Jason gets bearings in darkness                   |
-| 2     | `generator_area_start`     | `tunnel_generator_01`    | Generator area first discovered                                       |
-| 3     | `generator_area_operational` | `tunnel_generator_01`  | Generator area stabilized; same Morphic file as above                 |
-| 4     | `generator_card_reveal`    | `card_joker_01`          | Joker card now visible near generator base                            |
-| 5     | `card1_pickup_pov`         | `card_pickup_01`         | Joker card pickup video; no close-up                                  |
-| 6     | `wildcard_vision_feed`     | _(live gen)_             | Live smartglasses anomaly built from player camera extraction          |
-| 7     | `tunnel_to_park_transition` | `tunnel_transition_01`  | Jason explores forward from the Boring tunnel after wildcard resolves  |
-| 8     | `park_transition_reveal`   | `park_reveal_01`         | Reveal hold between tunnel and paradise park                          |
-| 9     | `park_entrance`            | `park_walkway_01`        | Perfect waterpark crashed into boring tunnel                          |
-| 10    | `park_walkway`             | `park_walkway_02`        | Jason exploring massive walkways between water features               |
-| 11    | `park_liminal`             | `park_liminal_01`        | Liminal park transition beat                                          |
-| 12    | `park_shaft_view`          | `shaft_maintenance_01`   | Clip-only auto-chain — no STILL hold; chains from maintenance_reveal_01         |
-| 13    | `maintenance_entry`        | `elevator_entry_01`      | STILL hold after shaft clip chain — Jason commits to elevator path              |
+| 0     | `flashlight_beam`          | `flashlight_sweep_01`    | First visual — muted; chains to tunnel_flashlight_01 → tunnel_generator_01 |
+| 1     | `generator_area_start`     | `tunnel_generator_01`    | Generator area first discovered                                       |
+| 2     | `generator_area_operational` | `tunnel_generator_01`  | Generator area stabilized; same Morphic file as above                 |
+| 3     | `generator_card_reveal`    | `card_joker_01`          | Joker card now visible near generator base                            |
+| 4     | `card1_pickup_pov`         | `card_pickup_01`         | Joker card pickup video; no close-up                                  |
+| 5     | `wildcard_vision_feed`     | _(live gen)_             | Live smartglasses anomaly built from player camera extraction          |
+| 6     | `tunnel_to_park_transition` | `tunnel_transition_01`  | Jason explores forward from the Boring tunnel after wildcard resolves  |
+| 7     | `park_transition_reveal`   | `park_reveal_01`         | Reveal hold between tunnel and paradise park                          |
+| 8     | `park_entrance`            | `park_walkway_01`        | Perfect waterpark crashed into boring tunnel                          |
+| 9     | `park_walkway`             | `park_walkway_02`        | Jason exploring massive walkways between water features               |
+| 10    | `park_liminal`             | `park_liminal_01`        | Liminal park transition beat                                          |
+| 11    | _(corridor approach)_      | `maintenance_reveal_01`  | Clip-only auto-chain — approaching maintenance shaft                  |
+| 12    | `park_shaft_view`          | `shaft_maintenance_01`   | Clip-only auto-chain — no STILL hold; chains into elevator_entry_01 still |
+| 13    | `maintenance_entry`        | `elevator_entry_01`      | STILL hold after shaft clip chain — Jason commits to elevator path    |
 | 14    | `elevator_inside`          | `elevator_inside_01`     | Elevator interior first view                                          |
 | 15    | `elevator_inside_2`        | `elevator_inside_02`     | Elevator interior continued                                           |
 | 16    | `maintenance_panel`        | `hallway_pov_01`         | Hallway POV — panel area                                              |
 | 17    | `hallway_pov_02`           | `hallway_pov_02`         | Prewarm anchor — wildcard2/3 background preparation begins here       |
 | 18    | `card2_pickup_pov`         | `card_pickup_02`         | Final card pickup / collection; no close-up                           |
-| 19    | `wildcard_game_over`       | `maintenance_reveal_01`  | Bad-ending branch (served from GCS Morphic clip)                  |
+| 19    | `wildcard_game_over`       | `maintenance_reveal_01`  | Bad-ending branch (served from GCS Morphic clip)                      |
 | 20    | `wildcard_good_ending`     | _(live gen)_             | Live anomaly good-ending branch                                       |
 
 ### Media Filename Registry (Morphic Import)
@@ -107,7 +105,7 @@ Use basename as trigger id. Frontend resolves stills and clips via GCS:
 
 | media_id                | still filename             | clip filename               | trigger type   | audio mode   | timeout seconds |
 | ----------------------- | -------------------------- | --------------------------- | -------------- | ------------ | --------------- |
-| `tunnel_darkness_01`    | `tunnel_darkness_01.png`   | `tunnel_darkness_01.mp4`    | hold_for_input | muted        | 22              |
+| `flashlight_sweep_01`   | n/a — chains immediately   | `flashlight_sweep_01.mp4`   | chained_auto   | muted        | 10              |
 | `tunnel_flashlight_01`  | `tunnel_flashlight_01.png` | `tunnel_flashlight_01.mp4`  | chained_auto   | native_audio | 30              |
 | `tunnel_generator_01`   | `tunnel_generator_01.png`  | `tunnel_generator_01.mp4`   | hold_for_input (last) | native_audio | 30              |
 | `card_joker_01`         | `card_joker_01.png`        | `card_joker_01.mp4`         | hold_for_input | native_audio | 30              |
@@ -181,7 +179,8 @@ The autoplay advance chain maps `fromStep → toStep` for inactivity-driven prog
 
 | Step | Scene Key                    | media_id                | Timeout | Trigger Type     | On Timeout / Action                          |
 | ---- | ---------------------------- | ----------------------- | ------- | ---------------- | -------------------------------------------- |
-| 7    | `flashlight_beam`            | `tunnel_flashlight_01`  | 30s     | chained_auto     | auto-advance → 9                             |
+| 7    | `flashlight_beam`            | `flashlight_sweep_01`   | 10s     | chained_auto     | muted — auto-advance → 8                     |
+| 8    | _(flashlight chain)_         | `tunnel_flashlight_01`  | 30s     | chained_auto     | auto-advance → 9                             |
 | 9    | `generator_area_start`       | `tunnel_generator_01`   | 30s     | chained_auto     | auto-advance → 11                            |
 | 11   | `generator_area_operational` | `tunnel_generator_01`   | 30s     | hold_for_input   | auto-advance → 13                            |
 | 13   | `generator_card_reveal`      | `card_joker_01`         | 30s     | hold_for_input   | auto-collect card1 → wildcard1               |
@@ -208,5 +207,5 @@ The autoplay advance chain maps `fromStep → toStep` for inactivity-driven prog
 
 _SHOT_STEPS.md — LIMINAL SIN_
 _Mycelia Interactive LLC_
-_Version 1.0 | March 14, 2026_
+_Version 2.0 | March 15, 2026_
 _Canon. Cross-reference: SHOT_SCRIPT.md | AGENTS.md | server/services/stepMachine.ts | server/services/gameMaster.ts_
