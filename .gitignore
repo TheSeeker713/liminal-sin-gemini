@@ -28,3 +28,8 @@ assets/screen-records/
 *.webp
 *.webm
 
+# Keep generated canonical media in-repo for contest duplication.
+!assets/generated_stills/**
+!assets/generated_clips/**
+!assets/generated_clips_web/**
+
