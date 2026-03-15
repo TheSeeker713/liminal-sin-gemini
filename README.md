@@ -8,6 +8,8 @@ A first-person, multi-agent FMV psychological horror prototype built for the **[
 
 **Live demo:** [myceliainteractive.com/ls/game](https://www.myceliainteractive.com/ls/game/)
 
+**Frontend repo:** [TheSeeker713/myceliainteractive](https://github.com/TheSeeker713/myceliainteractive)
+
 ---
 
 ## The Vision
@@ -87,13 +89,91 @@ Additionally, the backend invokes:
 
 ---
 
+## Third-Party Tools Disclosure
+
+This project used third-party tools across planning, staging, development, infrastructure, and asset production. For contest transparency, the breakdown below reflects what was used and how.
+
+### Planning, research, and staging tools
+
+These tools were used for ideation, planning, writing support, research, and staging. They were **not** the runtime engine serving the live game session.
+
+| Tool | Usage |
+|---|---|
+| **Google Gemini Pro** | Planning, ideation, prompt iteration, research support |
+| **NotebookLM** | Organizing notes, summarization, reference synthesis |
+| **Grok** | Planning and research support |
+| **Perplexity** | Research and fact-finding during staging/planning |
+
+### Asset creation and storyboarding
+
+| Tool | Usage |
+|---|---|
+| **Morphic Studio** | Storyboarding, still generation, and prebuilt FMV asset creation |
+
+### Development tools
+
+| Tool | Usage |
+|---|---|
+| **Visual Studio Code** | Primary editor and development environment |
+| **GitHub Copilot** | Coding assistance during implementation |
+| **Docker** | Container build and deployment packaging |
+| **Git / GitHub** | Source control and repository hosting |
+
+### Google Cloud / Google AI services used in this project
+
+The exact tool list evolved during development, but the production system and deployment flow in this repository explicitly use the following Google services and tooling:
+
+| Tool / Service | Usage | Proof |
+|---|---|---|
+| **Gemini Live API / Vertex AI** | Live multi-agent runtime | [`server/services/gemini.ts`](server/services/gemini.ts) |
+| **Imagen 4** | Wildcard image generation | [`server/services/imagen.ts`](server/services/imagen.ts) |
+| **Veo 3.1** | Wildcard video generation | [`server/services/veo.ts`](server/services/veo.ts) |
+| **Cloud Run** | Backend hosting | [`package.json`](package.json), [`CURRENT_STATE.md`](CURRENT_STATE.md) |
+| **Firestore** | Session state and runtime persistence | [`server/services/db.ts`](server/services/db.ts) |
+| **Google Cloud Storage** | Hosted stills and video clips | [`server/services/gameMaster.ts`](server/services/gameMaster.ts) |
+| **Artifact Registry** | Docker image storage | [`package.json`](package.json) |
+| **gcloud CLI** | Deployment/authentication workflow | [`package.json`](package.json) |
+
+---
+
 ## Running Locally
+
+### Important: backend repo vs full playable experience
+
+This repository is the **backend/runtime repo**. Judges can inspect the full server architecture here, including the Gemini Live multi-agent runtime, WebSocket event contract, Google Cloud deployment, and canonical media assets.
+
+However, the **full playable experience requires the frontend repo too**. The frontend contains:
+
+- onboarding and permission flow
+- WebSocket client transport
+- credits sequence
+- card overlays
+- dread timer UI/SFX
+- wildcard CSS effects
+- judges route and game presentation layer
+
+If a judge clones **only this backend repo**, they can run and inspect the server, but they will **not** get the complete browser game experience without the frontend.
+
+For a full local reproduction, clone both repos:
+
+```bash
+git clone https://github.com/TheSeeker713/liminal-sin-gemini.git
+git clone https://github.com/TheSeeker713/myceliainteractive.git
+```
+
+Use this repo for the backend and the frontend repo for the browser client.
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/TheSeeker713/liminal-sin-gemini.git
 cd liminal-sin-gemini
+```
+
+If you want the complete playable build locally, also clone the frontend repo:
+
+```bash
+git clone https://github.com/TheSeeker713/myceliainteractive.git
 ```
 
 ### 2. Install Dependencies
@@ -142,7 +222,27 @@ npm run server
 
 The WebSocket server starts on `ws://localhost:8080/game`. Connect a frontend client or use a WebSocket testing tool.
 
-### 5. Build & Deploy to Cloud Run
+### 5. Run the Frontend (required for full gameplay)
+
+In the frontend repo, install dependencies and run its dev server according to that repository's README. The frontend is the actual browser experience judges will interact with; this backend alone is not enough for the full end-to-end game loop.
+
+---
+
+## Judges / Reproduction Checklist
+
+If you are a judge or reviewer trying to fully reproduce the submitted experience, use this checklist:
+
+1. Clone **both** repositories:
+	- backend/runtime: `liminal-sin-gemini`
+	- frontend/client: `myceliainteractive`
+2. Install dependencies in both repos.
+3. Configure Google Cloud credentials and environment variables for the backend repo.
+4. Run the backend WebSocket server from this repo.
+5. Run the frontend from the frontend repo.
+6. Open the frontend game route in a real browser with microphone/camera permissions enabled.
+7. If you only clone this backend repo, you can inspect the architecture and run the server, but you will not have the full browser-playable version by itself.
+
+### 6. Build & Deploy to Cloud Run
 
 ```bash
 npm run deploy
