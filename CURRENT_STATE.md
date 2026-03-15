@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **UPDATE RULE:** When updating this file, REPLACE the previous content and write a single current-state snapshot. Do NOT append. Historical logs belong in git history.
-> Last updated: March 14, 2026 (post-onboarding fix + credits rewrite).
+> Last updated: March 14, 2026 (step machine rewrite + Bug 1/2/3 fixes).
 
 ---
 
@@ -16,7 +16,7 @@
 | Item | Value |
 |---|---|
 | Cloud Run URL | `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| Live revision | `liminal-sin-server-00059-tmd` — serving 100% traffic |
+| Live revision | `liminal-sin-server-00072-r6h` — serving 100% traffic |
 | GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
 | Org | `digitalartifact11-org` (165684325504) |
 | GM model | `gemini-live-2.5-flash-native-audio` (via `GM_LIVE_MODEL` env var) |
@@ -31,33 +31,39 @@
 
 ---
 
-## Current Live State (March 14, 2026 — POST-ONBOARDING FIX + CREDITS REWRITE)
+## Current Live State (March 14, 2026 — STEP MACHINE REWRITE + BUG FIXES)
 
-### Backend (unchanged since March 14 audit)
-- All backend game logic complete and audited: gmTools, dreadTimer, sessionEndings, card_collected, WS handlers.
-- Morphic media canonicalized: 16 stills + 18 clips uploaded to GCS bucket `liminal-sin-assets`.
-  - Stills: `https://storage.googleapis.com/liminal-sin-assets/stills/<mediaId>.png`
-  - Clips: `https://storage.googleapis.com/liminal-sin-assets/clips/<mediaId>.mp4`
-  - Public read access verified. No authentication required for browser fetches.
-  - Upload script: `scripts/upload-gcs.ts`
-- Step machine operating with per-step `mediaId`, `triggerType`, and `timeoutSeconds` payloads.
-- Acecard mechanic live: `triggerAcecardReveal`, step 31 keyword gate, `startAcecardKeywordTimer`.
-- Wildcard prewarm architecture live: game_over and good_ending prewarm from `hallway_pov_02` anchor.
-- RAI safety level set to `BLOCK_ONLY_HIGH` in Veo config (unblocked pipeline).
-- Zero dead-code issues (minor: ~50 lines unused functions in gameMaster.ts lines 96–146, safe to remove post-contest).
+### Step Machine Rewrite (deployed revision 00072-r6h)
+- **stepMachine.ts** completely rewritten — 4 files changed across backend.
+- Canonical Act 1 sequence: steps 8–22 with correct clip durations and trigger types.
+- STEP_TRANSITIONS: 7→8→9→10→11(terminal), 12→13→14→15→16→17→18→19→20→21→22(terminal).
+- STEP_AUTOPLAY_ACTIONS: 15 entries covering all active steps.
+- 4 interactive pause points: steps 10, 16, 18, 22 are `hold_for_input`.
+- Step 11 is terminal (card_collected handler owns progression).
+- Step 22 is terminal (acecard gate owns progression).
 
-### Frontend (Updated March 14, 2026 — Onboarding + Credits)
-- **Onboarding flow fully fixed.** Root cause: PLAY click was starting credits before WS open; backend gates Jason + GM behind `intro_complete` which was silently dropped.
-- **New phase flow:** `waiting → connecting → intro → active`
-  - `waiting`: Single consolidated screen. Auto-detects permissions — shows PLAY directly if granted, GRANT PERMISSIONS otherwise. Privacy disclaimer inline.
-  - `connecting`: Black "connecting…" screen until backend sends `session_ready`.
-  - `intro`: Credits start only after `session_ready`. `intro_complete` now always arrives over an open WS.
-- **Credits rewritten.** New 9-line script in 3 fade blocks + title card:
-  - Block 1 (t=1s): `MYCELIA INTERACTIVE / PRESENTS`
-  - Block 2 (t=5s): `LIMINAL SIN / A voice psychological-horror experience. / Powered by Google Gemini.`
-  - Block 3 (t=9.5s): `Directed by J.W. / Written by J.W. and A.L. / Music by THE S33K3R`
-  - Title card (t=14s) → fade (t=17s) → `intro_complete` (t=19s)
-- **All prior frontend work still live:** GCS Morphic media, WS contract sync, wildcard/acecard handlers, reconnect backoff, wildcard CSS, end screens.
+### Bug Fixes (deployed revision 00072-r6h)
+- **Bug 1 — Jason ignoring player speech:** Root cause was `sendText()` flooding during `chained_auto` steps. During rapid step chains (park sequence 12→15), Jason received 8+ forced text turns that drowned out player audio via `sendRealtimeInput`. Fix: autoplay narration (`sendText`) and scene context injection (`injectSceneContextIntoJason`) now only fire on `hold_for_input` steps or keyword triggers. Chained_auto steps skip both, leaving Jason free to listen.
+- **Bug 2 — Glitch effect persisting forever:** Root cause was a React useEffect cleanup race. The `hud_glitch` timer cleanup function canceled the `setGlitchClass(null)` timer when `lastEvent` changed. Fix applied on frontend: removed the useEffect cleanup return + added `setGlitchClass(null)` to the scene_change handler as a safety net.
+- **Bug 3 — Slow motion video:** Added defensive `playbackRate = 1.0` to all 3 video play sites (GCS clip, wildcard scene_video, acecard clip). Re-encoded all 18 clips to web-friendly bitrate (CRF 23, 5Mbps cap, 1080p) — total size reduced from 371MB to 78MB. Re-encoded clips ready in `assets/generated_clips_web/`, pending upload to GCS.
+
+### Backend Systems (all live)
+- All backend game logic complete and audited.
+- Morphic media canonicalized: 16 stills + 18 clips on GCS bucket `liminal-sin-assets`.
+- Acecard mechanic live: triggerAcecardReveal, step 31 keyword gate.
+- Wildcard prewarm architecture live.
+- RAI safety level set to `BLOCK_ONLY_HIGH` in Veo config.
+
+### Files Modified This Session
+| File | Change |
+|---|---|
+| `server/server.ts` | Skip `sendText` + `injectSceneContextIntoJason` during `chained_auto` steps |
+| `server/services/stepMachine.ts` | Complete rewrite — steps 8–22, durations, trigger types |
+| `server/services/gameMaster.ts` | `flashlight_beam`→`tunnel_darkness_01`, added `flashlight_scanning`, updated hold set |
+| `server/services/keywordLibrary.ts` | Remapped keywords to steps 7, 10, 16, 18 |
+
+### Pending Action
+- **GCS upload:** Re-encoded clips in `assets/generated_clips_web/` need to be uploaded to replace the high-bitrate originals on `gs://liminal-sin-assets/clips/`.
 
 ---
 
@@ -109,14 +115,12 @@
 - ADK/AutoFlow NOT implemented. Direct GenAI SDK + WebSocket only.
 - **WILDCARD2** = frontend CSS/SFX treatment only — no live backend video generation for game_over branch. `maintenance_reveal_01.mp4` served from GCS.
 - `docs/Contest.md` — do not archive until after March 16 5PM PDT deadline.
-- Voicebox → smartglasses lore migration: `jason.ts` system prompt. Tracked as separate sprint. NOT DONE.
-- GM 8-beat playbook target documented in SHOT_SCRIPT.md; updating `gemini.ts` deferred until approved.
 
 ---
 
 ## Backend Status — 100% COMPLETE (March 14, 2026)
 
-Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00059-tmd`.
+Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00072-r6h`.
 
 | System | Status |
 |---|---|
@@ -125,7 +129,7 @@ Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-se
 | Jason NPC (Gemini Live) | ✅ Live — Enceladus voice |
 | Audrey NPC (echo) | ✅ Live — Aoede voice, trust-gated |
 | Game Master (function calls only) | ✅ Live |
-| Step machine + autoplay | ✅ Live — 16 steps, wall-clock timers per step |
+| Step machine + autoplay | ✅ Live — steps 8–22, wall-clock timers, chained_auto text gating |
 | Keyword detection | ✅ Live — dedicated Gemini Live session, per-step keyword lists |
 | Acecard keyword gate | ✅ Live — 30s window + 15s card2 timer |
 | Dread timer | ✅ Live — callback mode |
@@ -136,7 +140,7 @@ Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-se
 | /debug/fire-gm-event | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /debug/test-wildcard-vision | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /log-client-error | ✅ Live |
-| Cloud Run | ✅ revision 00059-tmd |
+| Cloud Run | ✅ revision 00072-r6h |
 
 ---
 
@@ -162,74 +166,4 @@ Zero TypeScript errors. Zero ESLint errors. Zero warnings.
 | Audio SFX manifest | ✅ Live — scare_wildcard added |
 | Preload first 3 Morphic stills | ✅ Live |
 
----
 
-## Files Modified — March 14, 2026 (Onboarding + Credits Fix)
-
-| File | Change |
-|---|---|
-| `app/ls/game/page.tsx` | **REWRITTEN** — Removed PermissionsGate, collapsed 5 phases to 4 (`waiting→connecting→intro→active`), `handleGrantPermissions()`, `handlePlay()` calls `connect()`, `session_ready` fires `intro` |
-| `app/ls/game/IntroSequence.tsx` | **REWRITTEN** — New `IntroPhase` type, 3 fade blocks + title card, correct 9-line credits script, 19s total, audio fade at t=17s, `intro_complete` at t=19s |
-
----
-
-## Files Modified — March 15, 2026 (Frontend Implementation)
-
-| File | Change |
-|---|---|
-| `app/ls/game/mediaManifest.ts` | **NEW** — GCS constants, Morphic media IDs, helper functions |
-| `app/ls/game/GameWSContext.tsx` | 5 new event types, expanded payloads, reconnect backoff, removed dead types |
-| `app/ls/game/useGameHudScenarioEffects.ts` | Fixed 2 P0 bugs, added 7 slotsky handlers, acecard/card pickup/wildcard3 handlers |
-| `app/ls/game/useGameHudGeneralEffects.ts` | GCS Morphic loading, hallway_pov_02_ready emission, preload stills, removed dead handlers |
-| `app/ls/game/DemoEndOverlay.tsx` | Play Again for both endings, "to be continued" text |
-| `app/ls/game/GameHUD.tsx` | Removed dead handleEndSession, replaced with handleReload |
-| `app/styles/game-effects.css` | 7 new wildcard CSS classes |
-| `app/ls/game/audioManifest.ts` | Added scare_wildcard SFX key |
-
----
-
-## Status Delta — March 14, 2026 (Onboarding + Credits Fix)
-
-- **CRITICAL race condition fixed:** PLAY click was calling `setSessionPhase("intro")` before WS established. `intro_complete` fired at t=11.5s into a connecting WS → backend dropped it silently (readyState !== OPEN). Jason never spoke, no scene events ever emitted.
-- **`session_ready` now gates the intro.** WS opens on PLAY click; credits start only after backend confirms the session is live.
-- **Credits fully rewritten.** 5-phase animated sequence replacing the old single-block. Correct 9-line script per user spec.
-- **Onboarding consolidated.** 3-screen flow (PermissionsGate component + 2 more screens) collapsed to 1 screen with in-place button state change.
-- TSC: EXIT:0. ESLint: EXIT:0. Deployed to Cloudflare Pages (version `cc735cb5`). Pushed to main (`dfd6c60`).
-
----
-
-## Status Delta — March 15, 2026 (Frontend Implementation + Full Audit)
-
-- **FRONTEND_PLAN.txt fully implemented** — all P0, P1, P2 items complete.
-- **2 critical P0 bugs fixed** in `useGameHudScenarioEffects.ts`:
-  - `found_transition` no longer ends session prematurely.
-  - `anomaly_cards` no longer triggers full card overlay.
-- **CRITICAL architecture gap closed:** Frontend now loads Morphic stills/clips from GCS on `scene_change`, not just from base64 `scene_image`.
-- **Full FE + BE audit completed.** Backend: 100% production-ready, zero critical bugs. Frontend: 100% event contract compliance, zero TS/ESLint errors.
-- **Full audit report written** to `FE_BE_FULL_AUDIT.txt` in the frontend workspace.
-
----
-
-## Status Delta — March 15, 2026 (Keyword Detection + Wall-Clock Timers)
-
-- **CRITICAL architecture fix: silence-based timer replaced with wall-clock timers.** Old system used `lastPlayerSpeechAt = Date.now()` on every `player_speech` — ANY speech reset the 30s autoplay timer indefinitely, killing immersion. New system uses `setTimeout` per step that runs independently of player speech.
-- **Keyword detection system implemented.** Dedicated 4th Gemini Live session (`KeywordListener`) listens to player audio and detects per-step keywords via Gemini function calling. Keywords in `keywordLibrary.ts` — steps 7, 9, 11, 13, 17, 24, 27 have active keyword lists.
-- **Unified `advanceStep()` function** with mutex prevents double-fire from keyword + timer race conditions. Both keyword listener callback and wall-clock timer call `advanceStep(step, reason)`.
-- **Jason scene context injection.** `injectSceneContextIntoJason()` gives Jason immediate per-scene visual awareness on every step advance. `feedVideoFramesToJason()` now uses per-video frame timestamps and per-scene context from `keywordLibrary.ts`.
-- **`autoplay_advance` event now includes `reason` field** (`"keyword"` or `"timeout"`) for frontend debugging visibility.
-- TSC: EXIT:0. ESLint: EXIT:0. Deployed at revision `liminal-sin-server-00059-tmd`. Pushed to main (`28e7059`).
-
-### New Files
-
-| File | Purpose |
-|---|---|
-| `server/services/keywordLibrary.ts` | Per-step keywords, per-scene visual context for Jason, per-video frame timestamps |
-| `server/services/keywordListener.ts` | `KeywordListener` class — dedicated Gemini Live session for keyword detection via function calling |
-
-### Modified Files
-
-| File | Change |
-|---|---|
-| `server/services/gemini.ts` | Added `connectWithTools()` method + `Tool` import for custom-tool Live sessions |
-| `server/services/gameMaster.ts` | Per-scene Jason context injection (`injectSceneContextIntoJason`), per-video frame timestamps |
-| `server/server.ts` | Wall-clock `startStepTimer()`, unified `advanceStep()` with mutex, keyword listener wiring, removed silence-based interval timer |
