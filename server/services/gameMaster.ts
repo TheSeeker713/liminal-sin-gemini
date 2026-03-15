@@ -49,6 +49,8 @@ type TriggerType = "chained_auto" | "hold_for_input";
 function resolveMediaId(sceneKey: string): string {
   switch (sceneKey) {
     case "flashlight_beam":
+      return "tunnel_darkness_01";
+    case "flashlight_scanning":
       return "tunnel_flashlight_01";
     case "generator_area_start":
       return "tunnel_generator_01";
@@ -101,12 +103,11 @@ function resolveTriggerType(mediaId: string): TriggerType {
   // STILL hold steps only — all chained_auto clips are NOT in this set.
   // Keep in sync with STEP_MEDIA_TRIGGER in stepMachine.ts.
   const holdIds = new Set([
-    "tunnel_generator_01",   // step 11 — generator_area_operational STILL
-    "card_joker_01",         // step 13 — joker card STILL
-    "tunnel_transition_01",  // step 17 — tunnel-to-park STILL
-    "park_liminal_01",       // step 24 — liminal park STILL
-    "elevator_entry_01",     // step 27 — elevator entry STILL
-    "hallway_pov_02",        // step 31 — hallway STILL + game_over timer
+    "tunnel_generator_01",   // step 10 — generator STILL
+    "card_joker_01",         // step 11 — joker card STILL
+    "park_liminal_01",       // step 16 — liminal park STILL
+    "elevator_entry_01",     // step 18 — elevator entry STILL
+    "hallway_pov_02",        // step 22 — hallway STILL + acecard gate
     "card_pickup_02",        // acecard flow — card2 STILL
   ]);
   return holdIds.has(mediaId) ? "hold_for_input" : "chained_auto";

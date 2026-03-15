@@ -15,26 +15,26 @@ export type StepMediaEntry = {
 
 /** Canonical per-step media metadata. Step numbers match the server.ts step machine. */
 export const STEP_MEDIA_TRIGGER: Record<number, StepMediaEntry> = {
-  // ── Tunnel sequence ──────────────────────────────────────────────────────────
-  7:  { mediaId: "tunnel_flashlight_01",  triggerType: "chained_auto",    timeoutSeconds: 30 }, // clips chain → generator
-  9:  { mediaId: "tunnel_generator_01",   triggerType: "chained_auto",    timeoutSeconds: 30 }, // generator_area_start clip
-  11: { mediaId: "tunnel_generator_01",   triggerType: "hold_for_input",  timeoutSeconds: 30 }, // generator_area_operational — STILL hold
-  13: { mediaId: "card_joker_01",         triggerType: "hold_for_input",  timeoutSeconds: 30 }, // joker card — STILL hold
-  // ── Park sequence ────────────────────────────────────────────────────────────
-  17: { mediaId: "tunnel_transition_01",  triggerType: "hold_for_input",  timeoutSeconds: 30 }, // transition — STILL hold (start)
-  19: { mediaId: "park_reveal_01",        triggerType: "chained_auto",    timeoutSeconds: 30 },
-  21: { mediaId: "park_walkway_01",       triggerType: "chained_auto",    timeoutSeconds: 30 },
-  23: { mediaId: "park_walkway_02",       triggerType: "chained_auto",    timeoutSeconds: 30 },
-  24: { mediaId: "park_liminal_01",       triggerType: "hold_for_input",  timeoutSeconds: 30 }, // liminal — STILL hold
-  // ── Maintenance sequence ─────────────────────────────────────────────────────
-  25: { mediaId: "maintenance_reveal_01", triggerType: "chained_auto",    timeoutSeconds: 30 }, // maintenance corridor clip
-  26: { mediaId: "shaft_maintenance_01",  triggerType: "chained_auto",    timeoutSeconds: 30 }, // shaft clip → elevator entry STILL
-  27: { mediaId: "elevator_entry_01",     triggerType: "hold_for_input",  timeoutSeconds: 30 }, // elevator entry — STILL hold
-  // ── Elevator/hallway sequence ────────────────────────────────────────────────
-  28: { mediaId: "elevator_inside_01",    triggerType: "chained_auto",    timeoutSeconds: 30 }, // inside clips chain
-  29: { mediaId: "elevator_inside_02",    triggerType: "chained_auto",    timeoutSeconds: 30 },
-  30: { mediaId: "hallway_pov_01",        triggerType: "chained_auto",    timeoutSeconds: 30 }, // hallway clip → hallway_pov_02 STILL
-  31: { mediaId: "hallway_pov_02",        triggerType: "hold_for_input",  timeoutSeconds: 30 }, // hallway_pov_02 — STILL hold + game_over timer
+  // ── Tunnel sequence (flashlight chain) ───────────────────────────────────────
+  8:  { mediaId: "tunnel_darkness_01",   triggerType: "chained_auto",    timeoutSeconds: 11 },
+  9:  { mediaId: "tunnel_flashlight_01", triggerType: "chained_auto",    timeoutSeconds: 16 },
+  10: { mediaId: "tunnel_generator_01",  triggerType: "hold_for_input",  timeoutSeconds: 30 },
+  // ── Card joker → card1 hold ──────────────────────────────────────────────────
+  11: { mediaId: "card_joker_01",        triggerType: "hold_for_input",  timeoutSeconds: 90 },
+  // ── Park sequence (post-WILDCARD1 chain) ─────────────────────────────────────
+  12: { mediaId: "tunnel_transition_01", triggerType: "chained_auto",    timeoutSeconds: 16 },
+  13: { mediaId: "park_reveal_01",       triggerType: "chained_auto",    timeoutSeconds: 16 },
+  14: { mediaId: "park_walkway_01",      triggerType: "chained_auto",    timeoutSeconds: 11 },
+  15: { mediaId: "park_walkway_02",      triggerType: "chained_auto",    timeoutSeconds: 16 },
+  16: { mediaId: "park_liminal_01",      triggerType: "hold_for_input",  timeoutSeconds: 30 },
+  // ── Maintenance → elevator sequence ──────────────────────────────────────────
+  17: { mediaId: "shaft_maintenance_01", triggerType: "chained_auto",    timeoutSeconds: 11 },
+  18: { mediaId: "elevator_entry_01",    triggerType: "hold_for_input",  timeoutSeconds: 30 },
+  // ── Elevator → hallway sequence ──────────────────────────────────────────────
+  19: { mediaId: "elevator_inside_01",   triggerType: "chained_auto",    timeoutSeconds: 6 },
+  20: { mediaId: "elevator_inside_02",   triggerType: "chained_auto",    timeoutSeconds: 16 },
+  21: { mediaId: "hallway_pov_01",       triggerType: "chained_auto",    timeoutSeconds: 11 },
+  22: { mediaId: "hallway_pov_02",       triggerType: "hold_for_input",  timeoutSeconds: 30 },
 };
 
 /** Returns the hold-timeout in seconds for a given step (default 30s). */
@@ -43,8 +43,11 @@ export function getStepTimeoutSeconds(step: number): number {
 }
 
 const STEP_TRANSITIONS: Record<number, number> = {
-  7: 9, 9: 11, 11: 13, 13: 17, 17: 19, 19: 21,
-  21: 23, 23: 24, 24: 25, 25: 26, 26: 27, 27: 28, 28: 29, 29: 30, 30: 31,
+  7: 8, 8: 9, 9: 10, 10: 11,
+  // 11 is terminal — card_collected handler owns progression
+  12: 13, 13: 14, 14: 15, 15: 16, 16: 17, 17: 18, 18: 19,
+  19: 20, 20: 21, 21: 22,
+  // 22 is terminal — acecard gate owns progression
 };
 
 /** Returns the next step in the canonical Act 1 sequence for a given fromStep. */
@@ -80,6 +83,7 @@ export type StepAutoplayAction = {
  * Pure data. No WS or session references. All GM function names are strings.
  */
 export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
+  // ── Tunnel sequence ──────────────────────────────────────────────────────────
   7: {
     autoplayText:
       "[AUTOPLAY_TIMEOUT: No player response. You decide to turn on your flashlight and start scanning the darkness.]",
@@ -87,21 +91,21 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       { fnName: "triggerSceneChange", args: { sceneKey: "flashlight_beam" } },
     ],
   },
+  8: {
+    autoplayText:
+      "[AUTOPLAY: The flashlight beam sweeps deeper into the tunnel.]",
+    gmCalls: [
+      { fnName: "triggerSceneChange", args: { sceneKey: "flashlight_scanning" } },
+    ],
+  },
   9: {
     autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You push farther down the tunnel and a generator comes into view ahead.]",
+      "[AUTOPLAY: Up ahead in the tunnel there is a large industrial generator.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "generator_area_start" } },
     ],
   },
-  11: {
-    autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You walk toward the generator at the end of the tunnel.]",
-    gmCalls: [
-      { fnName: "triggerSceneChange", args: { sceneKey: "generator_area_operational" } },
-    ],
-  },
-  13: {
+  10: {
     autoplayText:
       "[AUTOPLAY_TIMEOUT: No player response. You start the generator, the tunnel lights come on, and something appears on the floor by the machine.]",
     gmCalls: [
@@ -110,77 +114,74 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
     ],
     extra: "card1_auto_pick",
   },
-  17: {
+  // Step 11 is terminal — card_collected handler owns progression past here
+  // ── Park sequence (post-WILDCARD1, triggered by wildcard end timer) ──────────
+  12: {
     autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You keep moving and the tunnel opens toward something impossible ahead.]",
+      "[AUTOPLAY: The tunnel opens into an impossible space ahead.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_transition_reveal" } },
     ],
   },
-  19: {
+  13: {
     autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You step through the breach and the whole park opens up in front of you.]",
+      "[AUTOPLAY: You step into the waterpark. It stretches in every direction.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_entrance" } },
     ],
   },
-  21: {
+  14: {
     autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You follow the walkways deeper into the park.]",
+      "[AUTOPLAY: You follow the walkways deeper into the park.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_walkway" } },
     ],
   },
-  23: {
+  15: {
     autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You pass through the liminal area between the waterpark and the shaft entrance.]",
+      "[AUTOPLAY: You pass through the liminal area toward the far edge of the park.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_liminal" } },
     ],
   },
-  24: {
+  // ── Maintenance → Elevator ───────────────────────────────────────────────────
+  16: {
     autoplayText:
       "[AUTOPLAY_TIMEOUT: No player response. You move toward the maintenance shaft entrance at the far edge of the park.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_shaft_view" } },
     ],
   },
-  25: {
+  17: {
     autoplayText:
-      "[AUTOPLAY: Moving down the maintenance shaft access corridor. The waterpark recedes behind you.]",
-    gmCalls: [
-      { fnName: "triggerSceneChange", args: { sceneKey: "park_shaft_view" } },
-    ],
-  },
-  26: {
-    autoplayText:
-      "[AUTOPLAY: Moving through the shaft access passage. The elevator doors are ahead.]",
+      "[AUTOPLAY: The elevator doors are ahead.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_entry" } },
     ],
   },
-  27: {
+  18: {
     autoplayText:
       "[AUTOPLAY_TIMEOUT: No player response. You step into the elevator and the doors close behind you.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside" } },
     ],
   },
-  28: {
+  // ── Elevator → Hallway ───────────────────────────────────────────────────────
+  19: {
     autoplayText:
       "[AUTOPLAY: The elevator carries you down. Steel walls close in around you.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside_2" } },
     ],
   },
-  29: {
+  20: {
     autoplayText:
       "[AUTOPLAY: Descent continues. The maintenance level comes into view below.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_panel" } },
     ],
   },
-  30: {
+  21: {
     autoplayText:
       "[AUTOPLAY: You reach the maintenance corridor. Something moves at the far end. The clock is running.]",
     gmCalls: [
@@ -188,6 +189,7 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       { fnName: "triggerDreadTimerStart", args: { durationMs: 30_000 } },
       { fnName: "triggerCardDiscovered", args: { cardId: "card2" } },
     ],
-    extra: "hallway_pov_02_all", // runs card2_hunt_and_prewarm + hallway_pov_02_acecard
+    extra: "hallway_pov_02_all",
   },
+  // Step 22 is terminal — acecard gate owns progression past here
 };

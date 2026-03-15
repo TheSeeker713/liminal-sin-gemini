@@ -16,12 +16,9 @@
  */
 export const STEP_KEYWORDS: Record<number, string[]> = {
   7:  ["flashlight", "light", "phone light", "flash", "lighter", "turn on", "can you see", "lamp", "torch"],
-  9:  ["generator", "power", "machine", "engine", "humming", "noise", "that sound", "over there", "what is that"],
-  11: ["start it", "turn it on", "activate", "power up", "switch", "run it", "start the generator", "turn on the generator", "crank"],
-  13: ["card", "joker", "pick up", "grab it", "take it", "floor", "what is that", "pick that up", "reach down"],
-  17: ["forward", "keep going", "move", "walk", "deeper", "go ahead", "keep moving", "push forward", "that way"],
-  24: ["shaft", "maintenance", "go in", "enter", "down there", "ladder", "climb", "descend", "that opening"],
-  27: ["elevator", "get in", "step in", "enter", "go inside", "ride it", "doors", "step inside"],
+  10: ["generator", "power", "machine", "engine", "humming", "noise", "that sound", "over there", "what is that", "start it", "turn it on", "activate", "power up", "switch", "run it", "start the generator", "turn on the generator", "crank"],
+  16: ["shaft", "maintenance", "go in", "enter", "down there", "ladder", "climb", "descend", "that opening", "forward", "keep going", "move", "walk", "deeper", "go ahead", "keep moving", "push forward", "that way"],
+  18: ["elevator", "get in", "step in", "enter", "go inside", "ride it", "doors", "step inside"],
 };
 
 /**

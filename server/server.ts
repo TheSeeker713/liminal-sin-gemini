@@ -384,7 +384,7 @@ wss.on("connection", (ws: WebSocket) => {
 
       wildcardVisionEndTimer = setTimeout(() => {
         if (ws.readyState !== WebSocket.OPEN) return;
-        currentSequenceStep = 17;
+        currentSequenceStep = 12;
         lastPlayerSpeechAt = Date.now();
         ws.send(
           JSON.stringify({
@@ -401,6 +401,9 @@ wss.on("connection", (ws: WebSocket) => {
             ws,
             jasonManager,
           );
+          injectSceneContextIntoJason("tunnel_to_park_transition", jasonManager);
+          startStepTimer(12);
+          keywordListener.updateKeywords(12);
         })().catch((err: Error) => {
           console.error(
             `[WS] wildcard transition follow-through failed for session ${sessionId}:`,
@@ -756,7 +759,7 @@ wss.on("connection", (ws: WebSocket) => {
   const advanceStep = (fromStep: number, reason: "keyword" | "timeout") => {
     if (stepAdvancing) return;
     if (fromStep !== currentSequenceStep) return;
-    if (fromStep >= 31) return; // step 31 terminal — acecard owns progression
+    if (fromStep === 11 || fromStep >= 22) return; // terminal — card hold or acecard gate
     if (ws.readyState !== WebSocket.OPEN) return;
 
     stepAdvancing = true;
@@ -886,7 +889,7 @@ wss.on("connection", (ws: WebSocket) => {
   // the timer is cancelled. If no keyword fires, timer expires and advances.
   const startStepTimer = (step: number) => {
     clearStepTimer();
-    if (step >= 31) return; // step 31 terminal — acecard gate owns timing
+    if (step === 11 || step >= 22) return; // terminal — card hold or acecard gate
     if (!jasonReadyForPlayer || ws.readyState !== WebSocket.OPEN) return;
 
     const timeoutMs = getStepTimeoutSeconds(step) * 1000;
@@ -978,10 +981,12 @@ wss.on("connection", (ws: WebSocket) => {
           sceneChangeCount++;
           // Sync step machine when GM fires flashlight — prevents autoplay from re-firing step 7.
           if ((args.sceneKey as string) === "flashlight_beam" && currentSequenceStep === 7) {
-            currentSequenceStep = 9;
+            currentSequenceStep = 8;
             clearStepTimer();
+            startStepTimer(8);
+            keywordListener.updateKeywords(8);
             if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
-            console.log(`[WS] GM fired flashlight_beam — step synced to 9 for session ${sessionId}`);
+            console.log(`[WS] GM fired flashlight_beam — step synced to 8 for session ${sessionId}`);
           }
         }
         // If acecard keyword timer is already running and the GM calls triggerDreadTimerStart,
@@ -1207,7 +1212,7 @@ wss.on("connection", (ws: WebSocket) => {
           deferGoodEnding: data.cardId === "card2",
         })
           .then(() => {
-            if (data.cardId === "card1") queueWildcardVisionPlayback();
+            if (data.cardId === "card1") playCard1PickupThenQueueWildcard();
             if (data.cardId === "card2") queueWildcardGoodEndingPlayback();
           })
           .catch((err: Error) => {
