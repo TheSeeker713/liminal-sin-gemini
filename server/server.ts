@@ -258,13 +258,7 @@ wss.on("connection", (ws: WebSocket) => {
   } | null = null;
   let wildcardVisionStartTimer: ReturnType<typeof setTimeout> | null = null;
   let wildcardVisionEndTimer: ReturnType<typeof setTimeout> | null = null;
-  let wildcardGameOverPreparing = false;
   let wildcardGameOverTriggered = false;
-  let preparedWildcardGameOver: {
-    imageBytes: string;
-    videoUri: string | null;
-  } | null = null;
-  let wildcardGameOverStartTimer: ReturnType<typeof setTimeout> | null = null;
   let wildcardGameOverEndTimer: ReturnType<typeof setTimeout> | null = null;
   let wildcardGoodEndingPreparing = false;
   let wildcardGoodEndingTriggered = false;
@@ -294,10 +288,6 @@ wss.on("connection", (ws: WebSocket) => {
     if (wildcardVisionEndTimer) {
       clearTimeout(wildcardVisionEndTimer);
       wildcardVisionEndTimer = null;
-    }
-    if (wildcardGameOverStartTimer) {
-      clearTimeout(wildcardGameOverStartTimer);
-      wildcardGameOverStartTimer = null;
     }
     if (wildcardGameOverEndTimer) {
       clearTimeout(wildcardGameOverEndTimer);
@@ -411,13 +401,6 @@ wss.on("connection", (ws: WebSocket) => {
             ws,
             jasonManager,
           );
-          await handleGmFunctionCall(
-            sessionId,
-            "triggerVideoGen",
-            { sceneKey: "tunnel_to_park_transition" },
-            ws,
-            jasonManager,
-          );
         })().catch((err: Error) => {
           console.error(
             `[WS] wildcard transition follow-through failed for session ${sessionId}:`,
@@ -477,21 +460,13 @@ wss.on("connection", (ws: WebSocket) => {
   };
 
   const waitForPreparedWildcard = async (
-    kind: "wildcard_game_over" | "wildcard_good_ending",
+    kind: "wildcard_good_ending",
     timeoutMs = 25_000,
     pollMs = 500,
   ): Promise<boolean> => {
     const started = Date.now();
     while (Date.now() - started < timeoutMs) {
       if (
-        kind === "wildcard_game_over" &&
-        preparedWildcardGameOver &&
-        preparedWildcardGameOver.videoUri
-      ) {
-        return true;
-      }
-      if (
-        kind === "wildcard_good_ending" &&
         preparedWildcardGoodEnding &&
         preparedWildcardGoodEnding.videoUri
       ) {
@@ -502,39 +477,10 @@ wss.on("connection", (ws: WebSocket) => {
     return false;
   };
 
+  // WILDCARD2 (game_over) is frontend-only — no AI generation needed.
+  // Keep the function as a no-op so existing callers don't break.
   const maybePrepareWildcardGameOver = () => {
-    if (wildcardGameOverPreparing || preparedWildcardGameOver) {
-      return;
-    }
-
-    wildcardGameOverPreparing = true;
-    console.log(
-      `[WS] Starting wildcard_game_over prep for session ${sessionId}`,
-    );
-
-    void (async () => {
-      const imageBytes = await generateSceneImage("wildcard_game_over");
-      if (!imageBytes) {
-        wildcardGameOverPreparing = false;
-        return;
-      }
-
-      const videoUri = await generateSceneVideo("wildcard_game_over", imageBytes);
-      preparedWildcardGameOver = {
-        imageBytes,
-        videoUri,
-      };
-      wildcardGameOverPreparing = false;
-      console.log(
-        `[WS] wildcard_game_over prep ready for session ${sessionId}`,
-      );
-    })().catch((err: Error) => {
-      wildcardGameOverPreparing = false;
-      console.error(
-        `[WS] wildcard_game_over prep failed for session ${sessionId}:`,
-        err.message,
-      );
-    });
+    // No-op: game_over uses frontend effects only (glitches, screams, game_over event).
   };
 
   const maybePrepareWildcardGoodEnding = () => {
@@ -587,6 +533,8 @@ wss.on("connection", (ws: WebSocket) => {
     }, 90_000);
   };
 
+  // WILDCARD2 (game_over) — frontend-only: glitch effects, slotsky, then game_over.
+  // No AI-generated scene_image or scene_video.
   const emitWildcardGameOverBranch = async () => {
     if (wildcardGameOverTriggered) {
       if (ws.readyState === WebSocket.OPEN) {
@@ -596,16 +544,6 @@ wss.on("connection", (ws: WebSocket) => {
     }
 
     wildcardGameOverTriggered = true;
-    if (!preparedWildcardGameOver) {
-      maybePrepareWildcardGameOver();
-      const ready = await waitForPreparedWildcard("wildcard_game_over");
-      if (!ready) {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "game_over" }));
-        }
-        return;
-      }
-    }
 
     if (ws.readyState !== WebSocket.OPEN) {
       return;
@@ -631,56 +569,12 @@ wss.on("connection", (ws: WebSocket) => {
       }),
     );
 
-    wildcardGameOverStartTimer = setTimeout(() => {
-      if (ws.readyState !== WebSocket.OPEN || !preparedWildcardGameOver) return;
-
-      ws.send(
-        JSON.stringify({
-          type: "scene_change",
-          payload: { sceneKey: "wildcard_game_over" },
-        }),
-      );
-      ws.send(
-        JSON.stringify({
-          type: "scene_image",
-          agent: "gm",
-          sessionId,
-          payload: {
-            sceneKey: "wildcard_game_over",
-            mediaId: "wildcard_game_over",
-            triggerType: "hold_for_input",
-            timeoutSeconds: 8,
-            data: preparedWildcardGameOver.imageBytes,
-          },
-          timestamp: Date.now(),
-        }),
-      );
-
-      if (preparedWildcardGameOver.videoUri) {
-        ws.send(
-          JSON.stringify({
-            type: "scene_video",
-            agent: "gm",
-            sessionId,
-            payload: {
-              sceneKey: "wildcard_game_over",
-              mediaId: "wildcard_game_over",
-              triggerType: "hold_for_input",
-              timeoutSeconds: 8,
-              audioMode: "native_audio",
-              url: preparedWildcardGameOver.videoUri,
-            },
-            timestamp: Date.now(),
-          }),
-        );
+    // Short delay for frontend glitch effects, then send game_over
+    wildcardGameOverEndTimer = setTimeout(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "game_over" }));
       }
-
-      wildcardGameOverEndTimer = setTimeout(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "game_over" }));
-        }
-      }, 8_500);
-    }, 700);
+    }, 3_000);
   };
 
   const queueWildcardGoodEndingPlayback = async () => {
@@ -785,13 +679,6 @@ wss.on("connection", (ws: WebSocket) => {
       await handleGmFunctionCall(
         sessionId,
         "triggerSceneChange",
-        { sceneKey: "card1_pickup_pov" },
-        ws,
-        jasonManager,
-      );
-      await handleGmFunctionCall(
-        sessionId,
-        "triggerVideoGen",
         { sceneKey: "card1_pickup_pov" },
         ws,
         jasonManager,
@@ -1080,7 +967,7 @@ wss.on("connection", (ws: WebSocket) => {
         // Prevents the GM from firing Beat 2 scene changes during Beat 1 darkness.
         if (
           !gmGated &&
-          (name === "triggerSceneChange" || name === "triggerVideoGen")
+          name === "triggerSceneChange"
         ) {
           console.log(`[GM] ${name} blocked pre-intro - session=${sessionId}`);
           gmManager.sendToolResponse(id, name);

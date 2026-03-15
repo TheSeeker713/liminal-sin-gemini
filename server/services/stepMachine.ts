@@ -85,7 +85,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You decide to turn on your flashlight and start scanning the darkness.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "flashlight_beam" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "flashlight_beam" } },
     ],
   },
   9: {
@@ -93,7 +92,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You push farther down the tunnel and a generator comes into view ahead.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "generator_area_start" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "generator_area_start" } },
     ],
   },
   11: {
@@ -101,7 +99,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You walk toward the generator at the end of the tunnel.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "generator_area_operational" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "generator_area_operational" } },
     ],
   },
   13: {
@@ -118,7 +115,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You keep moving and the tunnel opens toward something impossible ahead.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_transition_reveal" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "park_transition_reveal" } },
     ],
   },
   19: {
@@ -126,7 +122,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You step through the breach and the whole park opens up in front of you.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_entrance" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "park_entrance" } },
     ],
   },
   21: {
@@ -134,7 +129,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You follow the walkways deeper into the park.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_walkway" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "park_walkway" } },
     ],
   },
   23: {
@@ -142,7 +136,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You pass through the liminal area between the waterpark and the shaft entrance.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_liminal" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "park_liminal" } },
     ],
   },
   24: {
@@ -150,7 +143,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You move toward the maintenance shaft entrance at the far edge of the park.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_shaft_view" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "park_shaft_view" } },
     ],
   },
   25: {
@@ -158,7 +150,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY: Moving down the maintenance shaft access corridor. The waterpark recedes behind you.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_shaft_view" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "park_shaft_view" } },
     ],
   },
   26: {
@@ -166,7 +157,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY: Moving through the shaft access passage. The elevator doors are ahead.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_entry" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "maintenance_entry" } },
     ],
   },
   27: {
@@ -174,7 +164,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You step into the elevator and the doors close behind you.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "elevator_inside" } },
     ],
   },
   28: {
@@ -182,7 +171,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY: The elevator carries you down. Steel walls close in around you.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside_2" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "elevator_inside_2" } },
     ],
   },
   29: {
@@ -190,7 +178,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY: Descent continues. The maintenance level comes into view below.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_panel" } },
-      { fnName: "triggerVideoGen",    args: { sceneKey: "maintenance_panel" } },
     ],
   },
   30: {

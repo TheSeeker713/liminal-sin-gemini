@@ -1,9 +1,4 @@
 import { WebSocket } from "ws";
-import { randomUUID } from "crypto";
-import { tmpdir } from "os";
-import { join } from "path";
-import { promises as fs } from "fs";
-import { spawn } from "child_process";
 import {
   updateTrustLevel,
   updateFearIndex,
@@ -14,10 +9,9 @@ import {
   getOrCreateSession,
 } from "./db";
 import { generateSceneImage, getCachedImage } from "./imagen";
-import { generateSceneVideo } from "./veo";
 import { startDreadTimerWithCallback } from "./dreadTimer";
 import type { LiveSessionManager } from "./gemini";
-import { SCENE_VISUAL_CONTEXT, SCENE_FRAME_TIMESTAMPS } from "./keywordLibrary";
+import { SCENE_VISUAL_CONTEXT } from "./keywordLibrary";
 
 // Per-session throttle map — prevents rapid-fire hud_glitch broadcasts (e.g. GROUP audience spam).
 const lastGlitchMs = new Map<string, number>();
@@ -51,7 +45,6 @@ const MORPHIC_CLIP_IDS = new Set([
 ]);
 
 type TriggerType = "chained_auto" | "hold_for_input";
-type AudioMode = "native_audio" | "muted" | "silent_source";
 
 function resolveMediaId(sceneKey: string): string {
   switch (sceneKey) {
@@ -124,109 +117,6 @@ function resolveTimeoutSeconds(mediaId: string): number {
     return 15; // urgent 15s window for card2 acecard flow
   }
   return 30; // default for all STILL holds and chained clips
-}
-
-function resolveAudioMode(mediaId: string): AudioMode {
-  if (mediaId === "tunnel_darkness_01") {
-    return "muted";
-  }
-  return "native_audio";
-}
-
-async function downloadVideoToTempFile(videoUrl: string): Promise<string> {
-  const response = await fetch(videoUrl);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download video: ${response.status} ${response.statusText}`,
-    );
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  const filePath = join(tmpdir(), `ls-video-${randomUUID()}.mp4`);
-  await fs.writeFile(filePath, Buffer.from(arrayBuffer));
-  return filePath;
-}
-
-async function extractFrameAtSecond(
-  videoPath: string,
-  seconds: number,
-): Promise<string> {
-  const outPath = join(tmpdir(), `ls-frame-${randomUUID()}.jpg`);
-
-  await new Promise<void>((resolve, reject) => {
-    const ffmpeg = spawn(
-      "ffmpeg",
-      [
-        "-y",
-        "-ss",
-        seconds.toFixed(2),
-        "-i",
-        videoPath,
-        "-frames:v",
-        "1",
-        "-q:v",
-        "2",
-        outPath,
-      ],
-      { stdio: ["ignore", "pipe", "pipe"] },
-    );
-
-    let stderr = "";
-    ffmpeg.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-
-    ffmpeg.on("error", (err) => {
-      reject(new Error(`ffmpeg execution failed: ${err.message}`));
-    });
-
-    ffmpeg.on("close", (code) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-      reject(new Error(`ffmpeg exited with code ${code}. ${stderr.trim()}`));
-    });
-  });
-
-  try {
-    const frameBuffer = await fs.readFile(outPath);
-    return frameBuffer.toString("base64");
-  } finally {
-    await fs.rm(outPath, { force: true });
-  }
-}
-
-async function feedVideoFramesToJason(
-  videoUrl: string,
-  sceneKey: string,
-  jasonManager: LiveSessionManager,
-): Promise<void> {
-  const videoPath = await downloadVideoToTempFile(videoUrl);
-  try {
-    // Use per-video timestamps from keywordLibrary, fall back to defaults
-    const mediaId = resolveMediaId(sceneKey);
-    const defaultTs = sceneKey.includes("wildcard")
-      ? [1.0, 4.0, 7.0]
-      : [1.0, 3.0, 5.0];
-    const timestamps = SCENE_FRAME_TIMESTAMPS[mediaId] ?? defaultTs;
-    for (const ts of timestamps) {
-      const frame = await extractFrameAtSecond(videoPath, ts);
-      jasonManager.sendFrame(frame);
-    }
-
-    // Use per-scene visual context from keywordLibrary, fall back to generic
-    const context = SCENE_VISUAL_CONTEXT[sceneKey];
-    if (context) {
-      jasonManager.sendText(context);
-    } else {
-      jasonManager.sendText(
-        `[VISUAL_CONTEXT: You just watched moving footage through your smartglasses from scene ${sceneKey}. If anything impossible moved on its own, react immediately in character with one sharp spoken line.]`,
-      );
-    }
-  } finally {
-    await fs.rm(videoPath, { force: true });
-  }
 }
 
 /** Call on WebSocket close to reclaim memory for the ended session. */
@@ -452,82 +342,6 @@ export async function handleGmFunctionCall(
         type: "slotsky_trigger",
         payload: { anomalyType },
       };
-      break;
-    }
-
-    case "triggerVideoGen": {
-      const veoSceneKey = args.sceneKey as string;
-      const mediaId = resolveMediaId(veoSceneKey);
-      const triggerType = resolveTriggerType(mediaId);
-      const timeoutSeconds = resolveTimeoutSeconds(mediaId);
-      const audioMode = resolveAudioMode(mediaId);
-      wsMessage = {
-        type: "video_gen_started",
-        payload: {
-          sceneKey: veoSceneKey,
-          mediaId,
-          triggerType,
-          timeoutSeconds,
-          audioMode,
-        },
-      };
-      // Fire Veo 3.1 Fast async — uses the last Imagen 4 still for this session.
-      // The still image must already have been generated by triggerSceneChange.
-      // We re-generate the image bytes here (cached by Imagen if called recently)
-      // to pass as the reference frame for Veo.
-      void (async () => {
-        try {
-          const base64Jpeg = await generateSceneImage(veoSceneKey);
-          if (!base64Jpeg) {
-            console.warn(
-              `[GM] No image available for Veo — sceneKey="${veoSceneKey}". Skipping video gen.`,
-            );
-            return;
-          }
-          if (jasonManager) {
-            // Give Jason the pre-video still so his visual state matches the clip start.
-            jasonManager.sendFrame(base64Jpeg);
-          }
-          const videoUri = await generateSceneVideo(veoSceneKey, base64Jpeg);
-          if (videoUri && clientWs.readyState === WebSocket.OPEN) {
-            clientWs.send(
-              JSON.stringify({
-                type: "scene_video",
-                agent: "gm",
-                sessionId,
-                payload: {
-                  sceneKey: veoSceneKey,
-                  mediaId,
-                  triggerType,
-                  timeoutSeconds,
-                  audioMode,
-                  url: videoUri,
-                },
-                timestamp: Date.now(),
-              }),
-            );
-            console.log(
-              `[GM] Broadcast scene_video — sceneKey="${veoSceneKey}"`,
-            );
-            if (jasonManager) {
-              void feedVideoFramesToJason(
-                videoUri,
-                veoSceneKey,
-                jasonManager,
-              ).catch((err: Error) => {
-                console.warn(
-                  `[GM] Jason visual video feed failed for sceneKey="${veoSceneKey}": ${err.message}`,
-                );
-              });
-            }
-          }
-        } catch (err) {
-          console.error(
-            `[GM] Veo pipeline failed for sceneKey="${veoSceneKey}":`,
-            (err as Error).message,
-          );
-        }
-      })();
       break;
     }
 

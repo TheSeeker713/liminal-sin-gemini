@@ -81,20 +81,6 @@ export const gameMasterTools: Tool[] = [
         }
       },
       {
-        name: 'triggerVideoGen',
-        description: 'Animate the current static scene image into a short video clip using Veo 3.1 Fast. Call this AFTER triggerSceneChange when you want the scene to feel alive. The still image is already being shown to the player — this adds movement. Non-blocking: the still image stays visible while the video generates.',
-        parameters: {
-          type: Type.OBJECT,
-          properties: {
-            sceneKey: {
-              type: Type.STRING,
-              description: 'The same sceneKey used in the preceding triggerSceneChange call. Must match exactly so the animation prompt aligns with the still image.'
-            }
-          },
-          required: ['sceneKey']
-        }
-      },
-      {
         name: 'triggerSlotsky',
         description: 'Trigger a Slotsky anomaly event. Use when boredom is detected for 2+ consecutive reads, or when fourth_wall_count >= 3. anomaly_cards / anomaly_bells / anomaly_lights are subtle escalations; anomaly_geometry removes an exit; fourth_wall_correction fires the full three-bells + strobe sequence at count >= 3; found_transition fires when all characters reach FOUND state.',
         parameters: {
