@@ -388,6 +388,12 @@ wss.on("connection", (ws: WebSocket) => {
         lastPlayerSpeechAt = Date.now();
         ws.send(
           JSON.stringify({
+            type: "slotsky_trigger",
+            payload: { anomalyType: "wildcard_vision_feed_end" },
+          }),
+        );
+        ws.send(
+          JSON.stringify({
             type: "hud_glitch",
             intensity: "medium",
             duration_ms: 900,
