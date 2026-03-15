@@ -16,7 +16,7 @@
 | Item | Value |
 |---|---|
 | Cloud Run URL | `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| Live revision | `liminal-sin-server-00050-r2p` — serving 100% traffic |
+| Live revision | `liminal-sin-server-00059-tmd` — serving 100% traffic |
 | GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
 | Org | `digitalartifact11-org` (165684325504) |
 | GM model | `gemini-live-2.5-flash-native-audio` (via `GM_LIVE_MODEL` env var) |
@@ -116,7 +116,7 @@
 
 ## Backend Status — 100% COMPLETE (March 14, 2026)
 
-Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00050-r2p`.
+Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00059-tmd`.
 
 | System | Status |
 |---|---|
@@ -125,7 +125,8 @@ Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-se
 | Jason NPC (Gemini Live) | ✅ Live — Enceladus voice |
 | Audrey NPC (echo) | ✅ Live — Aoede voice, trust-gated |
 | Game Master (function calls only) | ✅ Live |
-| Step machine + autoplay | ✅ Live — 16 steps, correct trigger types & sceneKeys |
+| Step machine + autoplay | ✅ Live — 16 steps, wall-clock timers per step |
+| Keyword detection | ✅ Live — dedicated Gemini Live session, per-step keyword lists |
 | Acecard keyword gate | ✅ Live — 30s window + 15s card2 timer |
 | Dread timer | ✅ Live — callback mode |
 | Wildcard vision feed pipeline | ✅ Live — Imagen edit → Veo → playback |
@@ -135,7 +136,7 @@ Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-se
 | /debug/fire-gm-event | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /debug/test-wildcard-vision | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /log-client-error | ✅ Live |
-| Cloud Run | ✅ revision 00050-r2p |
+| Cloud Run | ✅ revision 00059-tmd |
 
 ---
 
@@ -206,3 +207,29 @@ Zero TypeScript errors. Zero ESLint errors. Zero warnings.
 - **CRITICAL architecture gap closed:** Frontend now loads Morphic stills/clips from GCS on `scene_change`, not just from base64 `scene_image`.
 - **Full FE + BE audit completed.** Backend: 100% production-ready, zero critical bugs. Frontend: 100% event contract compliance, zero TS/ESLint errors.
 - **Full audit report written** to `FE_BE_FULL_AUDIT.txt` in the frontend workspace.
+
+---
+
+## Status Delta — March 15, 2026 (Keyword Detection + Wall-Clock Timers)
+
+- **CRITICAL architecture fix: silence-based timer replaced with wall-clock timers.** Old system used `lastPlayerSpeechAt = Date.now()` on every `player_speech` — ANY speech reset the 30s autoplay timer indefinitely, killing immersion. New system uses `setTimeout` per step that runs independently of player speech.
+- **Keyword detection system implemented.** Dedicated 4th Gemini Live session (`KeywordListener`) listens to player audio and detects per-step keywords via Gemini function calling. Keywords in `keywordLibrary.ts` — steps 7, 9, 11, 13, 17, 24, 27 have active keyword lists.
+- **Unified `advanceStep()` function** with mutex prevents double-fire from keyword + timer race conditions. Both keyword listener callback and wall-clock timer call `advanceStep(step, reason)`.
+- **Jason scene context injection.** `injectSceneContextIntoJason()` gives Jason immediate per-scene visual awareness on every step advance. `feedVideoFramesToJason()` now uses per-video frame timestamps and per-scene context from `keywordLibrary.ts`.
+- **`autoplay_advance` event now includes `reason` field** (`"keyword"` or `"timeout"`) for frontend debugging visibility.
+- TSC: EXIT:0. ESLint: EXIT:0. Deployed at revision `liminal-sin-server-00059-tmd`. Pushed to main (`28e7059`).
+
+### New Files
+
+| File | Purpose |
+|---|---|
+| `server/services/keywordLibrary.ts` | Per-step keywords, per-scene visual context for Jason, per-video frame timestamps |
+| `server/services/keywordListener.ts` | `KeywordListener` class — dedicated Gemini Live session for keyword detection via function calling |
+
+### Modified Files
+
+| File | Change |
+|---|---|
+| `server/services/gemini.ts` | Added `connectWithTools()` method + `Tool` import for custom-tool Live sessions |
+| `server/services/gameMaster.ts` | Per-scene Jason context injection (`injectSceneContextIntoJason`), per-video frame timestamps |
+| `server/server.ts` | Wall-clock `startStepTimer()`, unified `advanceStep()` with mutex, keyword listener wiring, removed silence-based interval timer |
