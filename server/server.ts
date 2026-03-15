@@ -805,11 +805,18 @@ wss.on("connection", (ws: WebSocket) => {
 
         const action = STEP_AUTOPLAY_ACTIONS[fromStep];
         if (action) {
-          jasonManager.sendText(
-            reason === "keyword"
-              ? action.autoplayText.replace("[AUTOPLAY_TIMEOUT: No player response. ", "[KEYWORD_TRIGGERED: ")
-              : action.autoplayText,
-          );
+          // Only inject autoplay narration into Jason on hold_for_input steps
+          // (where the player is expected to speak). Chained_auto steps fire
+          // in rapid succession — flooding Jason with sendText calls prevents
+          // him from hearing/responding to the player's actual voice.
+          const stepMeta = STEP_MEDIA_TRIGGER[fromStep];
+          if (!stepMeta || stepMeta.triggerType === "hold_for_input" || reason === "keyword") {
+            jasonManager.sendText(
+              reason === "keyword"
+                ? action.autoplayText.replace("[AUTOPLAY_TIMEOUT: No player response. ", "[KEYWORD_TRIGGERED: ")
+                : action.autoplayText,
+            );
+          }
           for (let i = 0; i < action.gmCalls.length; i++) {
             const call = action.gmCalls[i];
             await handleGmFunctionCall(
@@ -827,9 +834,11 @@ wss.on("connection", (ws: WebSocket) => {
             }
           }
 
-          // Inject scene visual context into Jason for the new scene
+          // Inject scene visual context into Jason only on hold_for_input steps.
+          // Chained_auto steps advance too rapidly — injecting context for each
+          // brief clip prevents Jason from responding to the player.
           const sceneCall = action.gmCalls.find(c => c.fnName === "triggerSceneChange");
-          if (sceneCall) {
+          if (sceneCall && (!stepMeta || stepMeta.triggerType === "hold_for_input")) {
             injectSceneContextIntoJason(sceneCall.args.sceneKey as string, jasonManager);
           }
 
