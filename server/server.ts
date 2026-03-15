@@ -914,7 +914,8 @@ wss.on("connection", (ws: WebSocket) => {
               ? action.autoplayText.replace("[AUTOPLAY_TIMEOUT: No player response. ", "[KEYWORD_TRIGGERED: ")
               : action.autoplayText,
           );
-          for (const call of action.gmCalls) {
+          for (let i = 0; i < action.gmCalls.length; i++) {
+            const call = action.gmCalls[i];
             await handleGmFunctionCall(
               sessionId,
               call.fnName,
@@ -922,6 +923,12 @@ wss.on("connection", (ws: WebSocket) => {
               ws,
               jasonManager,
             );
+            // 120ms gap between WS sends so React 18+ automatic batching
+            // doesn't swallow the scene_change event when the next event
+            // (video_gen_started / card_discovered) overwrites lastEvent.
+            if (i < action.gmCalls.length - 1) {
+              await new Promise((r) => setTimeout(r, 120));
+            }
           }
 
           // Inject scene visual context into Jason for the new scene
