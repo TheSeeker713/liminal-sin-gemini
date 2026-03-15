@@ -17,6 +17,7 @@ import { generateSceneImage, getCachedImage } from "./imagen";
 import { generateSceneVideo } from "./veo";
 import { startDreadTimerWithCallback } from "./dreadTimer";
 import type { LiveSessionManager } from "./gemini";
+import { SCENE_VISUAL_CONTEXT, SCENE_FRAME_TIMESTAMPS } from "./keywordLibrary";
 
 // Per-session throttle map — prevents rapid-fire hud_glitch broadcasts (e.g. GROUP audience spam).
 const lastGlitchMs = new Map<string, number>();
@@ -203,17 +204,26 @@ async function feedVideoFramesToJason(
 ): Promise<void> {
   const videoPath = await downloadVideoToTempFile(videoUrl);
   try {
-    const timestamps = sceneKey.includes("wildcard")
+    // Use per-video timestamps from keywordLibrary, fall back to defaults
+    const mediaId = resolveMediaId(sceneKey);
+    const defaultTs = sceneKey.includes("wildcard")
       ? [1.0, 4.0, 7.0]
       : [1.0, 3.0, 5.0];
+    const timestamps = SCENE_FRAME_TIMESTAMPS[mediaId] ?? defaultTs;
     for (const ts of timestamps) {
       const frame = await extractFrameAtSecond(videoPath, ts);
       jasonManager.sendFrame(frame);
     }
 
-    jasonManager.sendText(
-      `[VISUAL_CONTEXT: You just watched moving footage through your smartglasses from scene ${sceneKey}. If anything impossible moved on its own, react immediately in character with one sharp spoken line.]`,
-    );
+    // Use per-scene visual context from keywordLibrary, fall back to generic
+    const context = SCENE_VISUAL_CONTEXT[sceneKey];
+    if (context) {
+      jasonManager.sendText(context);
+    } else {
+      jasonManager.sendText(
+        `[VISUAL_CONTEXT: You just watched moving footage through your smartglasses from scene ${sceneKey}. If anything impossible moved on its own, react immediately in character with one sharp spoken line.]`,
+      );
+    }
   } finally {
     await fs.rm(videoPath, { force: true });
   }
@@ -222,6 +232,21 @@ async function feedVideoFramesToJason(
 /** Call on WebSocket close to reclaim memory for the ended session. */
 export function clearGlitchThrottle(sessionId: string): void {
   lastGlitchMs.delete(sessionId);
+}
+
+/**
+ * Injects scene-specific visual context into Jason when a new scene fires.
+ * Called by server.ts after step progression (keyword or timer).
+ */
+export function injectSceneContextIntoJason(
+  sceneKey: string,
+  jasonManager: LiveSessionManager,
+): void {
+  const context = SCENE_VISUAL_CONTEXT[sceneKey];
+  if (context) {
+    jasonManager.sendText(context);
+    console.log(`[GM] Injected scene context into Jason — sceneKey="${sceneKey}"`);
+  }
 }
 
 /**

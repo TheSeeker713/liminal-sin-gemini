@@ -16,6 +16,7 @@ import { getAudreySystemPrompt } from "./services/npc/audrey";
 import {
   handleGmFunctionCall,
   clearGlitchThrottle,
+  injectSceneContextIntoJason,
 } from "./services/gameMaster";
 import {
   prewarmImageCache,
@@ -38,6 +39,7 @@ import {
   startCardPickup02Timer,
   clearAcecardTimers,
 } from "./services/acecardGate";
+import { KeywordListener } from "./services/keywordListener";
 
 const app = express();
 const server = http.createServer(app);
@@ -230,16 +232,17 @@ wss.on("connection", (ws: WebSocket) => {
   const jasonManager = new LiveSessionManager(); // NPC - speaks, audio out, Enceladus voice
   const gmManager = new LiveSessionManager(gmLiveModel); // GM - silent, function calls only
   const audreyManager = new LiveSessionManager(); // NPC - single echo, Aoede voice
+  const keywordListener = new KeywordListener(gmLiveModel); // Keyword detector - listens for per-step keywords
   let jasonIntroFired = false; // Gates Jason's first line until frontend sends intro_complete
   let gmGated = false; // Gates GM scene/video calls until intro_complete is received
   let jasonReadyForPlayer = false; // Gates player audio to Jason until landing monologue completes
   let jasonReadyTimer: ReturnType<typeof setTimeout> | null = null; // Flips jasonReadyForPlayer after ~18s
   let sceneChangeCount = 0; // Tracks GM-triggered scene changes (used by hint timer)
   let hintTimer: ReturnType<typeof setTimeout> | null = null; // B11: flashlight hint fallback
-  let flashlightAutoFireTimer: ReturnType<typeof setTimeout> | null = null; // 15s wall-clock flashlight failsafe
   let npcIdleNudgeTimer: ReturnType<typeof setInterval> | null = null; // 9s silence nudge loop
-  let autoplayAdvanceTimer: ReturnType<typeof setInterval> | null = null; // per-step inactivity auto-advance loop
-  let lastPlayerSpeechAt = Date.now();
+  let stepWallClockTimer: ReturnType<typeof setTimeout> | null = null; // per-step wall-clock auto-advance (NOT silence-based)
+  let lastPlayerSpeechAt = Date.now(); // Used ONLY for idle nudge — NOT for step advancement
+  let stepAdvancing = false; // Mutex — prevents double-fire from keyword + timer race
   let currentSequenceStep = 7; // Phase 4 interaction-open baseline step
   let card1Collected = false;
   let card1AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
@@ -804,10 +807,10 @@ wss.on("connection", (ws: WebSocket) => {
     });
   };
 
-  const clearFlashlightTimer = () => {
-    if (flashlightAutoFireTimer) {
-      clearTimeout(flashlightAutoFireTimer);
-      flashlightAutoFireTimer = null;
+  const clearStepTimer = () => {
+    if (stepWallClockTimer) {
+      clearTimeout(stepWallClockTimer);
+      stepWallClockTimer = null;
     }
   };
 
@@ -816,11 +819,7 @@ wss.on("connection", (ws: WebSocket) => {
       clearInterval(npcIdleNudgeTimer);
       npcIdleNudgeTimer = null;
     }
-    if (autoplayAdvanceTimer) {
-      clearInterval(autoplayAdvanceTimer);
-      autoplayAdvanceTimer = null;
-    }
-    clearFlashlightTimer();
+    clearStepTimer();
   };
 
   const startInteractionTimers = () => {
@@ -860,125 +859,151 @@ wss.on("connection", (ws: WebSocket) => {
       );
     }, 9_000);
 
-    // ── Flashlight auto-fire: deterministic 15s wall-clock timer ──────────
-    // The GM is supposed to detect flashlight cues from player audio and call
-    // triggerSceneChange, but it's unreliable. Meanwhile the autoplay silence
-    // timer can't fire because the player IS speaking. This timer fires the
-    // flashlight scene change regardless of speech activity.
-    if (currentSequenceStep === 7) {
-      flashlightAutoFireTimer = setTimeout(() => {
-        flashlightAutoFireTimer = null;
-        if (currentSequenceStep !== 7 || ws.readyState !== WebSocket.OPEN) return;
-        console.log(`[WS] Flashlight auto-fire — 15s wall-clock timer hit for session ${sessionId}`);
-        currentSequenceStep = 9;
-        lastPlayerSpeechAt = Date.now();
-        if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
-        void (async () => {
-          const action = STEP_AUTOPLAY_ACTIONS[7];
-          if (!action) return;
-          jasonManager.sendText(action.autoplayText);
-          for (const call of action.gmCalls) {
-            await handleGmFunctionCall(sessionId, call.fnName, call.args, ws, jasonManager);
-          }
-        })().catch((err: Error) => {
-          console.error(`[WS] flashlight auto-fire failed for session ${sessionId}:`, err.message);
-        });
-      }, 15_000);
+    // Start the wall-clock timer for the current step
+    startStepTimer(currentSequenceStep);
+  };
+
+  // ── advanceStep: unified step progression (keyword OR timer) ────────────
+  // Both the keyword listener callback and the wall-clock timer call this.
+  // The stepAdvancing mutex prevents double-fire from race conditions.
+  const advanceStep = (fromStep: number, reason: "keyword" | "timeout") => {
+    if (stepAdvancing) return;
+    if (fromStep !== currentSequenceStep) return;
+    if (fromStep >= 31) return; // step 31 terminal — acecard owns progression
+    if (ws.readyState !== WebSocket.OPEN) return;
+
+    stepAdvancing = true;
+    clearStepTimer();
+
+    const toStep = getNextAutoplayStep(fromStep);
+    currentSequenceStep = toStep;
+    lastPlayerSpeechAt = Date.now(); // Reset idle nudge baseline
+
+    console.log(
+      `[WS] Step advance: ${fromStep} → ${toStep} (${reason}) for session ${sessionId}`,
+    );
+
+    // Clear hint timer if flashlight just fired
+    if (fromStep === 7) {
+      if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
     }
 
-    autoplayAdvanceTimer = setInterval(() => {
-      if (!jasonReadyForPlayer || ws.readyState !== WebSocket.OPEN) return;
-      const secondsSilent = Math.floor(
-        (Date.now() - lastPlayerSpeechAt) / 1000,
-      );
-      const holdTimeoutSeconds = getStepTimeoutSeconds(currentSequenceStep);
-      if (secondsSilent < holdTimeoutSeconds) return;
+    ws.send(
+      JSON.stringify({
+        type: "autoplay_advance",
+        payload: {
+          fromStep,
+          toStep,
+          mediaId: STEP_MEDIA_TRIGGER[fromStep]?.mediaId ?? null,
+          triggerType:
+            STEP_MEDIA_TRIGGER[fromStep]?.triggerType ?? "hold_for_input",
+          timeoutSeconds: getStepTimeoutSeconds(fromStep),
+          reason,
+        },
+      }),
+    );
 
-      void (async () => {
-        const fromStep = currentSequenceStep;
-        // Step 31 is the terminal advance node — acecard keyword timer owns all progression from here.
-        if (fromStep >= 31) return;
-        const toStep = getNextAutoplayStep(fromStep);
-        currentSequenceStep = toStep;
-        lastPlayerSpeechAt = Date.now();
+    void (async () => {
+      try {
+        if (!gmGated) { stepAdvancing = false; startStepTimer(toStep); return; }
 
-        ws.send(
-          JSON.stringify({
-            type: "autoplay_advance",
-            payload: {
-              fromStep,
-              toStep,
-              mediaId: STEP_MEDIA_TRIGGER[fromStep]?.mediaId ?? null,
-              triggerType:
-                STEP_MEDIA_TRIGGER[fromStep]?.triggerType ?? "hold_for_input",
-              timeoutSeconds: holdTimeoutSeconds,
-              reason: "timeout",
-            },
-          }),
-        );
-
-        if (!gmGated) return;
         const action = STEP_AUTOPLAY_ACTIONS[fromStep];
-        if (!action) return;
-        jasonManager.sendText(action.autoplayText);
-        for (const call of action.gmCalls) {
-          await handleGmFunctionCall(
-            sessionId,
-            call.fnName,
-            call.args,
-            ws,
-            jasonManager,
+        if (action) {
+          jasonManager.sendText(
+            reason === "keyword"
+              ? action.autoplayText.replace("[AUTOPLAY_TIMEOUT: No player response. ", "[KEYWORD_TRIGGERED: ")
+              : action.autoplayText,
           );
+          for (const call of action.gmCalls) {
+            await handleGmFunctionCall(
+              sessionId,
+              call.fnName,
+              call.args,
+              ws,
+              jasonManager,
+            );
+          }
+
+          // Inject scene visual context into Jason for the new scene
+          const sceneCall = action.gmCalls.find(c => c.fnName === "triggerSceneChange");
+          if (sceneCall) {
+            injectSceneContextIntoJason(sceneCall.args.sceneKey as string, jasonManager);
+          }
+
+          // Handle step extras (card auto-pick, wildcard prewarm, acecard gate)
+          if (action.extra === "card1_auto_pick") {
+            if (!card1Collected && !card1AutoPickTimer) {
+              card1AutoPickTimer = setTimeout(() => {
+                if (card1Collected) return;
+                card1Collected = true;
+                void handleCardCollected("card1", sessionId, jasonManager, ws)
+                  .then(() => {
+                    playCard1PickupThenQueueWildcard();
+                  })
+                  .catch((err: Error) => {
+                    console.error(
+                      `[WS] card1 auto-pick failed for session ${sessionId}:`,
+                      err.message,
+                    );
+                  });
+              }, 60_000);
+            }
+          } else if (action.extra === "card2_hunt_and_prewarm") {
+            maybePrepareWildcardGameOver();
+            maybePrepareWildcardGoodEnding();
+            if (card2AutoPickTimer) {
+              clearTimeout(card2AutoPickTimer);
+              card2AutoPickTimer = null;
+            }
+          } else if (action.extra === "hallway_pov_02_all") {
+            maybePrepareWildcardGameOver();
+            maybePrepareWildcardGoodEnding();
+            if (card2AutoPickTimer) {
+              clearTimeout(card2AutoPickTimer);
+              card2AutoPickTimer = null;
+            }
+            startAcecardKeywordTimer(
+              acecardGateState,
+              ws,
+              sessionId,
+              () => { void emitWildcardGameOverBranch(); },
+            );
+          }
         }
 
-        if (action.extra === "card1_auto_pick") {
-          if (!card1Collected && !card1AutoPickTimer) {
-            card1AutoPickTimer = setTimeout(() => {
-              if (card1Collected) return;
-              card1Collected = true;
-              void handleCardCollected("card1", sessionId, jasonManager, ws)
-                .then(() => {
-                  playCard1PickupThenQueueWildcard();
-                })
-                .catch((err: Error) => {
-                  console.error(
-                    `[WS] card1 auto-pick failed for session ${sessionId}:`,
-                    err.message,
-                  );
-                });
-            }, 60_000);
-          }
-        } else if (action.extra === "card2_hunt_and_prewarm") {
-          maybePrepareWildcardGameOver();
-          maybePrepareWildcardGoodEnding();
-          if (card2AutoPickTimer) {
-            clearTimeout(card2AutoPickTimer);
-            card2AutoPickTimer = null;
-          }
-        } else if (action.extra === "hallway_pov_02_all") {
-          // Combined: card2_hunt_and_prewarm + hallway_pov_02_acecard.
-          // NOTE: wildcard2 (game_over branch) is now frontend CSS/SFX only — prewarm
-          // still runs for wildcard3 (good_ending) which may still use live gen.
-          maybePrepareWildcardGameOver();
-          maybePrepareWildcardGoodEnding();
-          if (card2AutoPickTimer) {
-            clearTimeout(card2AutoPickTimer);
-            card2AutoPickTimer = null;
-          }
-          startAcecardKeywordTimer(
-            acecardGateState,
-            ws,
-            sessionId,
-            () => { void emitWildcardGameOverBranch(); },
-          );
-        }
-      })().catch((err: Error) => {
+        // Update keyword listener for the new step
+        keywordListener.updateKeywords(toStep);
+
+        // Start the wall-clock timer for the new step
+        startStepTimer(toStep);
+      } catch (err) {
         console.error(
-          `[WS] autoplay advance failed for session ${sessionId}:`,
-          err.message,
+          `[WS] advanceStep failed for session ${sessionId}:`,
+          (err as Error).message,
         );
-      });
-    }, 1_000);
+      } finally {
+        stepAdvancing = false;
+      }
+    })();
+  };
+
+  // ── startStepTimer: wall-clock setTimeout per step ──────────────────────
+  // Timer runs independently of player speech. If a keyword fires first,
+  // the timer is cancelled. If no keyword fires, timer expires and advances.
+  const startStepTimer = (step: number) => {
+    clearStepTimer();
+    if (step >= 31) return; // step 31 terminal — acecard gate owns timing
+    if (!jasonReadyForPlayer || ws.readyState !== WebSocket.OPEN) return;
+
+    const timeoutMs = getStepTimeoutSeconds(step) * 1000;
+    stepWallClockTimer = setTimeout(() => {
+      stepWallClockTimer = null;
+      advanceStep(step, "timeout");
+    }, timeoutMs);
+
+    console.log(
+      `[WS] Step ${step} wall-clock timer started: ${getStepTimeoutSeconds(step)}s for session ${sessionId}`,
+    );
   };
 
   console.log(`[WS] Client connected - session ${sessionId}`);
@@ -1032,6 +1057,13 @@ wss.on("connection", (ws: WebSocket) => {
         }
       });
 
+      // Keyword listener session - listens for per-step keywords in player audio
+      await keywordListener.connect(7); // Start with step 7 keywords (flashlight)
+      keywordListener.onKeywordDetected((keyword) => {
+        console.log(`[KW] Keyword "${keyword}" detected at step ${currentSequenceStep} — session=${sessionId}`);
+        advanceStep(currentSequenceStep, "keyword");
+      });
+
       // GM session - silent, function calls only, no audio back to player
       const gmPrompt = getGameMasterSystemPrompt(sessionData.trustLevel);
       await gmManager.connect(gmPrompt, "gm");
@@ -1053,8 +1085,7 @@ wss.on("connection", (ws: WebSocket) => {
           // Sync step machine when GM fires flashlight — prevents autoplay from re-firing step 7.
           if ((args.sceneKey as string) === "flashlight_beam" && currentSequenceStep === 7) {
             currentSequenceStep = 9;
-            lastPlayerSpeechAt = Date.now();
-            clearFlashlightTimer();
+            clearStepTimer();
             if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
             console.log(`[WS] GM fired flashlight_beam — step synced to 9 for session ${sessionId}`);
           }
@@ -1221,6 +1252,7 @@ wss.on("connection", (ws: WebSocket) => {
         lastPlayerSpeechAt = Date.now();
         jasonManager.sendAudio(data.audio);
         if (gmGated) gmManager.sendAudio(data.audio); // GM hears player only after intro_complete
+        keywordListener.sendAudio(data.audio); // Keyword listener always hears player audio
         return;
       }
 
@@ -1308,7 +1340,7 @@ wss.on("connection", (ws: WebSocket) => {
     console.log(`[WS] Client disconnected - session ${sessionId}`);
     if (hintTimer) clearTimeout(hintTimer);
     if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
-    clearFlashlightTimer();
+    clearStepTimer();
     stopInteractionTimers();
     clearCardAutoPickTimers();
     clearWildcardTimers();
@@ -1318,6 +1350,7 @@ wss.on("connection", (ws: WebSocket) => {
     jasonManager.disconnect();
     audreyManager.disconnect();
     gmManager.disconnect();
+    keywordListener.disconnect();
   });
 });
 

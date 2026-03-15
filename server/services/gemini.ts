@@ -1,4 +1,4 @@
-import { GoogleGenAI, Modality, Session, StartSensitivity, EndSensitivity } from '@google/genai';
+import { GoogleGenAI, Modality, Session, StartSensitivity, EndSensitivity, Tool } from '@google/genai';
 import { gameMasterTools } from './gmTools';
 
 // Lazy getters — avoids CJS import-hoisting bug where dotenv.config() in server.ts
@@ -256,6 +256,45 @@ export class LiveSessionManager {
         onclose: (e) => {
           const ev = e as { code?: number; reason?: string; wasClean?: boolean };
           console.log(`[LiveSessionManager] Connection closed — code: ${ev.code}, reason: "${ev.reason ?? ''}", wasClean: ${ev.wasClean ?? '?'} — ${new Date().toISOString()}`);
+        },
+      },
+    });
+  }
+
+  /**
+   * Connects with custom tools (used by keyword listener which needs its own tool set).
+   * TEXT modality, no audio output — same as GM mode but with custom tools.
+   */
+  async connectWithTools(systemPrompt: string, tools: Tool[]): Promise<void> {
+    console.log(`[LiveSessionManager] Opening Vertex AI Live session — mode: keyword, model: ${this.modelName}...`);
+
+    const config = {
+      systemInstruction: systemPrompt,
+      tools,
+      responseModalities: [Modality.TEXT],
+    };
+
+    this.session = await getLiveAiClient().live.connect({
+      model: this.modelName,
+      config,
+      callbacks: {
+        onopen: () => {
+          console.log(`[LiveSessionManager] Keyword session connected. ${new Date().toISOString()}`);
+        },
+        onmessage: (msg) => {
+          const calls = msg.toolCall?.functionCalls ?? [];
+          for (const call of calls) {
+            if (call.name && this.onFunctionCallCallback) {
+              this.onFunctionCallCallback(call.id ?? '', call.name, call.args ?? {});
+            }
+          }
+        },
+        onerror: (e) => {
+          console.error('[LiveSessionManager] Keyword listener WebSocket error:', JSON.stringify(e));
+        },
+        onclose: (e) => {
+          const ev = e as { code?: number; reason?: string; wasClean?: boolean };
+          console.log(`[LiveSessionManager] Keyword listener closed — code: ${ev.code}, reason: "${ev.reason ?? ''}", wasClean: ${ev.wasClean ?? '?'}`);
         },
       },
     });
