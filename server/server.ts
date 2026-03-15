@@ -844,6 +844,18 @@ wss.on("connection", (ws: WebSocket) => {
 
           // Handle step extras (card auto-pick, wildcard prewarm, acecard gate)
           if (action.extra === "card1_auto_pick") {
+            // Delay card_discovered by 3s so the generator_card_reveal scene
+            // has time to load on the frontend before the card overlay appears.
+            setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  type: "card_discovered",
+                  cardId: "card1",
+                  timestamp: Date.now(),
+                }));
+                console.log(`[WS] Delayed card_discovered(card1) emitted for session ${sessionId}`);
+              }
+            }, 3_000);
             if (!card1Collected && !card1AutoPickTimer) {
               card1AutoPickTimer = setTimeout(() => {
                 if (card1Collected) return;
@@ -868,6 +880,18 @@ wss.on("connection", (ws: WebSocket) => {
               card2AutoPickTimer = null;
             }
           } else if (action.extra === "hallway_pov_02_all") {
+            // Delay card_discovered by 3s so the hallway_pov_02 scene
+            // has time to load on the frontend before the card overlay appears.
+            setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  type: "card_discovered",
+                  cardId: "card2",
+                  timestamp: Date.now(),
+                }));
+                console.log(`[WS] Delayed card_discovered(card2) emitted for session ${sessionId}`);
+              }
+            }, 3_000);
             maybePrepareWildcardGameOver();
             maybePrepareWildcardGoodEnding();
             if (card2AutoPickTimer) {

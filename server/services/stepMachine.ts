@@ -110,7 +110,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
       "[AUTOPLAY_TIMEOUT: No player response. You start the generator, the tunnel lights come on, and something appears on the floor by the machine.]",
     gmCalls: [
       { fnName: "triggerSceneChange",    args: { sceneKey: "generator_card_reveal" } },
-      { fnName: "triggerCardDiscovered", args: { cardId: "card1" } },
     ],
     extra: "card1_auto_pick",
   },
@@ -187,7 +186,6 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
     gmCalls: [
       { fnName: "triggerSceneChange",    args: { sceneKey: "hallway_pov_02" } },
       { fnName: "triggerDreadTimerStart", args: { durationMs: 30_000 } },
-      { fnName: "triggerCardDiscovered", args: { cardId: "card2" } },
     ],
     extra: "hallway_pov_02_all",
   },
