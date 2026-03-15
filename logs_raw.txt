@@ -1,0 +1,500 @@
+﻿2026-03-15 00:37:19 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:19 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:19 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:20 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:20 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:20 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:20 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:20 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:20 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:21 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:21 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:21 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:21 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:21 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:21 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:22 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:22 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:22 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:22 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:22 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:22 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:23 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:23 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:23 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:23 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:23 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:23 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:24 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:24 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:24 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:24 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:24 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:24 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:25 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:25 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:25 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:25 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:25 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:25 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:26 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:26 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:26 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:26 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:26 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:26 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:26 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:27 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:27 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:27 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:27 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:27 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:27 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:28 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:28 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:28 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:28 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:28 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:28 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:28 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:28 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:29 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:30 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:30 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:30 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:31 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:31 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:31 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:31 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:31 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:31 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:32 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:32 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:32 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:32 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:32 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:32 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:33 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:33 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:33 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:33 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:33 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:34 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:34 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:34 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:34 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:34 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:34 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:35 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:35 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:35 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:35 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:35 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:35 [WS] Step advance: 9 ? 11 (timeout) for session 7fdfbbbc-04ff-4740-97d5-20a7dedf0265
+2026-03-15 00:37:35 [GM] Function call: triggerSceneChange { sceneKey: 'generator_area_start' }
+2026-03-15 00:37:35 [ImageCache] MISS ? session="7fdfbbbc-04ff-4740-97d5-20a7dedf0265" key="generator_area_start"
+2026-03-15 00:37:35 [Imagen] Generating image for sceneKey="generator_area_start" (start context)
+2026-03-15 00:37:35 [GM] Broadcast event to client: scene_change
+2026-03-15 00:37:35 [GM] Function call: triggerVideoGen { sceneKey: 'generator_area_start' }
+2026-03-15 00:37:35 [Imagen] Generating image for sceneKey="generator_area_start" (start context)
+2026-03-15 00:37:35 [GM] Broadcast event to client: video_gen_started
+2026-03-15 00:37:35 [GM] Injected scene context into Jason ? sceneKey="generator_area_start"
+2026-03-15 00:37:35 [KeywordListener] Updated keywords for step 11: [start it, turn it on, activate, power up, switch, run it, start the generator, turn on the generator, crank]
+2026-03-15 00:37:35 [WS] Step 11 wall-clock timer started: 30s for session 7fdfbbbc-04ff-4740-97d5-20a7dedf0265
+2026-03-15 00:37:35 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:35 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:35 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:36 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:36 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:36 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:37 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:37 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:38 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:37:38 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:38 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:38 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:38 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:38 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:39 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:39 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:39 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:39 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:39 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:39 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:40 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:40 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:40 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:40 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:40 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:41 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:41 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:41 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:41 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:41 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:41 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:42 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:42 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:42 [Imagen] Scene image generated ? sceneKey="generator_area_start"
+2026-03-15 00:37:42 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:42 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:42 [Imagen] Scene image generated ? sceneKey="generator_area_start"
+2026-03-15 00:37:42 [Veo] Starting Veo 3.1 Fast generation for sceneKey="generator_area_start"
+2026-03-15 00:37:42 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:42 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:43 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:43 [Veo] Using model "veo-3.1-fast-generate-001" for sceneKey="generator_area_start"
+2026-03-15 00:37:43 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:43 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:43 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:43 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:43 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:44 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:44 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:44 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:44 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:44 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:45 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:45 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:45 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:45 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:45 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:45 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:45 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:46 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:46 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:46 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:46 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:46 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:47 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:47 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:47 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:47 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:47 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:47 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:48 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:48 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:48 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:48 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:48 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:48 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:49 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:49 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:49 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:49 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:49 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:49 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:50 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:50 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:50 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:50 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:50 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:50 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:51 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:51 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:51 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:51 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:51 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:51 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:52 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:52 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:52 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:52 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:52 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:52 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:53 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:53 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:53 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:53 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:53 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:54 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:54 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:54 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:54 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:54 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:54 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:55 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:55 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:55 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:55 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:55 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:55 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:56 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:56 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:56 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:56 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:56 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:56 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:57 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:57 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:57 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:57 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:57 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:57 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:58 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:58 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:58 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:58 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:58 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:58 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:59 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:59 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:59 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:59 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:59 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:37:59 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:00 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:00 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:00 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:00 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:00 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:01 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:01 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:01 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:01 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:01 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:01 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:02 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:02 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:02 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:02 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:02 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:02 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:03 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:03 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:03 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:03 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:03 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:03 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:04 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:04 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:04 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:04 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:04 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:04 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:05 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:05 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:05 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [WS] Step advance: 11 ? 13 (timeout) for session 7fdfbbbc-04ff-4740-97d5-20a7dedf0265
+2026-03-15 00:38:05 [GM] Function call: triggerSceneChange { sceneKey: 'generator_area_operational' }
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [ImageCache] MISS ? session="7fdfbbbc-04ff-4740-97d5-20a7dedf0265" key="generator_area_operational"
+2026-03-15 00:38:05 [Imagen] Generating image for sceneKey="generator_area_operational" (operational context)
+2026-03-15 00:38:05 [GM] Broadcast event to client: scene_change
+2026-03-15 00:38:05 [GM] Function call: triggerVideoGen { sceneKey: 'generator_area_operational' }
+2026-03-15 00:38:05 [Imagen] Generating image for sceneKey="generator_area_operational" (operational context)
+2026-03-15 00:38:05 [GM] Broadcast event to client: video_gen_started
+2026-03-15 00:38:05 [GM] Injected scene context into Jason ? sceneKey="generator_area_operational"
+2026-03-15 00:38:05 [KeywordListener] Updated keywords for step 13: [card, joker, pick up, grab it, take it, floor, what is that, pick that up, reach down]
+2026-03-15 00:38:05 [WS] Step 13 wall-clock timer started: 30s for session 7fdfbbbc-04ff-4740-97d5-20a7dedf0265
+2026-03-15 00:38:05 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:38:05 [Imagen] generateImages failed for sceneKey="generator_area_operational": {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: imagen-4.0-generate. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+2026-03-15 00:38:05 [GM] No image available for Veo ? sceneKey="generator_area_operational". Skipping video gen.
+2026-03-15 00:38:06 [Imagen] generateImages failed for sceneKey="generator_area_operational": {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: imagen-4.0-generate. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+2026-03-15 00:38:06 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:06 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:06 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:06 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:07 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: true, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [LiveSessionManager] onmessage ? data: false, toolCall: false, serverContent: true
+2026-03-15 00:38:08 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:08 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:09 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:09 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:09 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:09 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:09 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:09 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:10 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:10 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:10 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:10 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:10 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:10 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:11 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:11 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:11 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:11 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:11 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:11 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:12 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:12 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:12 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:12 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:12 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:12 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:13 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:13 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:13 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:13 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:13 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:14 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:14 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:14 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:14 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:14 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:14 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:15 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:15 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:15 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:15 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:15 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:15 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:16 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:16 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:16 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:16 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:16 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:16 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:17 [WS] player_speech received - b64 bytes: 7280
+2026-03-15 00:38:17 [WS] Client disconnected - session 7fdfbbbc-04ff-4740-97d5-20a7dedf0265
+2026-03-15 00:38:17 [ImageCache] Cleared ? session="7fdfbbbc-04ff-4740-97d5-20a7dedf0265"
+2026-03-15 00:38:17 [LiveSessionManager] Disconnecting session
+2026-03-15 00:38:17 [LiveSessionManager] Disconnecting session
+2026-03-15 00:38:17 [LiveSessionManager] Disconnecting session
+2026-03-15 00:38:17 [LiveSessionManager] Disconnecting session
+2026-03-15 00:38:17 [LiveSessionManager] Connection closed ? code: 1000, reason: "", wasClean: true ? 2026-03-15T00:38:17.184Z
+2026-03-15 00:38:17 [LiveSessionManager] Connection closed ? code: 1000, reason: "", wasClean: true ? 2026-03-15T00:38:17.184Z
+2026-03-15 00:43:36 [Veo] Video generated (inline bytes) ? sceneKey="generator_area_start"
