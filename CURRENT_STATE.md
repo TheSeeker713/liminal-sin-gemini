@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **UPDATE RULE:** When updating this file, REPLACE the previous content and write a single current-state snapshot. Do NOT append. Historical logs belong in git history.
-> Last updated: March 14, 2026 (step machine rewrite + Bug 1/2/3 fixes).
+> Last updated: March 15, 2026 (Bug 4 fix — joker card scene timing).
 
 ---
 
@@ -16,7 +16,7 @@
 | Item | Value |
 |---|---|
 | Cloud Run URL | `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| Live revision | `liminal-sin-server-00072-r6h` — serving 100% traffic |
+| Live revision | `liminal-sin-server-00076-njc` — serving 100% traffic |
 | GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
 | Org | `digitalartifact11-org` (165684325504) |
 | GM model | `gemini-live-2.5-flash-native-audio` (via `GM_LIVE_MODEL` env var) |
@@ -31,39 +31,31 @@
 
 ---
 
-## Current Live State (March 14, 2026 — STEP MACHINE REWRITE + BUG FIXES)
+## Current Live State (March 15, 2026 — BUG 4 FIX)
 
-### Step Machine Rewrite (deployed revision 00072-r6h)
-- **stepMachine.ts** completely rewritten — 4 files changed across backend.
-- Canonical Act 1 sequence: steps 8–22 with correct clip durations and trigger types.
-- STEP_TRANSITIONS: 7→8→9→10→11(terminal), 12→13→14→15→16→17→18→19→20→21→22(terminal).
-- STEP_AUTOPLAY_ACTIONS: 15 entries covering all active steps.
-- 4 interactive pause points: steps 10, 16, 18, 22 are `hold_for_input`.
-- Step 11 is terminal (card_collected handler owns progression).
-- Step 22 is terminal (acecard gate owns progression).
+### Bug 4 — Joker Card Scene Timing (Fixed, deployed revision 00076-njc)
+- **Root cause:** `triggerCardDiscovered` fired inline with `triggerSceneChange` in step 10 and step 21 gmCalls arrays. The 120ms gap between WS sends was too short — the card overlay appeared before the scene image/clip had loaded on the frontend. Player saw the Joker card floating over the previous tunnel_generator_01 scene, and Jason narrated the card before the visual matched.
+- **Fix:** Removed `triggerCardDiscovered` from both step 10 and step 21 `gmCalls` arrays in `stepMachine.ts`. Added 3-second delayed `card_discovered` WS emission in the `card1_auto_pick` and `hallway_pov_02_all` extra handlers in `server.ts`. The frontend now has 3 full seconds to load the scene before the card overlay appears.
+- **Files:** `server/services/stepMachine.ts`, `server/server.ts`
 
-### Bug Fixes (deployed revision 00072-r6h)
-- **Bug 1 — Jason ignoring player speech:** Root cause was `sendText()` flooding during `chained_auto` steps. During rapid step chains (park sequence 12→15), Jason received 8+ forced text turns that drowned out player audio via `sendRealtimeInput`. Fix: autoplay narration (`sendText`) and scene context injection (`injectSceneContextIntoJason`) now only fire on `hold_for_input` steps or keyword triggers. Chained_auto steps skip both, leaving Jason free to listen.
-- **Bug 2 — Glitch effect persisting forever:** Root cause was a React useEffect cleanup race. The `hud_glitch` timer cleanup function canceled the `setGlitchClass(null)` timer when `lastEvent` changed. Fix applied on frontend: removed the useEffect cleanup return + added `setGlitchClass(null)` to the scene_change handler as a safety net.
-- **Bug 3 — Slow motion video:** Added defensive `playbackRate = 1.0` to all 3 video play sites (GCS clip, wildcard scene_video, acecard clip). Re-encoded all 18 clips to web-friendly bitrate (CRF 23, 5Mbps cap, 1080p) — total size reduced from 371MB to 78MB. Re-encoded clips ready in `assets/generated_clips_web/`, pending upload to GCS.
+### Previous Fixes (Still Live)
+- **Bug 1 — Jason ignoring player speech:** `sendText()` + `injectSceneContextIntoJason()` gated to `hold_for_input` steps only. Chained_auto steps skip both.
+- **Bug 2 — Glitch effect persisting forever:** React useEffect cleanup race fixed on frontend.
+- **Bug 3 — Slow motion video:** `playbackRate = 1.0` defense on all 3 video play sites. 18 clips re-encoded to CRF 23 / 5Mbps cap.
+- **Step machine rewrite:** Canonical Act 1 steps 8–22, correct durations, trigger types.
 
 ### Backend Systems (all live)
 - All backend game logic complete and audited.
 - Morphic media canonicalized: 16 stills + 18 clips on GCS bucket `liminal-sin-assets`.
-- Acecard mechanic live: triggerAcecardReveal, step 31 keyword gate.
+- Acecard mechanic live: triggerAcecardReveal, step 22 keyword gate.
 - Wildcard prewarm architecture live.
 - RAI safety level set to `BLOCK_ONLY_HIGH` in Veo config.
 
 ### Files Modified This Session
 | File | Change |
 |---|---|
-| `server/server.ts` | Skip `sendText` + `injectSceneContextIntoJason` during `chained_auto` steps |
-| `server/services/stepMachine.ts` | Complete rewrite — steps 8–22, durations, trigger types |
-| `server/services/gameMaster.ts` | `flashlight_beam`→`tunnel_darkness_01`, added `flashlight_scanning`, updated hold set |
-| `server/services/keywordLibrary.ts` | Remapped keywords to steps 7, 10, 16, 18 |
-
-### Pending Action
-- **GCS upload:** Re-encoded clips in `assets/generated_clips_web/` need to be uploaded to replace the high-bitrate originals on `gs://liminal-sin-assets/clips/`.
+| `server/services/stepMachine.ts` | Removed `triggerCardDiscovered` from step 10 and step 21 gmCalls |
+| `server/server.ts` | Added 3s delayed `card_discovered` emission in card1_auto_pick and hallway_pov_02_all extras |
 
 ---
 
@@ -74,7 +66,7 @@
 | `scene_change` | `sceneKey`, `mediaId`, `triggerType`, `timeoutSeconds` | Step machine scene advance |
 | `scene_image` | `sceneKey`, `imageData`, `mediaId`, `triggerType`, `timeoutSeconds` | Imagen 4 still (wildcard/live-generated) |
 | `scene_video` | `sceneKey`, `videoUrl`, `mediaId`, `triggerType`, `timeoutSeconds`, `audioMode` | Veo 3.1 clip |
-| `card_discovered` | `cardId` | First-time card reveal |
+| `card_discovered` | `cardId` | First-time card reveal (3s delayed after scene_change) |
 | `dread_timer_start` | `durationMs` | Starts frontend countdown |
 | `game_over` | — | Dread timer expired |
 | `good_ending` | — | Card2 collected in time |
@@ -118,9 +110,9 @@
 
 ---
 
-## Backend Status — 100% COMPLETE (March 14, 2026)
+## Backend Status — 100% COMPLETE (March 15, 2026)
 
-Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00072-r6h`.
+Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-server-00076-njc`.
 
 | System | Status |
 |---|---|
@@ -140,30 +132,6 @@ Zero TypeScript errors. Zero ESLint errors. Deployed at revision `liminal-sin-se
 | /debug/fire-gm-event | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /debug/test-wildcard-vision | ✅ Live — gated by DEBUG_GM_ENDPOINT=true |
 | /log-client-error | ✅ Live |
-| Cloud Run | ✅ revision 00072-r6h |
-
----
-
-## Frontend Status — 100% COMPLETE (March 14, 2026)
-
-Zero TypeScript errors. Zero ESLint errors. Zero warnings.
-
-| System | Status |
-|---|---|
-| Onboarding (permissions gate + PLAY flow) | ✅ Live — Single consolidated screen, auto-detects granted perms |
-| Connecting screen | ✅ Live — Black screen with pulse; waits for `session_ready` |
-| Credits sequence (correct 9-line script, 19s) | ✅ Live — 3 fade blocks + title card, starts only after WS open |
-| `session_ready` → intro trigger | ✅ Live — `intro_complete` guaranteed over open WS |
-| WS transport (GameWSContext) | ✅ Live — all event types, reconnect backoff |
-| GCS Morphic media loading | ✅ Live — 16 stills + 18 clips from bucket |
-| Scenario effects (slotsky, cards, timers) | ✅ Live — all handlers wired |
-| General effects (scene loading, glitch, trust) | ✅ Live — Morphic media path + fallback |
-| Acecard keyword timer | ✅ Live — 30s heartbeat escalation |
-| Acecard reveal playback | ✅ Live — GCS clip + completion event |
-| Card pickup overlay | ✅ Live — still + card2 overlay |
-| Wildcard CSS effects | ✅ Live — 7 new CSS classes |
-| Demo end overlay | ✅ Live — Play Again for both endings |
-| Audio SFX manifest | ✅ Live — scare_wildcard added |
-| Preload first 3 Morphic stills | ✅ Live |
+| Cloud Run | ✅ revision 00076-njc |
 
 

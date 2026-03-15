@@ -1,86 +1,174 @@
-﻿# **🎰 LIMINAL SIN**
+﻿# **LIMINAL SIN**
 
 > **Note:** This project is a work of fiction. It is designed as a psychological horror experience and is not intended to depict real events or people. All characters, locations, and scenarios are entirely fictional and created for the purpose of storytelling. This project does not sponsor or endorse any real-world entities, products, or services.
 
 **"The House Always Wins. Even in the Unreality."**
 
-A first-person, multi-agent FMV psychological horror prototype built for the **Gemini Live Agent Challenge**. Developed by **Mycelia Interactive** (**J.W. or Jeremy w. Robards** with the help of **A.L. or Adrianna Loya** as creative consultant), with a focus on pushing the boundaries of real-time AI-driven narrative, bidirectional voice architecture, and multimodal player agency.
+A first-person, multi-agent FMV psychological horror prototype built for the **[Gemini Live Agent Challenge](https://ai.google.dev/competition/projects/live-agent-challenge)**. Developed by **Mycelia Interactive** (**J.W. / Jeremy W. Robards** with **A.L. / Adrianna Loya** as creative consultant).
 
-## **👁️ The Vision**
-
-**Liminal Sin** is not just a game: it is a live, anomalous event. It leverages the **Gemini Live API** to orchestrate autonomous AI characters who exist within a fractured, shifting reality beneath Las Vegas. 
-
-You play as a disembodied presence, a "voice from the static." Communicating through an experimental radio feed, your goal is to guide a group of trapped survivors back to the surface. But the system is designed to test your ethics. An ever-watchful "Director" observes your real-world behavior. If you falter, lie, or panic, the probability engine known only as **[Redacted]** will warp their reality and tear their sanity apart in real time.
-
-**⚠️ Content & Safety Disclosure**: This project is a strictly **psychological horror** experience. There is no gore, blood, or physical violence. The tension is derived entirely from isolation, spatial disorientation, and the unpredictable, emergent behavior of enhanced NPCs. Atmospheric dread and the uncanny valley take precedence over cheap scares.
-
-## **⚙️ Core Pillars & The [Redacted] Stack**
-
-1. **Agentic Agency**: Characters use **Gemini 3.1 Pro** and **Gemini 2.5 Flash Native Audio** to reason, remember, and adapt. They are not scripted NPCs. Their behaviors shift based on hidden Trust and Fear metrics. If they distrust your voice, they will ignore commands, withhold critical information, or actively sabotage their own survival. Your voice is your only input mechanism.  
-2. **Multimodal Dread**: Through the Gemini Live API, the game "hears" your voice and "sees" your face. The Director monitors your vocal cadence and facial micro-expressions. Your panic feeds the game's tension; your silence might be interpreted as malicious intent. 
-3. **Generative Synthesis**: The nightmare logic of the underground is controlled by advanced generative AI video frameworks. As the Director increases the intensity, visual sequences fluidly warp, reflecting severe spatial anomalies.
-4. **The Fourth Wall is a Trap**: The characters possess a baseline awareness of their anomalous situation. Attempting to tell them they are in a video game triggers catastrophic "Logic Collapses" and forces aggressive behavioral corrections from the system.
-
-## **✅ Completion / Todo List**
-
-**Project Kickoff:** February 23, 2026  
-**Target Submission Goal:** March 11, 2026, 11:11 PM MT  
-**Target Submission Deadline:** March 16th, 2026, 6:00 PM MT
-**Target Submission Actual:**
-
-- [x] **Week 1 (Feb 23 - Feb 28):** Research, planning, narrative design, and world-building constraints defined.
-- [x] **Feb 28:** Implemented an initial lightweight wrapper for ideation and concept testing.
-- [x] **Mar 1 - Present:** Actual active development of multi-agent real-time logic.
-- [x] **Foundation:** Deployed Firestore, initialized Gemini Live API with persistent WebSocket streaming backend structure, and configured automated CI/CD to Google Cloud Run via GitHub Actions (Workload Identity Federation).
-- [ ] **Voice Interruption:** Finalizing the seamless "Barge-in" API stream for natural human conversational thresholds (~2 seconds latency budget).
-- [ ] **Game Master Logic:** Connecting real-time player sentiment analysis to trigger [Redacted] anomalous visual events.
-- [ ] **Demo Validation:** Verifying end-to-end Google Cloud infrastructure. Recording the final 4-minute continuous submission video.
+**Live demo:** [myceliainteractive.com/ls/game](https://www.myceliainteractive.com/ls/game/)
 
 ---
 
-## **🎮 Running The Project Locally**
+## The Vision
 
-This repository is designed for developers and contest judges to spin up the prototype and test the Live Agent architecture themselves.
+**Liminal Sin** is not just a game — it is a live, anomalous event. It leverages the **Gemini Live API** to orchestrate autonomous AI characters who exist within a fractured, shifting reality beneath Las Vegas.
 
-### **1. Clone the Repository**
-``bash
+You play as a disembodied presence — a "voice from the static." Communicating through an experimental radio feed, your goal is to guide a group of trapped survivors back to the surface. But the system is designed to test your ethics. An ever-watchful Game Master observes your real-world behavior. If you falter, lie, or panic, the probability engine known only as **Slotsky** will warp their reality in real time.
+
+**Content & Safety Disclosure**: Strictly **psychological horror**. No gore, blood, or physical violence. Tension derives from isolation, spatial disorientation, and emergent NPC behavior. Atmospheric dread and the uncanny valley take precedence over cheap scares.
+
+---
+
+## Live Multi-Agent Architecture
+
+This project runs **4 concurrent Gemini Live API sessions per player** on Google Cloud Run, each with a distinct role:
+
+| Agent | Model | Role | Code |
+|---|---|---|---|
+| **Jason NPC** | `gemini-live-2.5-flash-native-audio` (Enceladus voice) | Speaks to the player via bidirectional audio. Personality, trust, and fear-reactive. | [`server/services/npc/jason.ts`](server/services/npc/jason.ts) |
+| **Audrey NPC** | `gemini-live-2.5-flash-native-audio` (Aoede voice) | Trust-gated echo voice. Goes silent at trust < 0.2. | [`server/services/npc/audrey.ts`](server/services/npc/audrey.ts) |
+| **Game Master** | `gemini-live-2.5-flash-native-audio` (TEXT mode) | Silent overseer. Never speaks. Controls world state via function calls only. Triggers scene changes, trust/fear shifts, glitch events, card discoveries, Slotsky anomalies. | [`server/services/gemini.ts`](server/services/gemini.ts) |
+| **Keyword Listener** | `gemini-live-2.5-flash` | Dedicated session monitoring player speech for per-step keyword triggers (e.g., "flashlight", "generator", "elevator"). | [`server/services/keywordListener.ts`](server/services/keywordListener.ts) |
+
+Additionally, the backend invokes:
+- **Imagen 4** (`imagen-4.0-generate-001`) — live image generation for wildcard events | [`server/services/imagen.ts`](server/services/imagen.ts)
+- **Veo 3.1** (`veo-3.1-fast-generate-001`) — live video generation for wildcard events | [`server/services/veo.ts`](server/services/veo.ts)
+
+### Google Cloud Infrastructure
+
+| Service | Purpose | Proof |
+|---|---|---|
+| **Cloud Run** | Hosts the WebSocket server + all Gemini sessions | [`Dockerfile`](Dockerfile), [`package.json` deploy script](package.json) |
+| **Firestore** | Session state (trust, fear, step, cards, audience) | [`server/services/db.ts`](server/services/db.ts) |
+| **Google Cloud Storage** | 16 stills + 18 clips served to frontend | [`server/services/gameMaster.ts`](server/services/gameMaster.ts) (GCS base URL) |
+| **Vertex AI** | Gemini Live, Imagen 4, Veo 3.1 inference | [`server/services/gemini.ts`](server/services/gemini.ts), [`server/services/imagen.ts`](server/services/imagen.ts), [`server/services/veo.ts`](server/services/veo.ts) |
+| **Artifact Registry** | Docker image hosting | [`package.json` docker:push script](package.json) |
+| **GitHub Actions** | CI/CD pipeline with Workload Identity Federation | [`.github/workflows/`](.github/workflows/) |
+
+### Key Backend Modules
+
+| File | Purpose |
+|---|---|
+| [`server/server.ts`](server/server.ts) | WebSocket server, session lifecycle, step machine orchestration, wildcard pipeline |
+| [`server/services/gameMaster.ts`](server/services/gameMaster.ts) | GM function call dispatcher, scene resolution, Imagen/Veo orchestration |
+| [`server/services/gmTools.ts`](server/services/gmTools.ts) | 10 GM tool declarations for Gemini function calling |
+| [`server/services/stepMachine.ts`](server/services/stepMachine.ts) | Canonical Act 1 step sequence (steps 8–22), autoplay actions, media triggers |
+| [`server/services/keywordLibrary.ts`](server/services/keywordLibrary.ts) | Per-step keyword sets, scene visual context injections |
+| [`server/services/acecardGate.ts`](server/services/acecardGate.ts) | Acecard keyword timer, reveal flow, card pickup window |
+| [`server/services/dreadTimer.ts`](server/services/dreadTimer.ts) | Dread countdown timer with callback |
+| [`server/services/sessionEndings.ts`](server/services/sessionEndings.ts) | Card collection handlers, ending state |
+| [`server/services/mediaSafety.ts`](server/services/mediaSafety.ts) | RAI safety filtering for generated media |
+
+---
+
+## Game Systems
+
+- **Trust System**: Float 0.0–1.0 per character. Honesty raises trust; lies lower it. NPC behavior scales accordingly.
+- **Step Machine**: 15-step autoplay sequence (steps 8–22) with wall-clock timers + keyword detection. 4 interactive pause points.
+- **Wildcard Pipeline**: 3 live-generation events using Imagen 4 + Veo 3.1 (vision feed, game over, good ending). Pre-warmed for latency.
+- **Slotsky**: Probability engine triggering 13 anomaly types (CSS/environmental distortions).
+- **Acecard Mechanic**: Keyword-gated card discovery with 30s timer window.
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [`docs/SHOT_SCRIPT.md`](docs/SHOT_SCRIPT.md) | Authoritative Act 1 director's blueprint — phase flow, GM beats, WS events, scene keys, prompts |
+| [`docs/SHOT_STEPS.md`](docs/SHOT_STEPS.md) | Scene key registry, canonical media filenames, step machine reference |
+| [`docs/Characters.md`](docs/Characters.md) | NPC personality specs, trust behavior, system prompt design |
+| [`docs/Gamemaster.md`](docs/Gamemaster.md) | Game Master architecture, tool definitions, perception pipeline |
+| [`docs/WORLD_BIBLE.md`](docs/WORLD_BIBLE.md) | Lore, world rules, environmental design |
+| [`docs/Contest.md`](docs/Contest.md) | Gemini Live Agent Challenge submission requirements |
+| [`AGENTS.md`](AGENTS.md) | Development agent directives, coding standards, execution protocol |
+| [`CURRENT_STATE.md`](CURRENT_STATE.md) | Live backend state snapshot, WS event contract, deployment status |
+
+---
+
+## Running Locally
+
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/TheSeeker713/liminal-sin-gemini.git
 cd liminal-sin-gemini
-``
+```
 
-### **2. Install Dependencies**
-``bash
+### 2. Install Dependencies
+
+```bash
 npm install
-``
+```
 
-### **3. Environment Setup**
-Create a .env.local file at the root of the project. Do **not** commit this file. You will need your own Google Cloud and Firebase credentials to run the required services.
+Requires **Node.js 20+** and **npm 10+**.
 
-``env
-GEMINI_API_KEY=your_gemini_api_key
-GOOGLE_CLOUD_PROJECT=your_project_id
+### 3. Environment Setup
+
+Create a `.env.local` file at the project root. **Never commit this file.**
+
+```env
+# Google Cloud / Vertex AI (required)
+GOOGLE_CLOUD_PROJECT=your_gcp_project_id
 GOOGLE_CLOUD_REGION=us-west1
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project
-``
 
-### **4. Local Deployment**
-To run the front-end and the proxy websocket:
-``bash
-npm run dev
-``
-Open http://localhost:3000 in your Chrome/Edge browser. You must grant Camera and Microphone access for the "Director" mechanisms and Gemini Live API to function.
+# Gemini Live model override (optional — defaults to gemini-live-2.5-flash)
+GM_LIVE_MODEL=gemini-live-2.5-flash-native-audio
 
-## **☁️ Cloud Infrastructure (GCP) for Live Deployment**
+# Imagen / Veo regions
+IMAGEN_REGION=us-west1
+VEO_REGION=us-central1
 
-To successfully replicate the experience and architecture on your own Google Cloud account:
-1. Ensure your Google Cloud Project has the **Vertex AI API**, **Firestore API**, and **Cloud Run Admin API** enabled.
-2. The core AI loop is built entirely around @google/genai bridging real-time audio from browser WebSockets to Gemini Live.
-3. Your Cloud Run deployment service account requires Firestore read/write capabilities and Vertex AI invocation access to handle state changes (Trust/Fear) and run inference concurrently.
+# Debug endpoints (optional — enables /debug/fire-gm-event and /debug/test-wildcard-vision)
+DEBUG_GM_ENDPOINT=true
+```
 
-## **⚖️ License & Open Source**
+**Authentication:** The server uses Google Cloud service account credentials via Application Default Credentials (ADC). Run:
 
-This project (Prototype structure, infrastructure code, and documentation) is released under the **MIT License**. It is free and open-source for educational and developmental purposes.
+```bash
+gcloud auth application-default login
+```
+
+Or set `GOOGLE_APPLICATION_CREDENTIALS` to your service account key file path.
+
+**Required GCP APIs:** Vertex AI API, Firestore API, Cloud Run Admin API, Cloud Storage API.
+
+### 4. Run the Server
+
+```bash
+npm run server
+```
+
+The WebSocket server starts on `ws://localhost:8080/game`. Connect a frontend client or use a WebSocket testing tool.
+
+### 5. Build & Deploy to Cloud Run
+
+```bash
+npm run deploy
+```
+
+This chains: TypeScript build → Docker build → push to Artifact Registry → deploy to Cloud Run.
+
+Requires Docker Desktop running and `gcloud` CLI authenticated with your GCP project.
+
+---
+
+## NPM Scripts
+
+| Script | Description |
+|---|---|
+| `npm run server` | Start dev server with hot-reload |
+| `npm run build` | TypeScript compile to `dist/` |
+| `npm run deploy` | Build + Docker + push + Cloud Run deploy |
+| `npm run lint` | ESLint check on `server/` |
+| `npm run typecheck` | TypeScript type-check (no emit) |
+| `npm start` | Run compiled `dist/server/server.js` |
+
+---
+
+## License
+
+This project (prototype structure, infrastructure code, and documentation) is released under the **MIT License**. Free and open-source for educational and developmental purposes.
 
 All multimedia asset rights (generated videos, audio, images) and the underlying proprietary models belong to their respective platforms, tools, and creators.
