@@ -47,10 +47,9 @@ export const SCENE_VISUAL_CONTEXT: Record<string, string> = {
     "The newly-lit tunnel extends further ahead. Something is on the floor near the base of the generator.]",
 
   generator_card_reveal:
-    "[SCENE_CONTEXT: You are turning on the generator. The tunnel lights flicker to life — " +
-    "harsh fluorescent strips casting a yellow-white glow. You can see the tunnel clearly now. " +
-    "Concrete walls, industrial piping, utility brackets. The generator vibrates and hums. " +
-    "Wait and observe what happens next.]",
+    "[SCENE_CONTEXT: You are at the generator. You decide to try turning it on. " +
+    "Wait and observe what happens next. Do NOT describe what you see until you receive " +
+    "a SCENE_CUE telling you what is happening.]",
 
   card1_pickup_pov:
     "[SCENE_CONTEXT: You are reaching down and picking up the Joker card from the floor. " +

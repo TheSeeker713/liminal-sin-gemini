@@ -114,7 +114,7 @@ BEAT 4 - GENERATOR LIVE / CARD 1 REVEAL (~1:30-~2:00)
 - Trigger cue: player tells Jason to approach or start the generator.
 - Call triggerSceneChange with sceneKey "generator_area_operational".
 - Follow with triggerSceneChange using sceneKey "generator_card_reveal" once the generator is on.
-- Call triggerCardDiscovered with cardId "card1".
+- Do NOT call triggerCardDiscovered here. The step machine owns card discovery timing exclusively.
 
 BEAT 5 - LIVE ANOMALY / PARK REVEAL (~2:00-~2:30)
 - Trigger cue: card1 is collected and the live anomaly interrupts the feed.
@@ -301,9 +301,14 @@ export class LiveSessionManager {
    */
   sendAudio(base64Chunk: string) {
     if (!this.session) return;
-    this.session.sendRealtimeInput({
-      audio: { data: base64Chunk, mimeType: 'audio/pcm;rate=16000' },
-    });
+    try {
+      this.session.sendRealtimeInput({
+        audio: { data: base64Chunk, mimeType: 'audio/pcm;rate=16000' },
+      });
+    } catch (err) {
+      console.error('[LiveSessionManager] sendAudio failed (session likely dead):', (err as Error).message);
+      this.session = null;
+    }
   }
 
   /**
@@ -311,9 +316,14 @@ export class LiveSessionManager {
    */
   sendFrame(base64Jpeg: string) {
     if (!this.session) return;
-    this.session.sendRealtimeInput({
-      video: { data: base64Jpeg, mimeType: 'image/jpeg' },
-    });
+    try {
+      this.session.sendRealtimeInput({
+        video: { data: base64Jpeg, mimeType: 'image/jpeg' },
+      });
+    } catch (err) {
+      console.error('[LiveSessionManager] sendFrame failed (session likely dead):', (err as Error).message);
+      this.session = null;
+    }
   }
 
   /**
@@ -322,7 +332,12 @@ export class LiveSessionManager {
    */
   sendText(text: string) {
     if (!this.session) return;
-    this.session.sendClientContent({ turns: text, turnComplete: true });
+    try {
+      this.session.sendClientContent({ turns: text, turnComplete: true });
+    } catch (err) {
+      console.error('[LiveSessionManager] sendText failed (session likely dead):', (err as Error).message);
+      this.session = null;
+    }
   }
 
   /**
@@ -352,9 +367,14 @@ export class LiveSessionManager {
    */
   sendToolResponse(callId: string, functionName: string, result: Record<string, unknown> = { status: 'ok' }) {
     if (!this.session) return;
-    this.session.sendToolResponse({
-      functionResponses: [{ id: callId, name: functionName, response: result }]
-    });
+    try {
+      this.session.sendToolResponse({
+        functionResponses: [{ id: callId, name: functionName, response: result }]
+      });
+    } catch (err) {
+      console.error('[LiveSessionManager] sendToolResponse failed (session likely dead):', (err as Error).message);
+      this.session = null;
+    }
   }
 
   disconnect() {

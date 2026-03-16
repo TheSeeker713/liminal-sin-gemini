@@ -115,26 +115,25 @@ const CLIP_CUES: Record<string, ClipCue[]> = {
 
   // ── elevator_entry_01 | 15s | no native sound ───────────────────────────────
   elevator_entry_01: [
-    { offsetMs: 0, type: "jason_dialogue", text: "[SCENE_CUE: You walk up to the elevator door.]" },
-    { offsetMs: 7000, type: "jason_dialogue", text: "[SCENE_CUE: The elevator door is opening. React.]" },
-    { offsetMs: 11000, type: "jason_dialogue", text: "[SCENE_CUE: You step inside the elevator.]" },
+    { offsetMs: 2000, type: "jason_dialogue", text: "[SCENE_CUE: You see the elevator ahead. You approach the door.]" },
+    { offsetMs: 11000, type: "jason_dialogue", text: "[SCENE_CUE: The elevator door is opening. You step inside.]" },
   ],
 
   // ── elevator_inside_01 | 5s | no native sound ───────────────────────────────
+  // Thin cues — only one sendText to avoid flooding Gemini during rapid chained_auto steps.
   elevator_inside_01: [
-    { offsetMs: 0, type: "jason_dialogue", text: "[SCENE_CUE: The elevator starts going down immediately. React with surprise.]" },
-    { offsetMs: 4000, type: "jason_dialogue", text: "[SCENE_CUE: The elevator door is starting to open. What will be on the other side?]" },
+    { offsetMs: 1500, type: "jason_dialogue", text: "[SCENE_CUE: The elevator starts going down immediately. React with surprise — the doors are already opening again.]" },
   ],
 
   // ── elevator_inside_02 | 15s | HAS native sound ─────────────────────────────
   elevator_inside_02: [
     { offsetMs: 4000, type: "hud_glitch", intensity: "high", durationMs: 2000 },
-    { offsetMs: 6000, type: "jason_dialogue", text: "[SCENE_CUE: The elevator door opened. You are walking into a hallway.]" },
+    { offsetMs: 7000, type: "jason_dialogue", text: "[SCENE_CUE: The elevator door opened. You are walking into a hallway.]" },
   ],
 
   // ── hallway_pov_01 | 10s | HAS native sound ─────────────────────────────────
   hallway_pov_01: [
-    { offsetMs: 0, type: "jason_dialogue", text: "[SCENE_CUE: You continue walking down the hallway. Keep moving forward.]" },
+    { offsetMs: 2000, type: "jason_dialogue", text: "[SCENE_CUE: You continue walking down the hallway. Keep moving forward.]" },
   ],
 
   // ── acecard_reveal_01 | 15s | HAS native sound ──────────────────────────────

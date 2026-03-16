@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **UPDATE RULE:** When updating this file, REPLACE the previous content and write a single current-state snapshot. Do NOT append. Historical logs belong in git history.
-> Last updated: March 15, 2026 (Doc audit — SHOT_SCRIPT split + SHOT_STEPS v2.0 + LS_VIDEO_PIPELINE alignment).
+> Last updated: March 16, 2026 (Frontend: D1 comments page, player subtitles, timed unlock, access cutoff, game page shell).
 
 ---
 
@@ -16,7 +16,7 @@
 | Item | Value |
 |---|---|
 | Cloud Run URL | `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| Live revision | `liminal-sin-server-00082-wzp` — serving 100% traffic |
+| Live revision | `liminal-sin-server-00091-d7g` — serving 100% traffic |
 | GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
 | Org | `digitalartifact11-org` (165684325504) |
 | GM model | `gemini-live-2.5-flash-native-audio` (via `GM_LIVE_MODEL` env var) |
@@ -31,29 +31,20 @@
 
 ---
 
-## Current Live State (March 15, 2026 — DOC AUDIT + MEDIA UPDATE)
+## Current Live State (March 16, 2026 — FRONTEND FEATURES + D1 COMMENTS)
 
-### Doc Audit — SHOT_SCRIPT split + SHOT_STEPS v2.0 + LS_VIDEO_PIPELINE alignment
-- **SHOT_SCRIPT.md v3.0:** Revised against LS_VIDEO_PIPELINE.md (the authoritative video pipeline doc). All contradictions resolved. Split into 5 focused docs:
-  - `SHOT_SCRIPT.md` (388 lines) — Overview, GM Playbook, Phases 1–5B
-  - `SHOT_SCRIPT_PART2.md` (291 lines) — Phases 6–8 (waterpark through endings)
-  - `WS_EVENTS.md` (80 lines) — WebSocket event registry + Slotsky anomalyTypes
-  - `FRONTEND_SPEC.md` (50 lines) — Jason Trust Meter UI spec
-  - `WILDCARD_PROMPTS.md` (147 lines) — Imagen/Veo prompts, prewarm cache, card collectibles
-- **SHOT_STEPS.md v2.0:** Revised against LS_VIDEO_PIPELINE.md:
-  - Removed `tunnel_darkness_01` from all tables (darkness is CSS black screen only, no media)
-  - Added `flashlight_sweep_01` (10s, muted) to Scene Key, Canonical Sequencing, Media Filename, Step Machine
-  - `flashlight_beam` scene key now maps to `flashlight_sweep_01` (was `tunnel_flashlight_01`)
-  - Step Machine: Step 7 → `flashlight_sweep_01` (muted), new Step 8 → `tunnel_flashlight_01`
-  - Still count 16 → 15, clip count corrected to 18
-  - `maintenance_reveal_01` inserted in Canonical Sequencing between `park_liminal` and `park_shaft_view`
-- **LS_VIDEO_PIPELINE.md:** Added descriptive line 1. Internal contradiction noted: `card_joker_01` listed as 10s in step 7 but 15s in detail section (15s is authoritative).
-- **GCS:** `flashlight_sweep_01.mp4` uploaded to `gs://liminal-sin-assets/clips/`
+### Frontend Deploys (Cloudflare Pages — commits 8324a8f, 063b35a)
+- **D1-backed anonymous comments page** (`/ls/comments`): Worker API routes (`GET /api/comments`, `POST /api/comments`) in `workers/signup-api.ts`. Self-initializing `ls_comments` table in D1. Comments page at `app/ls/comments/page.tsx`. Footer link added in `LiminalSinAccessFooter.tsx`.
+- **Player speech subtitles**: `usePlayerSubtitles.ts` (Web Speech API hook) + `PlayerSubtitles.tsx` (cinematic subtitle bar). Wired into `GameHUD.tsx`.
+- **Timed LOCKED→PLAY button**: `LiminalSinHero.tsx` — unlocks March 17 01:13 UTC.
+- **`/ls/game` access cutoff**: `page.tsx` — expires March 23 17:11 UTC. Judges route unaffected.
+- **Game page header/footer**: `GamePageShell.tsx` — auto-hiding header, fixed footer, z-[60].
+- **Removed Request Access section** from `LiminalSinAccessFooter.tsx`.
+- **Cloudflare Worker Version**: `c65c6d2f-60c3-44b5-b60e-d9b637b81f88`
 
-### Bug 4 — Joker Card Scene Timing (Fixed, deployed revision 00076-njc)
-- **Root cause:** `triggerCardDiscovered` fired inline with `triggerSceneChange` in step 10 and step 21 gmCalls arrays. The 120ms gap between WS sends was too short — the card overlay appeared before the scene image/clip had loaded on the frontend. Player saw the Joker card floating over the previous tunnel_generator_01 scene, and Jason narrated the card before the visual matched.
-- **Fix:** Removed `triggerCardDiscovered` from both step 10 and step 21 `gmCalls` arrays in `stepMachine.ts`. Added 3-second delayed `card_discovered` WS emission in the `card1_auto_pick` and `hallway_pov_02_all` extra handlers in `server.ts`. The frontend now has 3 full seconds to load the scene before the card overlay appears.
-- **Files:** `server/services/stepMachine.ts`, `server/server.ts`
+### Backend Deploy (Cloud Run — revision 00091-d7g, commit 453ad2a)
+- **maintenance_reveal_01 timeout**: Fixed to 15s (was 16s).
+- **card_joker_01 timing**: Removed card spoilers from autoplayText/sceneContext, added 8s cue, delayed card_discovered to 16s.
 
 ### Previous Fixes (Still Live)
 - **Bug 1 — Jason ignoring player speech:** `sendText()` + `injectSceneContextIntoJason()` gated to `hold_for_input` steps only. Chained_auto steps skip both.
@@ -68,17 +59,27 @@
 - Wildcard prewarm architecture live.
 - RAI safety level set to `BLOCK_ONLY_HIGH` in Veo config.
 
-### Files Modified This Session
+### Files Modified This Session (Frontend — Cloudflare)
 | File | Change |
 |---|---|
-| `docs/SHOT_SCRIPT.md` | v3.0 — revised against LS_VIDEO_PIPELINE, split into 5 docs, clip count 19→18 |
-| `docs/SHOT_SCRIPT_PART2.md` | NEW — Phases 6–8 extracted from SHOT_SCRIPT |
-| `docs/WS_EVENTS.md` | NEW — WS event registry extracted from SHOT_SCRIPT |
-| `docs/FRONTEND_SPEC.md` | NEW — Trust Meter UI spec extracted from SHOT_SCRIPT |
-| `docs/WILDCARD_PROMPTS.md` | NEW — Appendices extracted from SHOT_SCRIPT |
-| `docs/SHOT_STEPS.md` | v2.0 — removed tunnel_darkness_01, added flashlight_sweep_01, fixed flashlight_beam mapping, added Step 8, inserted maintenance_reveal_01, still count 16→15 |
-| `docs/LS_VIDEO_PIPELINE.md` | Added descriptive line 1 |
-| `CURRENT_STATE.md` | Updated with doc audit changes |
+| `workers/signup-api.ts` | Added D1 comments CRUD routes (handleGetComments, handlePostComment, ensureCommentsTable) |
+| `app/ls/comments/page.tsx` | NEW — D1-backed anonymous comments page |
+| `app/ls/LiminalSinAccessFooter.tsx` | Removed Request Access section; added Comments footer link |
+| `app/ls/game/usePlayerSubtitles.ts` | NEW — Web Speech API hook with inline type declarations |
+| `app/ls/game/PlayerSubtitles.tsx` | NEW — Cinematic subtitle overlay component |
+| `app/ls/game/GameHUD.tsx` | Added PlayerSubtitles import + render |
+| `app/ls/LiminalSinHero.tsx` | Timed LOCKED→PLAY button (March 17 01:13 UTC unlock) |
+| `app/ls/game/page.tsx` | Access cutoff guard (March 23 17:11 UTC), GamePageShell wrapper |
+| `app/ls/game/GamePageShell.tsx` | NEW — Auto-hiding header + fixed footer for game pages |
+| `app/ls/judges/game/page.tsx` | Added GamePageShell wrapper |
+
+### Files Modified This Session (Backend — Cloud Run)
+| File | Change |
+|---|---|
+| `server/services/stepMachine.ts` | maintenance_reveal_01 timeout=15s; step 10 autoplayText card ref removed |
+| `server/services/clipCues.ts` | card_joker_01 cues at 5000ms, 8000ms, 13000ms |
+| `server/server.ts` | card_discovered delay = 16_000ms |
+| `server/services/keywordLibrary.ts` | generator_card_reveal context → generator description |
 
 ---
 

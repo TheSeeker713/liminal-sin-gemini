@@ -1163,7 +1163,7 @@ wss.on("connection", (ws: WebSocket) => {
           console.log(
             `[WS] jasonReadyForPlayer = true - player_speak_prompt sent for session ${sessionId}`,
           );
-        }, 18_000);
+        }, 10_000);
         return;
       }
 
