@@ -16,7 +16,7 @@ export type StepMediaEntry = {
 /** Canonical per-step media metadata. Step numbers match the server.ts step machine. */
 export const STEP_MEDIA_TRIGGER: Record<number, StepMediaEntry> = {
   // ── Tunnel sequence (flashlight chain) ───────────────────────────────────────
-  8:  { mediaId: "tunnel_darkness_01",   triggerType: "chained_auto",    timeoutSeconds: 11 },
+  8:  { mediaId: "flashlight_sweep_01",  triggerType: "chained_auto",    timeoutSeconds: 11 },
   9:  { mediaId: "tunnel_flashlight_01", triggerType: "chained_auto",    timeoutSeconds: 16 },
   10: { mediaId: "tunnel_generator_01",  triggerType: "hold_for_input",  timeoutSeconds: 30 },
   // ── Card joker → card1 hold ──────────────────────────────────────────────────
@@ -28,13 +28,14 @@ export const STEP_MEDIA_TRIGGER: Record<number, StepMediaEntry> = {
   15: { mediaId: "park_walkway_02",      triggerType: "chained_auto",    timeoutSeconds: 16 },
   16: { mediaId: "park_liminal_01",      triggerType: "hold_for_input",  timeoutSeconds: 30 },
   // ── Maintenance → elevator sequence ──────────────────────────────────────────
-  17: { mediaId: "shaft_maintenance_01", triggerType: "chained_auto",    timeoutSeconds: 11 },
-  18: { mediaId: "elevator_entry_01",    triggerType: "hold_for_input",  timeoutSeconds: 30 },
+  17: { mediaId: "maintenance_reveal_01", triggerType: "chained_auto",   timeoutSeconds: 16 },
+  18: { mediaId: "shaft_maintenance_01", triggerType: "chained_auto",    timeoutSeconds: 11 },
+  19: { mediaId: "elevator_entry_01",    triggerType: "hold_for_input",  timeoutSeconds: 30 },
   // ── Elevator → hallway sequence ──────────────────────────────────────────────
-  19: { mediaId: "elevator_inside_01",   triggerType: "chained_auto",    timeoutSeconds: 6 },
-  20: { mediaId: "elevator_inside_02",   triggerType: "chained_auto",    timeoutSeconds: 16 },
-  21: { mediaId: "hallway_pov_01",       triggerType: "chained_auto",    timeoutSeconds: 11 },
-  22: { mediaId: "hallway_pov_02",       triggerType: "hold_for_input",  timeoutSeconds: 30 },
+  20: { mediaId: "elevator_inside_01",   triggerType: "chained_auto",    timeoutSeconds: 6 },
+  21: { mediaId: "elevator_inside_02",   triggerType: "chained_auto",    timeoutSeconds: 16 },
+  22: { mediaId: "hallway_pov_01",       triggerType: "chained_auto",    timeoutSeconds: 11 },
+  23: { mediaId: "hallway_pov_02",       triggerType: "hold_for_input",  timeoutSeconds: 30 },
 };
 
 /** Returns the hold-timeout in seconds for a given step (default 30s). */
@@ -45,9 +46,9 @@ export function getStepTimeoutSeconds(step: number): number {
 const STEP_TRANSITIONS: Record<number, number> = {
   7: 8, 8: 9, 9: 10, 10: 11,
   // 11 is terminal — card_collected handler owns progression
-  12: 13, 13: 14, 14: 15, 15: 16, 16: 17, 17: 18, 18: 19,
-  19: 20, 20: 21, 21: 22,
-  // 22 is terminal — acecard gate owns progression
+  12: 13, 13: 14, 14: 15, 15: 16, 16: 17, 17: 18, 18: 19, 19: 20,
+  20: 21, 21: 22, 22: 23,
+  // 23 is terminal — acecard gate owns progression
 };
 
 /** Returns the next step in the canonical Act 1 sequence for a given fromStep. */
@@ -146,19 +147,26 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
   // ── Maintenance → Elevator ───────────────────────────────────────────────────
   16: {
     autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You move toward the maintenance shaft entrance at the far edge of the park.]",
+      "[AUTOPLAY_TIMEOUT: No player response. You notice something in the distance — what looks like a maintenance area.]",
+    gmCalls: [
+      { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_reveal" } },
+    ],
+  },
+  17: {
+    autoplayText:
+      "[AUTOPLAY: You approach the maintenance shaft entrance.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "park_shaft_view" } },
     ],
   },
-  17: {
+  18: {
     autoplayText:
       "[AUTOPLAY: The elevator doors are ahead.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_entry" } },
     ],
   },
-  18: {
+  19: {
     autoplayText:
       "[AUTOPLAY_TIMEOUT: No player response. You step into the elevator and the doors close behind you.]",
     gmCalls: [
@@ -166,21 +174,21 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
     ],
   },
   // ── Elevator → Hallway ───────────────────────────────────────────────────────
-  19: {
+  20: {
     autoplayText:
       "[AUTOPLAY: The elevator carries you down. Steel walls close in around you.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "elevator_inside_2" } },
     ],
   },
-  20: {
+  21: {
     autoplayText:
       "[AUTOPLAY: Descent continues. The maintenance level comes into view below.]",
     gmCalls: [
       { fnName: "triggerSceneChange", args: { sceneKey: "maintenance_panel" } },
     ],
   },
-  21: {
+  22: {
     autoplayText:
       "[AUTOPLAY: You reach the maintenance corridor. Something moves at the far end. The clock is running.]",
     gmCalls: [
@@ -189,5 +197,5 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
     ],
     extra: "hallway_pov_02_all",
   },
-  // Step 22 is terminal — acecard gate owns progression past here
+  // Step 23 is terminal — acecard gate owns progression past here
 };

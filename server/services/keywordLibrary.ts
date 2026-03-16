@@ -17,8 +17,8 @@
 export const STEP_KEYWORDS: Record<number, string[]> = {
   7:  ["flashlight", "light", "phone light", "flash", "lighter", "turn on", "can you see", "lamp", "torch"],
   10: ["generator", "power", "machine", "engine", "humming", "noise", "that sound", "over there", "what is that", "start it", "turn it on", "activate", "power up", "switch", "run it", "start the generator", "turn on the generator", "crank"],
-  16: ["shaft", "maintenance", "go in", "enter", "down there", "ladder", "climb", "descend", "that opening", "forward", "keep going", "move", "walk", "deeper", "go ahead", "keep moving", "push forward", "that way"],
-  18: ["elevator", "get in", "step in", "enter", "go inside", "ride it", "doors", "step inside"],
+  16: ["shaft", "maintenance", "go in", "enter", "down there", "ladder", "climb", "descend", "that opening", "forward", "keep going", "move", "walk", "deeper", "go ahead", "keep moving", "push forward", "that way", "look around"],
+  19: ["elevator", "get in", "step in", "enter", "go inside", "ride it", "doors", "step inside"],
 };
 
 /**
@@ -83,6 +83,11 @@ export const SCENE_VISUAL_CONTEXT: Record<string, string> = {
     "industrial concrete again. Ahead is a maintenance shaft entrance. The park recedes behind you. " +
     "This is the boundary between paradise and infrastructure.]",
 
+  maintenance_reveal:
+    "[SCENE_CONTEXT: Ahead you can see the environment shifting again. A building structure appears " +
+    "where there was none before. What looked like a cave entrance has transformed into a maintenance shaft. " +
+    "The waterpark is behind you. This is unsettling — the space keeps changing.]",
+
   park_shaft_view:
     "[SCENE_CONTEXT: A maintenance shaft — steel and concrete, vertical access. " +
     "It descends deeper underground. There is an elevator platform or cage visible. " +
@@ -116,7 +121,7 @@ export const SCENE_VISUAL_CONTEXT: Record<string, string> = {
     "Time is running out.]",
 
   card2_pickup_pov:
-    "[SCENE_CONTEXT: You see the second card — the Queen of Spades — exposed on a surface. " +
+    "[SCENE_CONTEXT: You see the second card — the Ace card — exposed on a surface. " +
     "You are reaching for it. This is the last card you need.]",
 };
 

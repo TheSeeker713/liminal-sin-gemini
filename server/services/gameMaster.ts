@@ -12,6 +12,7 @@ import { generateSceneImage, getCachedImage } from "./imagen";
 import { startDreadTimerWithCallback } from "./dreadTimer";
 import type { LiveSessionManager } from "./gemini";
 import { SCENE_VISUAL_CONTEXT } from "./keywordLibrary";
+import { startClipCues, clearClipCues } from "./clipCues";
 
 // Per-session throttle map — prevents rapid-fire hud_glitch broadcasts (e.g. GROUP audience spam).
 const lastGlitchMs = new Map<string, number>();
@@ -23,7 +24,7 @@ const GLITCH_COOLDOWN_MS = 3000; // minimum 3 seconds between consecutive glitch
  * race that hides the playing video). Jason still receives the frame directly.
  */
 const MORPHIC_CLIP_IDS = new Set([
-  "tunnel_darkness_01",
+  "flashlight_sweep_01",
   "tunnel_flashlight_01",
   "tunnel_generator_01",
   "card_joker_01",
@@ -49,7 +50,7 @@ type TriggerType = "chained_auto" | "hold_for_input";
 function resolveMediaId(sceneKey: string): string {
   switch (sceneKey) {
     case "flashlight_beam":
-      return "tunnel_darkness_01";
+      return "flashlight_sweep_01";
     case "flashlight_scanning":
       return "tunnel_flashlight_01";
     case "generator_area_start":
@@ -82,8 +83,8 @@ function resolveMediaId(sceneKey: string): string {
       return "maintenance_reveal_01";
     case "wildcard_good_ending":
       return "wildcard_good_ending";
-    case "tunnel_darkness_01":
-      return "tunnel_darkness_01";
+    case "maintenance_reveal":
+      return "maintenance_reveal_01";
     case "park_liminal":
       return "park_liminal_01";
     case "elevator_inside":
@@ -106,8 +107,8 @@ function resolveTriggerType(mediaId: string): TriggerType {
     "tunnel_generator_01",   // step 10 — generator STILL
     "card_joker_01",         // step 11 — joker card STILL
     "park_liminal_01",       // step 16 — liminal park STILL
-    "elevator_entry_01",     // step 18 — elevator entry STILL
-    "hallway_pov_02",        // step 22 — hallway STILL + acecard gate
+    "elevator_entry_01",     // step 19 — elevator entry STILL
+    "hallway_pov_02",        // step 23 — hallway STILL + acecard gate
     "card_pickup_02",        // acecard flow — card2 STILL
   ]);
   return holdIds.has(mediaId) ? "hold_for_input" : "chained_auto";
@@ -123,6 +124,7 @@ function resolveTimeoutSeconds(mediaId: string): number {
 /** Call on WebSocket close to reclaim memory for the ended session. */
 export function clearGlitchThrottle(sessionId: string): void {
   lastGlitchMs.delete(sessionId);
+  clearClipCues(sessionId);
 }
 
 /**
@@ -259,21 +261,12 @@ export async function handleGmFunctionCall(
         type: "scene_change",
         payload: { sceneKey, mediaId, triggerType, timeoutSeconds },
       };
-      // For Morphic clips the frontend loads directly from GCS — skip scene_image
-      // to the client (prevents React batching race that hides the playing video).
-      // Jason still receives the frame directly for visual context.
-      if (MORPHIC_CLIP_IDS.has(mediaId)) {
-        const cachedBase64 = getCachedImage(sessionId, sceneKey);
-        if (cachedBase64 && jasonManager) {
-          jasonManager.sendFrame(cachedBase64);
-        } else if (!cachedBase64) {
-          void generateSceneImage(sceneKey).then((base64) => {
-            if (base64 && jasonManager) {
-              jasonManager.sendFrame(base64);
-            }
-          });
-        }
-      } else {
+      // Schedule timed per-clip cues (Jason dialogue, SFX, glitch events)
+      startClipCues(sessionId, mediaId, clientWs, jasonManager);
+      // Morphic clips: frontend loads directly from GCS.
+      // Jason receives visual context via SCENE_VISUAL_CONTEXT text injection (server.ts).
+      // No runtime image generation needed for scripted scenes.
+      if (!MORPHIC_CLIP_IDS.has(mediaId)) {
         // Wildcard / non-Morphic — send scene_image to client for display
         const cachedBase64 = getCachedImage(sessionId, sceneKey);
         if (cachedBase64) {

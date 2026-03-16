@@ -141,7 +141,7 @@ export const gameMasterTools: Tool[] = [
             cardId: {
               type: Type.STRING,
               enum: ['card1', 'card2'],
-              description: 'The card identifier: "card1" for the Jack of Clubs (Phase 5B), or "card2" for the Queen of Spades (Phase 7).'
+              description: 'The card identifier: "card1" for the Joker card (Phase 5B), or "card2" for the Ace card (Phase 7).'
             }
           },
           required: ['cardId']

@@ -19,7 +19,6 @@ import {
   injectSceneContextIntoJason,
 } from "./services/gameMaster";
 import {
-  prewarmImageCache,
   clearImageCache,
   generateEditedSceneImage,
   generateSceneImage,
@@ -39,6 +38,7 @@ import {
   startCardPickup02Timer,
   clearAcecardTimers,
 } from "./services/acecardGate";
+import { clearClipCues } from "./services/clipCues";
 import { KeywordListener } from "./services/keywordListener";
 
 const app = express();
@@ -765,7 +765,7 @@ wss.on("connection", (ws: WebSocket) => {
   const advanceStep = (fromStep: number, reason: "keyword" | "timeout") => {
     if (stepAdvancing) return;
     if (fromStep !== currentSequenceStep) return;
-    if (fromStep === 11 || fromStep >= 22) return; // terminal — card hold or acecard gate
+    if (fromStep === 11 || fromStep >= 23) return; // terminal — card hold or acecard gate
     if (ws.readyState !== WebSocket.OPEN) return;
 
     stepAdvancing = true;
@@ -904,6 +904,17 @@ wss.on("connection", (ws: WebSocket) => {
               sessionId,
               () => { void emitWildcardGameOverBranch(); },
             );
+            // LS_VIDEO_PIPELINE step 23: immediate visual hint — panel is hidden
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: "overlay_text",
+                payload: {
+                  text: "Maybe there's a panel somewhere?",
+                  variant: "hint",
+                  durationMs: 3000,
+                },
+              }));
+            }
           }
         }
 
@@ -928,7 +939,7 @@ wss.on("connection", (ws: WebSocket) => {
   // the timer is cancelled. If no keyword fires, timer expires and advances.
   const startStepTimer = (step: number) => {
     clearStepTimer();
-    if (step === 11 || step >= 22) return; // terminal — card hold or acecard gate
+    if (step === 11 || step >= 23) return; // terminal — card hold or acecard gate
     if (!jasonReadyForPlayer || ws.readyState !== WebSocket.OPEN) return;
 
     const timeoutMs = getStepTimeoutSeconds(step) * 1000;
@@ -1106,8 +1117,7 @@ wss.on("connection", (ws: WebSocket) => {
         console.log(
           `[WS] intro_complete received - firing Jason landing sequence for session ${sessionId}`,
         );
-        // Pre-warm image cache for the 3 opening zones while Jason speaks in darkness.
-        prewarmImageCache(sessionId);
+        // Pre-warm for wildcard zones happens later when hallway_pov_02 fires.
         // B11: If GM fires no scene change within 45s, nudge the player to ask about a flashlight.
         hintTimer = setTimeout(() => {
           if (sceneChangeCount === 0 && ws.readyState === WebSocket.OPEN) {
@@ -1152,7 +1162,7 @@ wss.on("connection", (ws: WebSocket) => {
           console.log(
             `[WS] jasonReadyForPlayer = true - player_speak_prompt sent for session ${sessionId}`,
           );
-        }, 10_000);
+        }, 18_000);
         return;
       }
 
@@ -1213,6 +1223,17 @@ wss.on("connection", (ws: WebSocket) => {
           sessionId,
           () => { void emitWildcardGameOverBranch(); },
         );
+        // LS_VIDEO_PIPELINE step 23: immediate visual hint — panel is hidden
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "overlay_text",
+            payload: {
+              text: "Maybe there's a panel somewhere?",
+              variant: "hint",
+              durationMs: 3000,
+            },
+          }));
+        }
         return;
       }
 
@@ -1285,6 +1306,7 @@ wss.on("connection", (ws: WebSocket) => {
     debugSessions.delete(sessionId);
     clearImageCache(sessionId);
     clearGlitchThrottle(sessionId);
+    clearClipCues(sessionId);
     jasonManager.disconnect();
     audreyManager.disconnect();
     gmManager.disconnect();
