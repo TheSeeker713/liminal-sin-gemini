@@ -256,6 +256,8 @@ wss.on("connection", (ws: WebSocket) => {
   let card1AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
   let card2AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
   let lastInterruptForwardedAt = 0; // Throttle agent_interrupt to 1 per 2s
+  let jasonSpeaking = false; // Echo suppression — true while Jason is outputting audio
+  let jasonSpeakingTimer: ReturnType<typeof setTimeout> | null = null; // Clears jasonSpeaking after silence gap
   const acecardGateState = createAcecardGateState();
   let latestPlayerFrame: string | null = null;
   let wildcardVisionPreparing = false;
@@ -981,6 +983,12 @@ wss.on("connection", (ws: WebSocket) => {
       await jasonManager.connect(jasonPrompt, "npc");
 
       jasonManager.onAgentAudio((base64Audio) => {
+        // Echo suppression: mark Jason as speaking. Player audio is suppressed
+        // while this flag is set to prevent TV speaker feedback from being
+        // forwarded back to Gemini (mic picks up Jason's voice from speakers).
+        jasonSpeaking = true;
+        if (jasonSpeakingTimer) clearTimeout(jasonSpeakingTimer);
+        jasonSpeakingTimer = setTimeout(() => { jasonSpeaking = false; }, 350);
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(
             JSON.stringify({
@@ -993,15 +1001,11 @@ wss.on("connection", (ws: WebSocket) => {
       });
 
       jasonManager.onAgentInterrupt(() => {
-        // During chained_auto steps, Jason audio is muted so interrupts are residual noise — suppress entirely.
-        const stepMeta = STEP_MEDIA_TRIGGER[currentSequenceStep];
-        if (stepMeta?.triggerType === "chained_auto") return;
-        const now = Date.now();
-        if (now - lastInterruptForwardedAt < 5000) return; // Throttle: max 1 per 5s
-        lastInterruptForwardedAt = now;
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "agent_interrupt", agent: "jason" }));
-        }
+        // Radio static should only play once at landing — suppress all agent_interrupt
+        // forwarding to the frontend. The frontend plays barge_in (radio static) on
+        // every agent_interrupt, so not forwarding prevents repeated radio static.
+        // Gemini-side barge-in (interrupting Jason's audio generation) still works
+        // internally — we just don't notify the frontend with a WS event.
       });
 
       // Audrey NPC session - Aoede voice, single echo, trust-gated
@@ -1157,6 +1161,15 @@ wss.on("connection", (ws: WebSocket) => {
             "DO NOT address anyone through the channel yet. " +
             "React naturally to the darkness and the silence.]",
         );
+        // One-time radio static SFX at landing — this is the ONLY radio static in the session.
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "clip_sfx",
+              payload: { sfx: "radio_static", mediaId: "session_start" },
+            }),
+          );
+        }
         // Gate player audio to Jason for 10s - covers Gemini latency + landing monologue duration.
         // After 10s: flip the gate and tell the frontend to show the "speak to JASON" hint.
         jasonReadyTimer = setTimeout(() => {
@@ -1214,11 +1227,13 @@ wss.on("connection", (ws: WebSocket) => {
         // Prevents ambient mic bleed from triggering Jason before the channel is discovered.
         if (!jasonReadyForPlayer) return;
         lastPlayerSpeechAt = Date.now();
-        // During chained_auto steps (elevator/tunnel/park transitions), mute Jason.
-        // Sending audio during rapid auto-advance causes interrupt floods that
-        // overwhelm the frontend audio system and can kill Jason's Gemini session.
+        // Echo suppression: while Jason is actively outputting audio, do NOT
+        // forward player mic audio to Jason. The TV speakers play Jason's voice
+        // and the mic picks it up — sending it back creates a feedback loop that
+        // confuses Gemini (it hears its own output as player input).
+        // GM and keyword listener still receive audio so trust/keyword detection works.
         const currentStepMeta = STEP_MEDIA_TRIGGER[currentSequenceStep];
-        if (!currentStepMeta || currentStepMeta.triggerType !== "chained_auto") {
+        if (!jasonSpeaking && (!currentStepMeta || currentStepMeta.triggerType !== "chained_auto")) {
           jasonManager.sendAudio(data.audio);
         }
         if (gmGated) gmManager.sendAudio(data.audio); // GM hears player only after intro_complete
@@ -1322,6 +1337,7 @@ wss.on("connection", (ws: WebSocket) => {
     clearInterval(pingInterval);
     if (hintTimer) clearTimeout(hintTimer);
     if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
+    if (jasonSpeakingTimer) clearTimeout(jasonSpeakingTimer);
     clearStepTimer();
     stopInteractionTimers();
     clearCardAutoPickTimers();
