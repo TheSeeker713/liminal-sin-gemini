@@ -1422,6 +1422,22 @@ wss.on("connection", (ws: WebSocket) => {
         return;
       }
 
+      // Panel clicked — deterministic UI fallback for voice keyword detection.
+      // Fires handleAcecardReveal exactly like the keyword listener would.
+      if (data.type === "panel_clicked") {
+        if (currentSequenceStep >= 23 && !acecardGateState.acecardKeywordReceived) {
+          console.log(`[WS] panel_clicked received — triggering acecard reveal — session=${sessionId}`);
+          if (acecardHintTimer) {
+            clearTimeout(acecardHintTimer);
+            acecardHintTimer = null;
+          }
+          handleAcecardReveal(acecardGateState, ws, sessionId);
+        } else {
+          console.log(`[WS] panel_clicked ignored — step=${currentSequenceStep}, alreadyReceived=${acecardGateState.acecardKeywordReceived}`);
+        }
+        return;
+      }
+
       // Frontend marker: hallway_pov_02 still is now active.
       // This is the earliest anchor for background pre-generation of wildcard2/wildcard3.
       // Also starts the acecard keyword window timer (30s).
