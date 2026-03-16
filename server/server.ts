@@ -294,6 +294,7 @@ wss.on("connection", (ws: WebSocket) => {
   let cardPickupKeywordPhase = false; // True after acecard_reveal_01 plays — keyword listener listens for card pickup words
   let acecardHintTimer: ReturnType<typeof setTimeout> | null = null; // 12s silence hint at step 23
   let matrixMentionCount = 0; // Matrix easter egg — triggers at 3 mentions
+  let matrixEasterEggFired = false; // One-shot guard — prevents double-fire from duplicate keyword detection
 
   const clearCardAutoPickTimers = () => {
     if (card1AutoPickTimer) {
@@ -1121,7 +1122,12 @@ wss.on("connection", (ws: WebSocket) => {
           console.log(
             `[KW] Matrix mention #${matrixMentionCount} — session=${sessionId}`,
           );
-          if (matrixMentionCount === 3 && ws.readyState === WebSocket.OPEN) {
+          if (
+            matrixMentionCount >= 3 &&
+            !matrixEasterEggFired &&
+            ws.readyState === WebSocket.OPEN
+          ) {
+            matrixEasterEggFired = true;
             ws.send(
               JSON.stringify({
                 type: "matrix_easter_egg",
