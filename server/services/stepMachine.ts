@@ -28,7 +28,7 @@ export const STEP_MEDIA_TRIGGER: Record<number, StepMediaEntry> = {
   15: { mediaId: "park_walkway_02",      triggerType: "chained_auto",    timeoutSeconds: 16 },
   16: { mediaId: "park_liminal_01",      triggerType: "hold_for_input",  timeoutSeconds: 30 },
   // ── Maintenance → elevator sequence ──────────────────────────────────────────
-  17: { mediaId: "maintenance_reveal_01", triggerType: "chained_auto",   timeoutSeconds: 16 },
+  17: { mediaId: "maintenance_reveal_01", triggerType: "chained_auto",   timeoutSeconds: 15 },
   18: { mediaId: "shaft_maintenance_01", triggerType: "chained_auto",    timeoutSeconds: 11 },
   19: { mediaId: "elevator_entry_01",    triggerType: "hold_for_input",  timeoutSeconds: 30 },
   // ── Elevator → hallway sequence ──────────────────────────────────────────────
