@@ -256,10 +256,11 @@ wss.on("connection", (ws: WebSocket) => {
   let card1Collected = false;
   let card1AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
   let card2AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
-  let lastInterruptForwardedAt = 0; // Throttle agent_interrupt to 1 per 2s
   let jasonSpeaking = false; // Echo suppression — true while Jason is outputting audio
   let jasonSpeakingTimer: ReturnType<typeof setTimeout> | null = null; // Clears jasonSpeaking after silence gap
   const acecardGateState = createAcecardGateState();
+  let lastInjectedSceneKey: string | null = null; // Dedup scene context injection
+  let lastInjectedSceneAt = 0;
   let latestPlayerFrame: string | null = null;
   let wildcardVisionPreparing = false;
   let wildcardVisionRequested = false;
@@ -422,6 +423,8 @@ wss.on("connection", (ws: WebSocket) => {
             ws,
             jasonManager,
           );
+          lastInjectedSceneKey = "tunnel_to_park_transition";
+          lastInjectedSceneAt = Date.now();
           injectSceneContextIntoJason("tunnel_to_park_transition", jasonManager);
           startStepTimer(12);
           keywordListener.updateKeywords(12);
@@ -852,9 +855,19 @@ wss.on("connection", (ws: WebSocket) => {
           // Inject scene visual context into Jason only on hold_for_input steps.
           // Chained_auto steps advance too rapidly — injecting context for each
           // brief clip prevents Jason from responding to the player.
+          // Dedup: skip if the same scene was injected within the last 10s (prevents
+          // double-fire from GM + step machine both triggering the same scene).
           const sceneCall = action.gmCalls.find(c => c.fnName === "triggerSceneChange");
           if (sceneCall && (!stepMeta || stepMeta.triggerType === "hold_for_input")) {
-            injectSceneContextIntoJason(sceneCall.args.sceneKey as string, jasonManager);
+            const sk = sceneCall.args.sceneKey as string;
+            const now = Date.now();
+            if (sk !== lastInjectedSceneKey || now - lastInjectedSceneAt > 10_000) {
+              lastInjectedSceneKey = sk;
+              lastInjectedSceneAt = now;
+              injectSceneContextIntoJason(sk, jasonManager);
+            } else {
+              console.log(`[WS] Skipped duplicate scene context injection for "${sk}" — session=${sessionId}`);
+            }
           }
 
           // Handle step extras (card auto-pick, wildcard prewarm, acecard gate)
@@ -1274,8 +1287,7 @@ wss.on("connection", (ws: WebSocket) => {
         // and the mic picks it up — sending it back creates a feedback loop that
         // confuses Gemini (it hears its own output as player input).
         // GM and keyword listener still receive audio so trust/keyword detection works.
-        const currentStepMeta = STEP_MEDIA_TRIGGER[currentSequenceStep];
-        if (!jasonSpeaking && (!currentStepMeta || currentStepMeta.triggerType !== "chained_auto")) {
+        if (!jasonSpeaking) {
           jasonManager.sendAudio(data.audio);
         }
         if (gmGated) gmManager.sendAudio(data.audio); // GM hears player only after intro_complete
