@@ -19,7 +19,17 @@ export const STEP_KEYWORDS: Record<number, string[]> = {
   10: ["generator", "power", "machine", "engine", "humming", "noise", "that sound", "over there", "what is that", "start it", "turn it on", "activate", "power up", "switch", "run it", "start the generator", "turn on the generator", "crank"],
   16: ["shaft", "maintenance", "go in", "enter", "down there", "ladder", "climb", "descend", "that opening", "forward", "keep going", "move", "walk", "deeper", "go ahead", "keep moving", "push forward", "that way", "look around"],
   19: ["elevator", "get in", "step in", "enter", "go inside", "ride it", "doors", "step inside"],
+  23: ["panel", "hidden panel", "secret panel", "wall panel", "open it", "behind the wall", "there", "found it", "look", "that panel", "grab", "take", "pick up", "get it", "retrieve", "the card", "over there", "right there", "what's that"],
 };
+
+/**
+ * Keywords for the card_pickup_02 phase (after acecard_reveal_01 clip).
+ * Separate from step-based keywords because this phase has no step number.
+ */
+export const CARD_PICKUP_KEYWORDS: string[] = [
+  "card", "pick up", "grab", "take", "get it", "got it", "pick it up",
+  "grab it", "take it", "the card", "ace", "collect", "reach",
+];
 
 /**
  * Scene visual context injected into Jason when each scene fires.

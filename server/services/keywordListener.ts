@@ -143,6 +143,23 @@ export class KeywordListener {
   }
 
   /**
+   * Push an arbitrary keyword list (bypasses step dedup).
+   * Used for phases without a step number, e.g. card_pickup_02.
+   */
+  pushKeywords(keywords: string[]): void {
+    const kwList =
+      keywords.length > 0
+        ? keywords.map((k) => `"${k}"`).join(", ")
+        : "(no active keywords — stay silent)";
+    this.manager.sendText(
+      `[KEYWORD_UPDATE: Replace your active keyword list. New active keywords: [${kwList}]]`,
+    );
+    console.log(
+      `[KeywordListener] Pushed custom keywords: [${keywords.join(", ")}]`,
+    );
+  }
+
+  /**
    * Forward player audio to the keyword listener.
    */
   sendAudio(base64Chunk: string): void {

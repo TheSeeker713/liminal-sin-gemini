@@ -40,6 +40,7 @@ import {
 } from "./services/acecardGate";
 import { clearClipCues } from "./services/clipCues";
 import { KeywordListener } from "./services/keywordListener";
+import { CARD_PICKUP_KEYWORDS } from "./services/keywordLibrary";
 
 const app = express();
 const server = http.createServer(app);
@@ -279,6 +280,8 @@ wss.on("connection", (ws: WebSocket) => {
   } | null = null;
   let wildcardGoodEndingStartTimer: ReturnType<typeof setTimeout> | null = null;
   let wildcardGoodEndingEndTimer: ReturnType<typeof setTimeout> | null = null;
+  let cardPickupKeywordPhase = false; // True after acecard_reveal_01 plays — keyword listener listens for card pickup words
+  let acecardHintTimer: ReturnType<typeof setTimeout> | null = null; // 12s silence hint at step 23
 
   const clearCardAutoPickTimers = () => {
     if (card1AutoPickTimer) {
@@ -313,6 +316,7 @@ wss.on("connection", (ws: WebSocket) => {
       wildcardGoodEndingEndTimer = null;
     }
     clearAcecardTimers(acecardGateState);
+    if (acecardHintTimer) { clearTimeout(acecardHintTimer); acecardHintTimer = null; }
   };
 
   const maybeEmitPreparedWildcardVision = () => {
@@ -916,17 +920,25 @@ wss.on("connection", (ws: WebSocket) => {
               sessionId,
               () => { void emitWildcardGameOverBranch(); },
             );
-            // LS_VIDEO_PIPELINE step 23: immediate visual hint — panel is hidden
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({
-                type: "overlay_text",
-                payload: {
-                  text: "Maybe there's a panel somewhere?",
-                  variant: "hint",
-                  durationMs: 3000,
-                },
-              }));
-            }
+            // 12s silence hint — if the player hasn't spoken, nudge them
+            if (acecardHintTimer) { clearTimeout(acecardHintTimer); acecardHintTimer = null; }
+            acecardHintTimer = setTimeout(() => {
+              acecardHintTimer = null;
+              if (
+                ws.readyState === WebSocket.OPEN &&
+                !acecardGateState.acecardKeywordReceived
+              ) {
+                ws.send(JSON.stringify({
+                  type: "overlay_text",
+                  payload: {
+                    text: "Search the walls… there must be something hidden.",
+                    variant: "hint",
+                    durationMs: 4000,
+                  },
+                }));
+                console.log(`[WS] Acecard silence hint sent — session=${sessionId}`);
+              }
+            }, 12_000);
           }
         }
 
@@ -1027,7 +1039,37 @@ wss.on("connection", (ws: WebSocket) => {
       // Keyword listener session - listens for per-step keywords in player audio
       await keywordListener.connect(7); // Start with step 7 keywords (flashlight)
       keywordListener.onKeywordDetected((keyword) => {
-        console.log(`[KW] Keyword "${keyword}" detected at step ${currentSequenceStep} — session=${sessionId}`);
+        console.log(`[KW] Keyword "${keyword}" detected at step ${currentSequenceStep} (pickupPhase=${cardPickupKeywordPhase}) — session=${sessionId}`);
+
+        // Card pickup phase — voice-triggered card2 collection
+        if (cardPickupKeywordPhase) {
+          cardPickupKeywordPhase = false;
+          if (acecardGateState.cardPickup02Timer !== null) {
+            clearTimeout(acecardGateState.cardPickup02Timer);
+            acecardGateState.cardPickup02Timer = null;
+          }
+          if (card2AutoPickTimer) {
+            clearTimeout(card2AutoPickTimer);
+            card2AutoPickTimer = null;
+          }
+          console.log(`[KW] Voice-triggered card2 pickup — session=${sessionId}`);
+          handleCardCollected("card2", sessionId, jasonManager, ws, {
+            deferGoodEnding: true,
+          })
+            .then(() => { queueWildcardGoodEndingPlayback(); })
+            .catch((err: Error) => {
+              console.error(`[KW] card2 voice-pickup error: ${err.message}`);
+            });
+          return;
+        }
+
+        // Step 23 (hallway) — keyword triggers acecard reveal instead of advanceStep
+        if (currentSequenceStep >= 23) {
+          if (acecardHintTimer) { clearTimeout(acecardHintTimer); acecardHintTimer = null; }
+          handleAcecardReveal(acecardGateState, ws);
+          return;
+        }
+
         advanceStep(currentSequenceStep, "keyword");
       });
 
@@ -1283,6 +1325,9 @@ wss.on("connection", (ws: WebSocket) => {
           sessionId,
           () => { void emitWildcardGameOverBranch(); },
         );
+        // Enable voice-triggered card pickup via keyword listener
+        cardPickupKeywordPhase = true;
+        keywordListener.pushKeywords(CARD_PICKUP_KEYWORDS);
         return;
       }
 
@@ -1338,6 +1383,7 @@ wss.on("connection", (ws: WebSocket) => {
     if (hintTimer) clearTimeout(hintTimer);
     if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
     if (jasonSpeakingTimer) clearTimeout(jasonSpeakingTimer);
+    if (acecardHintTimer) clearTimeout(acecardHintTimer);
     clearStepTimer();
     stopInteractionTimers();
     clearCardAutoPickTimers();

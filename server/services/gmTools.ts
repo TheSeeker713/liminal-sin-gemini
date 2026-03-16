@@ -163,7 +163,7 @@ export const gameMasterTools: Tool[] = [
       },
       {
         name: 'triggerAcecardReveal',
-        description: 'Call this at step 31 (hallway_pov_02) when the player gives any instruction to grab, pick up, take, or retrieve an object — e.g. "grab it", "take the card", "get it", "pick it up", "there — take that", "Jason grab the card". Any semantically broad instruction to acquire or retrieve something counts. This unlocks the acecard_reveal_01 clip and begins the final 15-second card pickup countdown. Do not call outside the 30-second keyword window. Do not call if no such instruction has been given.',
+        description: 'Call this at step 31 (hallway_pov_02) when the player gives any instruction meaning: find, open, grab, pick up, take, retrieve, look at a panel, check the wall, or identify a hidden object — e.g. "the panel", "open it", "hidden panel", "grab it", "take the card", "get it", "pick it up", "there — take that", "what\'s that on the wall", "found it", "over there", "right there". Any semantically broad instruction to find, reveal, or acquire something counts. This unlocks the acecard_reveal_01 clip and begins the final 15-second card pickup countdown. Do not call outside the 30-second keyword window. Do not call if no such instruction has been given.',
         parameters: {
           type: Type.OBJECT,
           properties: {}
