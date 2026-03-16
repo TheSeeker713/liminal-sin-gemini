@@ -1,5 +1,12 @@
-import { GoogleGenAI, Modality, Session, StartSensitivity, EndSensitivity, Tool } from '@google/genai';
-import { gameMasterTools } from './gmTools';
+import {
+  GoogleGenAI,
+  Modality,
+  Session,
+  StartSensitivity,
+  EndSensitivity,
+  Tool,
+} from "@google/genai";
+import { gameMasterTools } from "./gmTools";
 
 // Lazy getters — avoids CJS import-hoisting bug where dotenv.config() in server.ts
 // runs AFTER all require()s (including this module) due to TypeScript CJS compilation.
@@ -10,10 +17,12 @@ let _veoAi: GoogleGenAI | null = null;
 /** Returns the Vertex AI GenAI client (us-west1). Used for Imagen 4 and non-live calls. */
 export function getAiClient(): GoogleGenAI {
   if (!_ai) {
-    const project = process.env.GOOGLE_CLOUD_PROJECT || '';
-    const location = process.env.GOOGLE_CLOUD_REGION || 'us-west1';
+    const project = process.env.GOOGLE_CLOUD_PROJECT || "";
+    const location = process.env.GOOGLE_CLOUD_REGION || "us-west1";
     if (!project) {
-      console.warn('[GEMINI] WARNING: GOOGLE_CLOUD_PROJECT is not set. Vertex AI calls will fail.');
+      console.warn(
+        "[GEMINI] WARNING: GOOGLE_CLOUD_PROJECT is not set. Vertex AI calls will fail.",
+      );
     }
     _ai = new GoogleGenAI({ vertexai: true, project, location });
   }
@@ -23,8 +32,12 @@ export function getAiClient(): GoogleGenAI {
 /** Returns the Vertex AI Live client (us-central1 — required for Live API). */
 function getLiveAiClient(): GoogleGenAI {
   if (!_liveAi) {
-    const project = process.env.GOOGLE_CLOUD_PROJECT || '';
-    _liveAi = new GoogleGenAI({ vertexai: true, project, location: 'us-central1' });
+    const project = process.env.GOOGLE_CLOUD_PROJECT || "";
+    _liveAi = new GoogleGenAI({
+      vertexai: true,
+      project,
+      location: "us-central1",
+    });
   }
   return _liveAi;
 }
@@ -32,8 +45,12 @@ function getLiveAiClient(): GoogleGenAI {
 /** Returns the Vertex AI client for Veo (us-central1 — Veo 3.x is not available in us-west1). */
 export function getVeoAiClient(): GoogleGenAI {
   if (!_veoAi) {
-    const project = process.env.GOOGLE_CLOUD_PROJECT || '';
-    _veoAi = new GoogleGenAI({ vertexai: true, project, location: 'us-central1' });
+    const project = process.env.GOOGLE_CLOUD_PROJECT || "";
+    _veoAi = new GoogleGenAI({
+      vertexai: true,
+      project,
+      location: "us-central1",
+    });
   }
   return _veoAi;
 }
@@ -47,11 +64,11 @@ export function getVeoAiClient(): GoogleGenAI {
 /**
  * Constructs the core System Prompt for the Game Master / Overseer agent
  * based on the current player Trust Level.
- * 
+ *
  * The GM is SILENT — it never speaks to the player. It uses function calls only.
  * It hears the player's voice and sees their webcam (1 FPS JPEG).
  * It orchestrates the demo by firing function calls at the right moments.
- * 
+ *
  * @param trustLevel The current TrustLevel from the database session.
  * @returns A string formatted for the system instruction block.
  */
@@ -79,7 +96,7 @@ Your webcam gives you 1 frame per second. Use it to count people in the room.
 - GROUP (3+): Social courage fights dread — they reassure each other. Counter this with triggerGlitchEvent(high) and faster scene transitions to shatter group comfort.
 Call triggerAudienceUpdate within the first 10 seconds. If count changes mid-session, call it again immediately.`;
 
-  let trustModifiers = '';
+  let trustModifiers = "";
   if (trustLevel >= 0.65) {
     trustModifiers = `\n[CURRENT TRUST: HIGH — ${trustLevel.toFixed(2)}]
 The player has been cooperative. Pace the experience gently. Offer survival hints through Jason (via trust injection). Scene changes should feel exploratory, not threatening.`;
@@ -170,11 +187,14 @@ export class LiveSessionManager {
   private session: Session | null = null;
   private onAudioCallback: ((base64Audio: string) => void) | null = null;
   private onInterruptCallback: (() => void) | null = null;
-  private onFunctionCallCallback: ((id: string, name: string, args: Record<string, unknown>) => void) | null = null;
+  private onFunctionCallCallback:
+    | ((id: string, name: string, args: Record<string, unknown>) => void)
+    | null = null;
   private readonly modelName: string;
   private lastConnectPrompt: string | null = null;
-  private lastConnectMode: 'npc' | 'gm' = 'npc';
-  private lastConnectVoice: string = 'Enceladus';
+  private lastConnectMode: "npc" | "gm" = "npc";
+  private lastConnectVoice: string = "Enceladus";
+  private lastCustomTools: Tool[] | null = null;
   private reconnecting = false;
   private lastReconnectAttempt = 0;
 
@@ -182,7 +202,7 @@ export class LiveSessionManager {
    * @param modelName Override the Gemini model. NPC agents use the native-audio model (default).
    *                  GM model is configured by server.ts via GM_LIVE_MODEL env var.
    */
-  constructor(modelName = 'gemini-live-2.5-flash-native-audio') {
+  constructor(modelName = "gemini-live-2.5-flash-native-audio") {
     this.modelName = modelName;
   }
 
@@ -194,50 +214,62 @@ export class LiveSessionManager {
    *             'gm'  — silent, gameMasterTools, no voice config (Game Master).
    * @param voiceName Optional Gemini Live voice name override (default: 'Enceladus' for npc mode).
    */
-  async connect(systemPrompt: string, mode: 'npc' | 'gm' = 'npc', voiceName = 'Enceladus'): Promise<void> {
+  async connect(
+    systemPrompt: string,
+    mode: "npc" | "gm" = "npc",
+    voiceName = "Enceladus",
+  ): Promise<void> {
     this.lastConnectPrompt = systemPrompt;
     this.lastConnectMode = mode;
     this.lastConnectVoice = voiceName;
-    console.log(`[LiveSessionManager] Opening Vertex AI Live session — mode: ${mode}, model: ${this.modelName}...`);
+    console.log(
+      `[LiveSessionManager] Opening Vertex AI Live session — mode: ${mode}, model: ${this.modelName}...`,
+    );
 
-    const config = mode === 'npc'
-      ? {
-          systemInstruction: systemPrompt,
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: voiceName }
-            }
-          },
-          // Default VAD is LOW sensitivity — raise to HIGH so quiet speech
-          // still triggers end-of-turn and Jason responds promptly.
-          realtimeInputConfig: {
-            automaticActivityDetection: {
-              startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_HIGH,
-              endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_HIGH,
-            }
+    const config =
+      mode === "npc"
+        ? {
+            systemInstruction: systemPrompt,
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: voiceName },
+              },
+            },
+            // Default VAD is LOW sensitivity — raise to HIGH so quiet speech
+            // still triggers end-of-turn and Jason responds promptly.
+            realtimeInputConfig: {
+              automaticActivityDetection: {
+                startOfSpeechSensitivity:
+                  StartSensitivity.START_SENSITIVITY_HIGH,
+                endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_HIGH,
+              },
+            },
           }
-        }
-      : {
-          systemInstruction: systemPrompt,
-          tools: gameMasterTools,
-          // GM is silent — it uses TEXT modality so it never pushes audio to the client.
-          // Native-audio model must NOT be used here: it fires an audio turn on connect
-          // before any input arrives, which causes a 1007 disconnect and kills the GM session.
-          responseModalities: [Modality.TEXT],
-        };
+        : {
+            systemInstruction: systemPrompt,
+            tools: gameMasterTools,
+            // GM is silent — it uses TEXT modality so it never pushes audio to the client.
+            // Native-audio model must NOT be used here: it fires an audio turn on connect
+            // before any input arrives, which causes a 1007 disconnect and kills the GM session.
+            responseModalities: [Modality.TEXT],
+          };
 
     this.session = await getLiveAiClient().live.connect({
       model: this.modelName,
       config,
       callbacks: {
         onopen: () => {
-          console.log(`[LiveSessionManager] Session connected. ${new Date().toISOString()}`);
+          console.log(
+            `[LiveSessionManager] Session connected. ${new Date().toISOString()}`,
+          );
         },
         onmessage: (msg) => {
           // NOTE: Do NOT access msg.text here — the SDK accessor logs a noisy warning
           // for every audio message that contains inlineData instead of text parts.
-          console.log(`[LiveSessionManager] onmessage — data: ${!!msg.data}, toolCall: ${!!msg.toolCall}, serverContent: ${!!msg.serverContent}`);
+          console.log(
+            `[LiveSessionManager] onmessage — data: ${!!msg.data}, toolCall: ${!!msg.toolCall}, serverContent: ${!!msg.serverContent}`,
+          );
           // Audio: use the .data convenience accessor (base64 inline data)
           if (msg.data && this.onAudioCallback) {
             this.onAudioCallback(msg.data);
@@ -250,16 +282,29 @@ export class LiveSessionManager {
           const calls = msg.toolCall?.functionCalls ?? [];
           for (const call of calls) {
             if (call.name && this.onFunctionCallCallback) {
-              this.onFunctionCallCallback(call.id ?? '', call.name, call.args ?? {});
+              this.onFunctionCallCallback(
+                call.id ?? "",
+                call.name,
+                call.args ?? {},
+              );
             }
           }
         },
         onerror: (e) => {
-          console.error('[LiveSessionManager] WebSocket error:', JSON.stringify(e));
+          console.error(
+            "[LiveSessionManager] WebSocket error:",
+            JSON.stringify(e),
+          );
         },
         onclose: (e) => {
-          const ev = e as { code?: number; reason?: string; wasClean?: boolean };
-          console.log(`[LiveSessionManager] Connection closed — code: ${ev.code}, reason: "${ev.reason ?? ''}", wasClean: ${ev.wasClean ?? '?'} — ${new Date().toISOString()}`);
+          const ev = e as {
+            code?: number;
+            reason?: string;
+            wasClean?: boolean;
+          };
+          console.log(
+            `[LiveSessionManager] Connection closed — code: ${ev.code}, reason: "${ev.reason ?? ""}", wasClean: ${ev.wasClean ?? "?"} — ${new Date().toISOString()}`,
+          );
         },
       },
     });
@@ -270,7 +315,15 @@ export class LiveSessionManager {
    * TEXT modality, no audio output — same as GM mode but with custom tools.
    */
   async connectWithTools(systemPrompt: string, tools: Tool[]): Promise<void> {
-    console.log(`[LiveSessionManager] Opening Vertex AI Live session — mode: keyword, model: ${this.modelName}...`);
+    // Store for reconnection — without this, tryReconnect() is a no-op and the
+    // keyword listener silently dies if the Live session disconnects mid-game.
+    this.lastConnectPrompt = systemPrompt;
+    this.lastConnectMode = "gm"; // TEXT modality with tools
+    this.lastCustomTools = tools;
+
+    console.log(
+      `[LiveSessionManager] Opening Vertex AI Live session — mode: keyword, model: ${this.modelName}...`,
+    );
 
     const config = {
       systemInstruction: systemPrompt,
@@ -283,22 +336,39 @@ export class LiveSessionManager {
       config,
       callbacks: {
         onopen: () => {
-          console.log(`[LiveSessionManager] Keyword session connected. ${new Date().toISOString()}`);
+          console.log(
+            `[LiveSessionManager] Keyword session connected. ${new Date().toISOString()}`,
+          );
         },
         onmessage: (msg) => {
           const calls = msg.toolCall?.functionCalls ?? [];
           for (const call of calls) {
             if (call.name && this.onFunctionCallCallback) {
-              this.onFunctionCallCallback(call.id ?? '', call.name, call.args ?? {});
+              this.onFunctionCallCallback(
+                call.id ?? "",
+                call.name,
+                call.args ?? {},
+              );
             }
           }
         },
         onerror: (e) => {
-          console.error('[LiveSessionManager] Keyword listener WebSocket error:', JSON.stringify(e));
+          console.error(
+            "[LiveSessionManager] Keyword listener WebSocket error:",
+            JSON.stringify(e),
+          );
         },
         onclose: (e) => {
-          const ev = e as { code?: number; reason?: string; wasClean?: boolean };
-          console.log(`[LiveSessionManager] Keyword listener closed — code: ${ev.code}, reason: "${ev.reason ?? ''}", wasClean: ${ev.wasClean ?? '?'}`);
+          const ev = e as {
+            code?: number;
+            reason?: string;
+            wasClean?: boolean;
+          };
+          console.log(
+            `[LiveSessionManager] Keyword listener closed — code: ${ev.code}, reason: "${ev.reason ?? ""}", wasClean: ${ev.wasClean ?? "?"}`,
+          );
+          // Mark session dead so sendAudio triggers reconnection
+          this.session = null;
         },
       },
     });
@@ -308,13 +378,19 @@ export class LiveSessionManager {
    * Sends a base64-encoded PCM audio chunk to the active Gemini Live stream.
    */
   sendAudio(base64Chunk: string) {
-    if (!this.session) { this.tryReconnect(); return; }
+    if (!this.session) {
+      this.tryReconnect();
+      return;
+    }
     try {
       this.session.sendRealtimeInput({
-        audio: { data: base64Chunk, mimeType: 'audio/pcm;rate=16000' },
+        audio: { data: base64Chunk, mimeType: "audio/pcm;rate=16000" },
       });
     } catch (err) {
-      console.error('[LiveSessionManager] sendAudio failed (session likely dead):', (err as Error).message);
+      console.error(
+        "[LiveSessionManager] sendAudio failed (session likely dead):",
+        (err as Error).message,
+      );
       this.session = null;
       this.tryReconnect();
     }
@@ -327,10 +403,13 @@ export class LiveSessionManager {
     if (!this.session) return;
     try {
       this.session.sendRealtimeInput({
-        video: { data: base64Jpeg, mimeType: 'image/jpeg' },
+        video: { data: base64Jpeg, mimeType: "image/jpeg" },
       });
     } catch (err) {
-      console.error('[LiveSessionManager] sendFrame failed (session likely dead):', (err as Error).message);
+      console.error(
+        "[LiveSessionManager] sendFrame failed (session likely dead):",
+        (err as Error).message,
+      );
       this.session = null;
     }
   }
@@ -340,11 +419,17 @@ export class LiveSessionManager {
    * This uses sendClientContent which bypasses VAD and triggers a response.
    */
   sendText(text: string) {
-    if (!this.session) { this.tryReconnect(); return; }
+    if (!this.session) {
+      this.tryReconnect();
+      return;
+    }
     try {
       this.session.sendClientContent({ turns: text, turnComplete: true });
     } catch (err) {
-      console.error('[LiveSessionManager] sendText failed (session likely dead):', (err as Error).message);
+      console.error(
+        "[LiveSessionManager] sendText failed (session likely dead):",
+        (err as Error).message,
+      );
       this.session = null;
       this.tryReconnect();
     }
@@ -367,7 +452,9 @@ export class LiveSessionManager {
   /**
    * Hook for Game Master tools execution
    */
-  onFunctionCall(callback: (id: string, name: string, args: Record<string, unknown>) => void) {
+  onFunctionCall(
+    callback: (id: string, name: string, args: Record<string, unknown>) => void,
+  ) {
     this.onFunctionCallCallback = callback;
   }
 
@@ -375,14 +462,23 @@ export class LiveSessionManager {
    * ACKs a Gemini function call. Must be called after handling every toolCall
    * or Gemini will hang waiting for the response.
    */
-  sendToolResponse(callId: string, functionName: string, result: Record<string, unknown> = { status: 'ok' }) {
+  sendToolResponse(
+    callId: string,
+    functionName: string,
+    result: Record<string, unknown> = { status: "ok" },
+  ) {
     if (!this.session) return;
     try {
       this.session.sendToolResponse({
-        functionResponses: [{ id: callId, name: functionName, response: result }]
+        functionResponses: [
+          { id: callId, name: functionName, response: result },
+        ],
       });
     } catch (err) {
-      console.error('[LiveSessionManager] sendToolResponse failed (session likely dead):', (err as Error).message);
+      console.error(
+        "[LiveSessionManager] sendToolResponse failed (session likely dead):",
+        (err as Error).message,
+      );
       this.session = null;
     }
   }
@@ -397,13 +493,23 @@ export class LiveSessionManager {
     if (now - this.lastReconnectAttempt < 30_000) return; // 30s cooldown — prevents reconnect loops
     this.lastReconnectAttempt = now;
     this.reconnecting = true;
-    console.log('[LiveSessionManager] Session dead — attempting reconnect...');
-    this.connect(this.lastConnectPrompt, this.lastConnectMode, this.lastConnectVoice)
+    console.log("[LiveSessionManager] Session dead — attempting reconnect...");
+    const reconnectPromise = this.lastCustomTools
+      ? this.connectWithTools(this.lastConnectPrompt, this.lastCustomTools)
+      : this.connect(
+          this.lastConnectPrompt,
+          this.lastConnectMode,
+          this.lastConnectVoice,
+        );
+    reconnectPromise
       .then(() => {
-        console.log('[LiveSessionManager] Reconnect succeeded.');
+        console.log("[LiveSessionManager] Reconnect succeeded.");
       })
       .catch((err) => {
-        console.error('[LiveSessionManager] Reconnect failed:', (err as Error).message);
+        console.error(
+          "[LiveSessionManager] Reconnect failed:",
+          (err as Error).message,
+        );
         this.session = null;
       })
       .finally(() => {
@@ -413,12 +519,10 @@ export class LiveSessionManager {
 
   disconnect() {
     if (this.session) {
-      console.log('[LiveSessionManager] Disconnecting session');
+      console.log("[LiveSessionManager] Disconnecting session");
       this.session.close();
       this.session = null;
     }
     this.lastConnectPrompt = null; // Prevent reconnect after intentional disconnect
   }
 }
-
-

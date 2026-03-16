@@ -40,7 +40,10 @@ import {
 } from "./services/acecardGate";
 import { clearClipCues } from "./services/clipCues";
 import { KeywordListener } from "./services/keywordListener";
-import { CARD_PICKUP_KEYWORDS } from "./services/keywordLibrary";
+import {
+  CARD_PICKUP_KEYWORDS,
+  getKeywordListForStep,
+} from "./services/keywordLibrary";
 
 const app = express();
 const server = http.createServer(app);
@@ -123,12 +126,16 @@ app.post("/debug/test-wildcard-vision", async (req, res) => {
     process.env.NODE_ENV === "production" &&
     process.env.DEBUG_GM_ENDPOINT !== "true"
   ) {
-    res.status(403).json({ error: "Debug endpoint disabled. Set DEBUG_GM_ENDPOINT=true." });
+    res
+      .status(403)
+      .json({ error: "Debug endpoint disabled. Set DEBUG_GM_ENDPOINT=true." });
     return;
   }
   const { jpeg } = req.body as { jpeg?: string };
   if (!jpeg) {
-    res.status(400).json({ error: "Body must contain { jpeg: '<base64 string>' }" });
+    res
+      .status(400)
+      .json({ error: "Body must contain { jpeg: '<base64 string>' }" });
     return;
   }
 
@@ -148,7 +155,8 @@ app.post("/debug/test-wildcard-vision", async (req, res) => {
     if (edited) {
       editedImageBytes = edited.imageBytes;
     } else {
-      editError = "generateEditedSceneImage returned null (possible RAI block — check server logs)";
+      editError =
+        "generateEditedSceneImage returned null (possible RAI block — check server logs)";
     }
   } catch (err) {
     editError = String(err);
@@ -158,10 +166,14 @@ app.post("/debug/test-wildcard-vision", async (req, res) => {
   if (editedImageBytes) {
     try {
       const t2 = Date.now();
-      videoUri = await generateSceneVideo("wildcard_vision_feed", editedImageBytes);
+      videoUri = await generateSceneVideo(
+        "wildcard_vision_feed",
+        editedImageBytes,
+      );
       videoDurationMs = Date.now() - t2;
       if (!videoUri) {
-        videoError = "generateSceneVideo returned null (possible RAI block — check server logs)";
+        videoError =
+          "generateSceneVideo returned null (possible RAI block — check server logs)";
       }
     } catch (err) {
       videoError = String(err);
@@ -175,13 +187,13 @@ app.post("/debug/test-wildcard-vision", async (req, res) => {
       imagenEdit: {
         success: !!editedImageBytes,
         durationMs: editDurationMs,
-        imageBytes: editedImageBytes,   // base64 JPEG
+        imageBytes: editedImageBytes, // base64 JPEG
         error: editError,
       },
       veoVideo: {
         success: !!videoUri,
         durationMs: videoDurationMs,
-        videoUri,                        // data URI or GCS URI
+        videoUri, // data URI or GCS URI
         error: videoError,
       },
     },
@@ -256,8 +268,6 @@ wss.on("connection", (ws: WebSocket) => {
   let card1Collected = false;
   let card1AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
   let card2AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
-  let jasonSpeaking = false; // Echo suppression — true while Jason is outputting audio
-  let jasonSpeakingTimer: ReturnType<typeof setTimeout> | null = null; // Clears jasonSpeaking after silence gap
   const acecardGateState = createAcecardGateState();
   let lastInjectedSceneKey: string | null = null; // Dedup scene context injection
   let lastInjectedSceneAt = 0;
@@ -283,6 +293,7 @@ wss.on("connection", (ws: WebSocket) => {
   let wildcardGoodEndingEndTimer: ReturnType<typeof setTimeout> | null = null;
   let cardPickupKeywordPhase = false; // True after acecard_reveal_01 plays — keyword listener listens for card pickup words
   let acecardHintTimer: ReturnType<typeof setTimeout> | null = null; // 12s silence hint at step 23
+  let matrixMentionCount = 0; // Matrix easter egg — triggers at 3 mentions
 
   const clearCardAutoPickTimers = () => {
     if (card1AutoPickTimer) {
@@ -317,7 +328,10 @@ wss.on("connection", (ws: WebSocket) => {
       wildcardGoodEndingEndTimer = null;
     }
     clearAcecardTimers(acecardGateState);
-    if (acecardHintTimer) { clearTimeout(acecardHintTimer); acecardHintTimer = null; }
+    if (acecardHintTimer) {
+      clearTimeout(acecardHintTimer);
+      acecardHintTimer = null;
+    }
   };
 
   const maybeEmitPreparedWildcardVision = () => {
@@ -425,7 +439,10 @@ wss.on("connection", (ws: WebSocket) => {
           );
           lastInjectedSceneKey = "tunnel_to_park_transition";
           lastInjectedSceneAt = Date.now();
-          injectSceneContextIntoJason("tunnel_to_park_transition", jasonManager);
+          injectSceneContextIntoJason(
+            "tunnel_to_park_transition",
+            jasonManager,
+          );
           startStepTimer(12);
           keywordListener.updateKeywords(12);
         })().catch((err: Error) => {
@@ -493,10 +510,7 @@ wss.on("connection", (ws: WebSocket) => {
   ): Promise<boolean> => {
     const started = Date.now();
     while (Date.now() - started < timeoutMs) {
-      if (
-        preparedWildcardGoodEnding &&
-        preparedWildcardGoodEnding.videoUri
-      ) {
+      if (preparedWildcardGoodEnding && preparedWildcardGoodEnding.videoUri) {
         return true;
       }
       await new Promise((resolve) => setTimeout(resolve, pollMs));
@@ -818,7 +832,10 @@ wss.on("connection", (ws: WebSocket) => {
 
     // Clear hint timer if flashlight just fired
     if (fromStep === 7) {
-      if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+      if (hintTimer) {
+        clearTimeout(hintTimer);
+        hintTimer = null;
+      }
     }
 
     ws.send(
@@ -838,7 +855,11 @@ wss.on("connection", (ws: WebSocket) => {
 
     void (async () => {
       try {
-        if (!gmGated) { stepAdvancing = false; startStepTimer(toStep); return; }
+        if (!gmGated) {
+          stepAdvancing = false;
+          startStepTimer(toStep);
+          return;
+        }
 
         const action = STEP_AUTOPLAY_ACTIONS[fromStep];
         if (action) {
@@ -847,10 +868,17 @@ wss.on("connection", (ws: WebSocket) => {
           // in rapid succession — flooding Jason with sendText calls prevents
           // him from hearing/responding to the player's actual voice.
           const stepMeta = STEP_MEDIA_TRIGGER[fromStep];
-          if (!stepMeta || stepMeta.triggerType === "hold_for_input" || reason === "keyword") {
+          if (
+            !stepMeta ||
+            stepMeta.triggerType === "hold_for_input" ||
+            reason === "keyword"
+          ) {
             jasonManager.sendText(
               reason === "keyword"
-                ? action.autoplayText.replace("[AUTOPLAY_TIMEOUT: No player response. ", "[KEYWORD_TRIGGERED: ")
+                ? action.autoplayText.replace(
+                    "[AUTOPLAY_TIMEOUT: No player response. ",
+                    "[KEYWORD_TRIGGERED: ",
+                  )
                 : action.autoplayText,
             );
           }
@@ -876,16 +904,26 @@ wss.on("connection", (ws: WebSocket) => {
           // brief clip prevents Jason from responding to the player.
           // Dedup: skip if the same scene was injected within the last 10s (prevents
           // double-fire from GM + step machine both triggering the same scene).
-          const sceneCall = action.gmCalls.find(c => c.fnName === "triggerSceneChange");
-          if (sceneCall && (!stepMeta || stepMeta.triggerType === "hold_for_input")) {
+          const sceneCall = action.gmCalls.find(
+            (c) => c.fnName === "triggerSceneChange",
+          );
+          if (
+            sceneCall &&
+            (!stepMeta || stepMeta.triggerType === "hold_for_input")
+          ) {
             const sk = sceneCall.args.sceneKey as string;
             const now = Date.now();
-            if (sk !== lastInjectedSceneKey || now - lastInjectedSceneAt > 10_000) {
+            if (
+              sk !== lastInjectedSceneKey ||
+              now - lastInjectedSceneAt > 10_000
+            ) {
               lastInjectedSceneKey = sk;
               lastInjectedSceneAt = now;
               injectSceneContextIntoJason(sk, jasonManager);
             } else {
-              console.log(`[WS] Skipped duplicate scene context injection for "${sk}" — session=${sessionId}`);
+              console.log(
+                `[WS] Skipped duplicate scene context injection for "${sk}" — session=${sessionId}`,
+              );
             }
           }
 
@@ -896,12 +934,16 @@ wss.on("connection", (ws: WebSocket) => {
             // only after the clip ends and the still (card_joker_01.png) loads.
             setTimeout(() => {
               if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                  type: "card_discovered",
-                  cardId: "card1",
-                  timestamp: Date.now(),
-                }));
-                console.log(`[WS] Delayed card_discovered(card1) emitted for session ${sessionId}`);
+                ws.send(
+                  JSON.stringify({
+                    type: "card_discovered",
+                    cardId: "card1",
+                    timestamp: Date.now(),
+                  }),
+                );
+                console.log(
+                  `[WS] Delayed card_discovered(card1) emitted for session ${sessionId}`,
+                );
               }
             }, 16_000);
             if (!card1Collected && !card1AutoPickTimer) {
@@ -932,12 +974,16 @@ wss.on("connection", (ws: WebSocket) => {
             // has time to load on the frontend before the card overlay appears.
             setTimeout(() => {
               if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                  type: "card_discovered",
-                  cardId: "card2",
-                  timestamp: Date.now(),
-                }));
-                console.log(`[WS] Delayed card_discovered(card2) emitted for session ${sessionId}`);
+                ws.send(
+                  JSON.stringify({
+                    type: "card_discovered",
+                    cardId: "card2",
+                    timestamp: Date.now(),
+                  }),
+                );
+                console.log(
+                  `[WS] Delayed card_discovered(card2) emitted for session ${sessionId}`,
+                );
               }
             }, 3_000);
             maybePrepareWildcardGameOver();
@@ -946,29 +992,43 @@ wss.on("connection", (ws: WebSocket) => {
               clearTimeout(card2AutoPickTimer);
               card2AutoPickTimer = null;
             }
-            startAcecardKeywordTimer(
-              acecardGateState,
-              ws,
-              sessionId,
-              () => { void emitWildcardGameOverBranch(); },
+            startAcecardKeywordTimer(acecardGateState, ws, sessionId, () => {
+              void emitWildcardGameOverBranch();
+            });
+            // Notify GM that the acecard keyword window is open so it can fire triggerAcecardReveal
+            gmManager.sendText(
+              "[ACECARD_WINDOW_OPEN: The hallway_pov_02 scene is now active. " +
+                "The 30-second acecard keyword window has started. Listen for the player to say " +
+                "ANYTHING about finding, opening, grabbing, or looking at a panel, wall, or hidden object. " +
+                "If you hear such an instruction, call triggerAcecardReveal IMMEDIATELY.]",
             );
+            // Belt-and-suspenders: explicitly push step 23 keywords to the keyword listener.
+            // updateKeywords() below also does this, but pushKeywords bypasses step dedup.
+            keywordListener.pushKeywords(getKeywordListForStep(23));
             // 12s silence hint — if the player hasn't spoken, nudge them
-            if (acecardHintTimer) { clearTimeout(acecardHintTimer); acecardHintTimer = null; }
+            if (acecardHintTimer) {
+              clearTimeout(acecardHintTimer);
+              acecardHintTimer = null;
+            }
             acecardHintTimer = setTimeout(() => {
               acecardHintTimer = null;
               if (
                 ws.readyState === WebSocket.OPEN &&
                 !acecardGateState.acecardKeywordReceived
               ) {
-                ws.send(JSON.stringify({
-                  type: "overlay_text",
-                  payload: {
-                    text: "Search the walls… there must be something hidden.",
-                    variant: "hint",
-                    durationMs: 4000,
-                  },
-                }));
-                console.log(`[WS] Acecard silence hint sent — session=${sessionId}`);
+                ws.send(
+                  JSON.stringify({
+                    type: "overlay_text",
+                    payload: {
+                      text: "Search the walls… there must be something hidden.",
+                      variant: "hint",
+                      durationMs: 4000,
+                    },
+                  }),
+                );
+                console.log(
+                  `[WS] Acecard silence hint sent — session=${sessionId}`,
+                );
               }
             }, 12_000);
           }
@@ -1027,12 +1087,6 @@ wss.on("connection", (ws: WebSocket) => {
       await jasonManager.connect(jasonPrompt, "npc");
 
       jasonManager.onAgentAudio((base64Audio) => {
-        // Echo suppression: mark Jason as speaking. Player audio is suppressed
-        // while this flag is set to prevent TV speaker feedback from being
-        // forwarded back to Gemini (mic picks up Jason's voice from speakers).
-        jasonSpeaking = true;
-        if (jasonSpeakingTimer) clearTimeout(jasonSpeakingTimer);
-        jasonSpeakingTimer = setTimeout(() => { jasonSpeaking = false; }, 350);
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(
             JSON.stringify({
@@ -1071,7 +1125,37 @@ wss.on("connection", (ws: WebSocket) => {
       // Keyword listener session - listens for per-step keywords in player audio
       await keywordListener.connect(7); // Start with step 7 keywords (flashlight)
       keywordListener.onKeywordDetected((keyword) => {
-        console.log(`[KW] Keyword "${keyword}" detected at step ${currentSequenceStep} (pickupPhase=${cardPickupKeywordPhase}) — session=${sessionId}`);
+        console.log(
+          `[KW] Keyword "${keyword}" detected at step ${currentSequenceStep} (pickupPhase=${cardPickupKeywordPhase}) — session=${sessionId}`,
+        );
+
+        // Matrix easter egg — 3 mentions triggers green screen + Jason quote
+        if (keyword.toLowerCase().includes("matrix")) {
+          matrixMentionCount++;
+          console.log(
+            `[KW] Matrix mention #${matrixMentionCount} — session=${sessionId}`,
+          );
+          if (matrixMentionCount === 3 && ws.readyState === WebSocket.OPEN) {
+            ws.send(
+              JSON.stringify({
+                type: "matrix_easter_egg",
+                payload: { durationMs: 6000 },
+              }),
+            );
+            jasonManager.sendText(
+              "[MATRIX_EASTER_EGG: The player has mentioned 'The Matrix' three times. " +
+                "Your smartglasses display just glitched — green characters cascading down " +
+                "the screen like digital rain. React with one short, unsettled line referencing " +
+                "the glitch. Something like: 'What the— did you see that? Green… everywhere. " +
+                "Like that old movie.' or 'My display just went full Morpheus on me. " +
+                "What if I told you… none of this is real?' Keep it brief and unnerved.]",
+            );
+            console.log(
+              `[KW] Matrix easter egg triggered! — session=${sessionId}`,
+            );
+          }
+          return; // Don't process "matrix" as a step keyword
+        }
 
         // Card pickup phase — voice-triggered card2 collection
         if (cardPickupKeywordPhase) {
@@ -1084,11 +1168,15 @@ wss.on("connection", (ws: WebSocket) => {
             clearTimeout(card2AutoPickTimer);
             card2AutoPickTimer = null;
           }
-          console.log(`[KW] Voice-triggered card2 pickup — session=${sessionId}`);
+          console.log(
+            `[KW] Voice-triggered card2 pickup — session=${sessionId}`,
+          );
           handleCardCollected("card2", sessionId, jasonManager, ws, {
             deferGoodEnding: true,
           })
-            .then(() => { queueWildcardGoodEndingPlayback(); })
+            .then(() => {
+              queueWildcardGoodEndingPlayback();
+            })
             .catch((err: Error) => {
               console.error(`[KW] card2 voice-pickup error: ${err.message}`);
             });
@@ -1097,7 +1185,10 @@ wss.on("connection", (ws: WebSocket) => {
 
         // Step 23 (hallway) — keyword triggers acecard reveal instead of advanceStep
         if (currentSequenceStep >= 23) {
-          if (acecardHintTimer) { clearTimeout(acecardHintTimer); acecardHintTimer = null; }
+          if (acecardHintTimer) {
+            clearTimeout(acecardHintTimer);
+            acecardHintTimer = null;
+          }
           handleAcecardReveal(acecardGateState, ws);
           return;
         }
@@ -1112,10 +1203,7 @@ wss.on("connection", (ws: WebSocket) => {
       gmManager.onFunctionCall((id, name, args) => {
         // Gate scene/video events until the frontend sends intro_complete.
         // Prevents the GM from firing Beat 2 scene changes during Beat 1 darkness.
-        if (
-          !gmGated &&
-          name === "triggerSceneChange"
-        ) {
+        if (!gmGated && name === "triggerSceneChange") {
           console.log(`[GM] ${name} blocked pre-intro - session=${sessionId}`);
           gmManager.sendToolResponse(id, name);
           return;
@@ -1124,18 +1212,29 @@ wss.on("connection", (ws: WebSocket) => {
         if (name === "triggerSceneChange") {
           sceneChangeCount++;
           // Sync step machine when GM fires flashlight — prevents autoplay from re-firing step 7.
-          if ((args.sceneKey as string) === "flashlight_beam" && currentSequenceStep === 7) {
+          if (
+            (args.sceneKey as string) === "flashlight_beam" &&
+            currentSequenceStep === 7
+          ) {
             currentSequenceStep = 8;
             clearStepTimer();
             startStepTimer(8);
             keywordListener.updateKeywords(8);
-            if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
-            console.log(`[WS] GM fired flashlight_beam — step synced to 8 for session ${sessionId}`);
+            if (hintTimer) {
+              clearTimeout(hintTimer);
+              hintTimer = null;
+            }
+            console.log(
+              `[WS] GM fired flashlight_beam — step synced to 8 for session ${sessionId}`,
+            );
           }
         }
         // If acecard keyword timer is already running and the GM calls triggerDreadTimerStart,
         // treat it as a no-op — startAcecardKeywordTimer() already owns this timer slot at step 31.
-        if (name === "triggerDreadTimerStart" && acecardGateState.acecardKeywordTimer !== null) {
+        if (
+          name === "triggerDreadTimerStart" &&
+          acecardGateState.acecardKeywordTimer !== null
+        ) {
           console.log(
             `[GM] triggerDreadTimerStart skipped — acecard keyword timer already running for session ${sessionId}`,
           );
@@ -1301,14 +1400,10 @@ wss.on("connection", (ws: WebSocket) => {
         // Prevents ambient mic bleed from triggering Jason before the channel is discovered.
         if (!jasonReadyForPlayer) return;
         lastPlayerSpeechAt = Date.now();
-        // Echo suppression: while Jason is actively outputting audio, do NOT
-        // forward player mic audio to Jason. The TV speakers play Jason's voice
-        // and the mic picks it up — sending it back creates a feedback loop that
-        // confuses Gemini (it hears its own output as player input).
-        // GM and keyword listener still receive audio so trust/keyword detection works.
-        if (!jasonSpeaking) {
-          jasonManager.sendAudio(data.audio);
-        }
+        // Always forward player audio to Jason — allows Gemini-native barge-in
+        // so the player can interrupt Jason's scene narration. Gemini's VAD
+        // handles distinguishing genuine player speech from speaker echo.
+        jasonManager.sendAudio(data.audio);
         if (gmGated) gmManager.sendAudio(data.audio); // GM hears player only after intro_complete
         keywordListener.sendAudio(data.audio); // Keyword listener always hears player audio
         return;
@@ -1327,22 +1422,21 @@ wss.on("connection", (ws: WebSocket) => {
       // Also starts the acecard keyword window timer (30s).
       if (data.type === "hallway_pov_02_ready") {
         scheduleWildcardPrewarmFromHallwayStill();
-        startAcecardKeywordTimer(
-          acecardGateState,
-          ws,
-          sessionId,
-          () => { void emitWildcardGameOverBranch(); },
-        );
+        startAcecardKeywordTimer(acecardGateState, ws, sessionId, () => {
+          void emitWildcardGameOverBranch();
+        });
         // LS_VIDEO_PIPELINE step 23: immediate visual hint — panel is hidden
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({
-            type: "overlay_text",
-            payload: {
-              text: "Maybe there's a panel somewhere?",
-              variant: "hint",
-              durationMs: 3000,
-            },
-          }));
+          ws.send(
+            JSON.stringify({
+              type: "overlay_text",
+              payload: {
+                text: "Maybe there's a panel somewhere?",
+                variant: "hint",
+                durationMs: 3000,
+              },
+            }),
+          );
         }
         return;
       }
@@ -1350,12 +1444,9 @@ wss.on("connection", (ws: WebSocket) => {
       // Frontend signals the acecard_reveal_01.mp4 clip has finished playing.
       // Backend starts the 15s card_pickup_02 click window.
       if (data.type === "acecard_reveal_complete") {
-        startCardPickup02Timer(
-          acecardGateState,
-          ws,
-          sessionId,
-          () => { void emitWildcardGameOverBranch(); },
-        );
+        startCardPickup02Timer(acecardGateState, ws, sessionId, () => {
+          void emitWildcardGameOverBranch();
+        });
         // Enable voice-triggered card pickup via keyword listener
         cardPickupKeywordPhase = true;
         keywordListener.pushKeywords(CARD_PICKUP_KEYWORDS);
@@ -1413,7 +1504,6 @@ wss.on("connection", (ws: WebSocket) => {
     clearInterval(pingInterval);
     if (hintTimer) clearTimeout(hintTimer);
     if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
-    if (jasonSpeakingTimer) clearTimeout(jasonSpeakingTimer);
     if (acecardHintTimer) clearTimeout(acecardHintTimer);
     clearStepTimer();
     stopInteractionTimers();

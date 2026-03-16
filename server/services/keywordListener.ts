@@ -47,13 +47,15 @@ function buildKeywordListenerPrompt(keywords: string[]): string {
 
 ACTIVE KEYWORDS: [${kwList}]
 
+PERMANENT KEYWORDS (always active regardless of updates): ["matrix", "the matrix"]
+
 RULES:
-1. When you hear ANY of these words, phrases, or close synonyms/paraphrases, IMMEDIATELY call reportKeywordDetected with the matched keyword.
+1. When you hear ANY of these words, phrases, or close synonyms/paraphrases from EITHER the active or permanent list, IMMEDIATELY call reportKeywordDetected with the matched keyword.
 2. Speed is critical. Call the function AS SOON as you detect a match. Do not wait for the speaker to finish their sentence.
 3. Accept reasonable synonyms and paraphrases. For example, if "flashlight" is a keyword, also match "flash light", "turn on the light", "do you have a light", "use your phone light", etc.
 4. Do NOT respond with text. Do NOT acknowledge anything. Do NOT make conversation. Your ONLY output is reportKeywordDetected function calls.
 5. If no keywords match, stay completely silent. Do not respond at all.
-6. When you receive a [KEYWORD_UPDATE] message, replace your entire active keyword list with the new list provided.
+6. When you receive a [KEYWORD_UPDATE] message, replace your ACTIVE keyword list with the new list provided. Permanent keywords are never replaced.
 7. You may match multiple keywords in a single utterance — call reportKeywordDetected once for each distinct match.`;
 }
 
