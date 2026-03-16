@@ -710,9 +710,28 @@ wss.on("connection", (ws: WebSocket) => {
         ws,
         jasonManager,
       );
-      setTimeout(() => {
-        queueWildcardVisionPlayback();
-      }, 6_500);
+
+      // Wait for the wildcard vision to finish preparing (Imagen + Veo).
+      // The card_pickup_01 clip plays ~8s — use that window plus extra buffer.
+      // If Veo fails fast the prep resolves quickly; if it succeeds we wait up to 20s.
+      // Either way we emit whatever is ready (still-only is acceptable).
+      const waitStart = Date.now();
+      const maxWaitMs = 20_000;
+      const pollMs = 500;
+      while (
+        !preparedWildcardVision &&
+        Date.now() - waitStart < maxWaitMs &&
+        ws.readyState === WebSocket.OPEN
+      ) {
+        maybePrepareWildcardVision();
+        await new Promise((r) => setTimeout(r, pollMs));
+      }
+      // Ensure at least 6.5s elapsed so the card pickup clip has time to play.
+      const elapsed = Date.now() - waitStart;
+      if (elapsed < 6_500) {
+        await new Promise((r) => setTimeout(r, 6_500 - elapsed));
+      }
+      queueWildcardVisionPlayback();
     })().catch((err: Error) => {
       console.error(
         `[WS] card1 pickup transition failed for session ${sessionId}:`,
