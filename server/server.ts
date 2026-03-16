@@ -1181,7 +1181,7 @@ wss.on("connection", (ws: WebSocket) => {
             clearTimeout(acecardHintTimer);
             acecardHintTimer = null;
           }
-          handleAcecardReveal(acecardGateState, ws);
+          handleAcecardReveal(acecardGateState, ws, sessionId);
           return;
         }
 
@@ -1267,7 +1267,7 @@ wss.on("connection", (ws: WebSocket) => {
             await emitWildcardGameOverBranch();
           },
           () => {
-            handleAcecardReveal(acecardGateState, ws);
+            handleAcecardReveal(acecardGateState, ws, sessionId);
           },
         ).finally(() => {
           gmManager.sendToolResponse(id, name);
@@ -1377,7 +1377,7 @@ wss.on("connection", (ws: WebSocket) => {
             await emitWildcardGameOverBranch();
           },
           () => {
-            handleAcecardReveal(acecardGateState, ws);
+            handleAcecardReveal(acecardGateState, ws, sessionId);
           },
         );
         return;

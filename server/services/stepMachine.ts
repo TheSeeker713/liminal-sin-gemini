@@ -192,8 +192,12 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
     autoplayText:
       "[AUTOPLAY: You reach the maintenance corridor. Something moves at the far end. The clock is running.]",
     gmCalls: [
-      { fnName: "triggerSceneChange",    args: { sceneKey: "hallway_pov_02" } },
-      { fnName: "triggerDreadTimerStart", args: { durationMs: 30_000 } },
+      { fnName: "triggerSceneChange", args: { sceneKey: "hallway_pov_02" } },
+      // NOTE: No triggerDreadTimerStart here — the acecard keyword timer
+      // (started by hallway_pov_02_ready from frontend) IS the canonical
+      // 30s countdown. A separate dread timer caused a race: keyword
+      // detection cleared the acecard timer but not the dread timer,
+      // so game_over still fired during the acecard_reveal clip.
     ],
     extra: "hallway_pov_02_all",
   },

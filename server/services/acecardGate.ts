@@ -7,6 +7,7 @@
  */
 
 import type { WebSocket } from "ws";
+import { cancelDreadTimer } from "./dreadTimer";
 
 export type AcecardGateState = {
   acecardKeywordTimer: ReturnType<typeof setTimeout> | null;
@@ -58,12 +59,16 @@ export function startAcecardKeywordTimer(
 export function handleAcecardReveal(
   state: AcecardGateState,
   ws: WebSocket,
+  sessionId?: string,
 ): void {
   if (state.acecardKeywordTimer !== null) {
     clearTimeout(state.acecardKeywordTimer);
     state.acecardKeywordTimer = null;
   }
   state.acecardKeywordReceived = true;
+  // Cancel any parallel dread timer — prevents game_over from firing
+  // during the acecard_reveal clip + card_pickup_02 window.
+  if (sessionId) cancelDreadTimer(sessionId);
   ws.send(
     JSON.stringify({
       type: "acecard_reveal_start",
