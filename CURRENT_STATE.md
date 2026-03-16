@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **UPDATE RULE:** When updating this file, REPLACE the previous content and write a single current-state snapshot. Do NOT append. Historical logs belong in git history.
-> Last updated: March 16, 2026 (6-bug hotfix: Jason hallucination, subtitle lag, SFX volume, joker timing, NPC delay, elevator crash).
+> Last updated: March 16, 2026 (interrupt flood fix + session reconnect + audio manifest restore).
 
 ---
 
@@ -16,7 +16,7 @@
 | Item | Value |
 |---|---|
 | Cloud Run URL | `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| Live revision | `liminal-sin-server-00094-mdl` — serving 100% traffic |
+| Live revision | `liminal-sin-server-00097-ptc` — serving 100% traffic |
 | GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
 | Org | `digitalartifact11-org` (165684325504) |
 | GM model | `gemini-live-2.5-flash-native-audio` (via `GM_LIVE_MODEL` env var) |
@@ -31,33 +31,25 @@
 
 ---
 
-## Current Live State (March 16, 2026 — 6-BUG HOTFIX)
+## Current Live State (March 16, 2026 — INTERRUPT FLOOD FIX + SESSION RECONNECT)
 
-### Backend Deploy (Cloud Run — revision 00094-mdl, commit 51dbae3)
-- **Bug 1 — Jason hallucinating old prompts:** Removed "Queen of spades" example from NPC system prompt; fixed SEPARATION section contradiction.
-- **Bug 4 — Joker card speech timing:** Step 10 autoplayText no longer says "lights come on"; generator_card_reveal scene context rewritten to "wait and observe"; GM Beat 4 no longer calls triggerCardDiscovered (step machine owns card timing exclusively).
-- **Bug 5 — NPC unresponsive 15s after title:** jasonReadyTimer corrected from 18,000ms to 10,000ms.
-- **Bug 7 — Elevator scene crash:** Added try/catch to sendAudio/sendText/sendFrame/sendToolResponse in LiveSessionManager (dead Gemini session no longer crashes WS handler); thinned elevator clip cues (removed 0ms-offset sendText calls, consolidated to ≥1500ms spacing).
+### Backend Deploy (Cloud Run — revision 00097-ptc, commit f02c5c4)
+- **agent_interrupt flood:** Throttled interrupt forwarding to max 1 per 2 seconds. Prevents rapid barge-in events from overwhelming the frontend (dozens of node cancellations per second were killing Jason audio and causing subtitle recognition errors).
+- **Session auto-reconnect:** LiveSessionManager now stores connect params and attempts a single reconnect when sendAudio/sendText detects a dead session. Prevents permanent Jason silence if Gemini drops the connection mid-game.
 
-### Frontend Deploy (Cloudflare — version 9b139b4a, commit 94d5426)
-- **Bug 2 — Subtitle lag:** Web Speech API restart delay reduced 300ms→50ms; fade timer extended 2000→3000ms.
-- **Bug 3 — Radio static SFX too loud:** transmission_ping volume 0.4→0.18; barge_in volume 1.0→0.25.
+### Frontend Deploy (Cloudflare — commit 1c33e48)
+- **Audio manifest restored:** Re-added 15 wrongly-removed SFX entries (card_appear, heartbeat_low/mid/high1/high2, distant_growl1/2, monster_sound1/2, fear_spike variant in scare_wildcard). Added footsteps_walk_loop + water_fountain keys referenced by frontend clipCues.ts. Preloader handles 404s gracefully; entries ready for GCS file upload.
 
 ### Files Modified — Backend (Cloud Run)
 | File | Change |
 |---|---|
-| `server/services/npc/jason.ts` | Removed card example, fixed SEPARATION contradiction |
-| `server/services/stepMachine.ts` | Step 10 autoplayText → "decide to try starting the generator" |
-| `server/services/keywordLibrary.ts` | generator_card_reveal context rewritten (no premature light description) |
-| `server/services/gemini.ts` | GM Beat 4 card race removed; try/catch on all LiveSession send methods |
-| `server/server.ts` | jasonReadyTimer 18000→10000ms |
-| `server/services/clipCues.ts` | Thinned elevator cues (0ms→1500ms+, consolidated) |
+| `server/server.ts` | lastInterruptForwardedAt throttle (2s cooldown) on jasonManager.onAgentInterrupt |
+| `server/services/gemini.ts` | lastConnectPrompt/mode/voice storage; tryReconnect() on sendAudio/sendText death; disconnect() clears reconnect params |
 
 ### Files Modified — Frontend (Cloudflare)
 | File | Change |
 |---|---|
-| `app/ls/game/usePlayerSubtitles.ts` | Restart delay 300→50ms, fade timer 2000→3000ms |
-| `app/ls/game/useAgentAudio.ts` | transmission_ping 0.4→0.18, barge_in 1.0→0.25 |
+| `app/ls/game/audioManifest.ts` | Restored card_appear, heartbeat_*, distant_growl*, monster_sound*, fear_spike; added footsteps_walk_loop + water_fountain |
 
 ---
 
