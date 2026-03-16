@@ -989,7 +989,7 @@ wss.on("connection", (ws: WebSocket) => {
         const stepMeta = STEP_MEDIA_TRIGGER[currentSequenceStep];
         if (stepMeta?.triggerType === "chained_auto") return;
         const now = Date.now();
-        if (now - lastInterruptForwardedAt < 2000) return; // Throttle: max 1 per 2s
+        if (now - lastInterruptForwardedAt < 5000) return; // Throttle: max 1 per 5s
         lastInterruptForwardedAt = now;
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: "agent_interrupt", agent: "jason" }));
