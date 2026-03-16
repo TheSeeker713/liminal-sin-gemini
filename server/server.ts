@@ -889,11 +889,7 @@ wss.on("connection", (ws: WebSocket) => {
               call.fnName,
               call.args,
               ws,
-              // Don't pass jasonManager for chained_auto steps — startClipCues
-              // fires jason_dialogue cues that use sendClientContent, which resets
-              // Gemini's VAD state and discards any in-flight player audio.
-              // This was the root cause of Jason ignoring the player post-WILDCARD1.
-              stepMeta?.triggerType === "chained_auto" ? undefined : jasonManager,
+              jasonManager,
             );
             // 120ms gap between WS sends so React 18+ automatic batching
             // doesn't swallow the scene_change event when the next event
@@ -974,31 +970,16 @@ wss.on("connection", (ws: WebSocket) => {
               card2AutoPickTimer = null;
             }
           } else if (action.extra === "hallway_pov_02_all") {
-            // Delay card_discovered by 3s so the hallway_pov_02 scene
-            // has time to load on the frontend before the card overlay appears.
-            setTimeout(() => {
-              if (ws.readyState === WebSocket.OPEN) {
-                ws.send(
-                  JSON.stringify({
-                    type: "card_discovered",
-                    cardId: "card2",
-                    timestamp: Date.now(),
-                  }),
-                );
-                console.log(
-                  `[WS] Delayed card_discovered(card2) emitted for session ${sessionId}`,
-                );
-              }
-            }, 3_000);
+            // card_discovered(card2) does NOT fire here — card2 overlay
+            // only appears at card_pickup_02_ready after acecard_reveal clip.
+            // startAcecardKeywordTimer also does NOT fire here — the frontend
+            // hallway_pov_02_ready marker is the canonical trigger (see below).
             maybePrepareWildcardGameOver();
             maybePrepareWildcardGoodEnding();
             if (card2AutoPickTimer) {
               clearTimeout(card2AutoPickTimer);
               card2AutoPickTimer = null;
             }
-            startAcecardKeywordTimer(acecardGateState, ws, sessionId, () => {
-              void emitWildcardGameOverBranch();
-            });
             // Notify GM that the acecard keyword window is open so it can fire triggerAcecardReveal
             gmManager.sendText(
               "[ACECARD_WINDOW_OPEN: The hallway_pov_02 scene is now active. " +
