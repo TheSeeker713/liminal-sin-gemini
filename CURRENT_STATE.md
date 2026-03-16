@@ -1,7 +1,7 @@
 ﻿# CURRENT_STATE.md — Liminal Sin Gemini (Backend)
 
 > **UPDATE RULE:** When updating this file, REPLACE the previous content and write a single current-state snapshot. Do NOT append. Historical logs belong in git history.
-> Last updated: March 16, 2026 (Frontend: D1 comments page, player subtitles, timed unlock, access cutoff, game page shell).
+> Last updated: March 16, 2026 (6-bug hotfix: Jason hallucination, subtitle lag, SFX volume, joker timing, NPC delay, elevator crash).
 
 ---
 
@@ -16,7 +16,7 @@
 | Item | Value |
 |---|---|
 | Cloud Run URL | `https://liminal-sin-server-1071754889104.us-west1.run.app` |
-| Live revision | `liminal-sin-server-00091-d7g` — serving 100% traffic |
+| Live revision | `liminal-sin-server-00094-mdl` — serving 100% traffic |
 | GCP Project | `project-c4c3ba57-5165-4e24-89e` (Mycelia Interactive) |
 | Org | `digitalartifact11-org` (165684325504) |
 | GM model | `gemini-live-2.5-flash-native-audio` (via `GM_LIVE_MODEL` env var) |
@@ -31,55 +31,33 @@
 
 ---
 
-## Current Live State (March 16, 2026 — FRONTEND FEATURES + D1 COMMENTS)
+## Current Live State (March 16, 2026 — 6-BUG HOTFIX)
 
-### Frontend Deploys (Cloudflare Pages — commits 8324a8f, 063b35a)
-- **D1-backed anonymous comments page** (`/ls/comments`): Worker API routes (`GET /api/comments`, `POST /api/comments`) in `workers/signup-api.ts`. Self-initializing `ls_comments` table in D1. Comments page at `app/ls/comments/page.tsx`. Footer link added in `LiminalSinAccessFooter.tsx`.
-- **Player speech subtitles**: `usePlayerSubtitles.ts` (Web Speech API hook) + `PlayerSubtitles.tsx` (cinematic subtitle bar). Wired into `GameHUD.tsx`.
-- **Timed LOCKED→PLAY button**: `LiminalSinHero.tsx` — unlocks March 17 01:13 UTC.
-- **`/ls/game` access cutoff**: `page.tsx` — expires March 23 17:11 UTC. Judges route unaffected.
-- **Game page header/footer**: `GamePageShell.tsx` — auto-hiding header, fixed footer, z-[60].
-- **Removed Request Access section** from `LiminalSinAccessFooter.tsx`.
-- **Cloudflare Worker Version**: `c65c6d2f-60c3-44b5-b60e-d9b637b81f88`
+### Backend Deploy (Cloud Run — revision 00094-mdl, commit 51dbae3)
+- **Bug 1 — Jason hallucinating old prompts:** Removed "Queen of spades" example from NPC system prompt; fixed SEPARATION section contradiction.
+- **Bug 4 — Joker card speech timing:** Step 10 autoplayText no longer says "lights come on"; generator_card_reveal scene context rewritten to "wait and observe"; GM Beat 4 no longer calls triggerCardDiscovered (step machine owns card timing exclusively).
+- **Bug 5 — NPC unresponsive 15s after title:** jasonReadyTimer corrected from 18,000ms to 10,000ms.
+- **Bug 7 — Elevator scene crash:** Added try/catch to sendAudio/sendText/sendFrame/sendToolResponse in LiveSessionManager (dead Gemini session no longer crashes WS handler); thinned elevator clip cues (removed 0ms-offset sendText calls, consolidated to ≥1500ms spacing).
 
-### Backend Deploy (Cloud Run — revision 00091-d7g, commit 453ad2a)
-- **maintenance_reveal_01 timeout**: Fixed to 15s (was 16s).
-- **card_joker_01 timing**: Removed card spoilers from autoplayText/sceneContext, added 8s cue, delayed card_discovered to 16s.
+### Frontend Deploy (Cloudflare — version 9b139b4a, commit 94d5426)
+- **Bug 2 — Subtitle lag:** Web Speech API restart delay reduced 300ms→50ms; fade timer extended 2000→3000ms.
+- **Bug 3 — Radio static SFX too loud:** transmission_ping volume 0.4→0.18; barge_in volume 1.0→0.25.
 
-### Previous Fixes (Still Live)
-- **Bug 1 — Jason ignoring player speech:** `sendText()` + `injectSceneContextIntoJason()` gated to `hold_for_input` steps only. Chained_auto steps skip both.
-- **Bug 2 — Glitch effect persisting forever:** React useEffect cleanup race fixed on frontend.
-- **Bug 3 — Slow motion video:** `playbackRate = 1.0` defense on all 3 video play sites. 18 clips re-encoded to CRF 23 / 5Mbps cap.
-- **Step machine rewrite:** Canonical Act 1 steps 8–22, correct durations, trigger types.
-
-### Backend Systems (all live)
-- All backend game logic complete and audited.
-- Morphic media canonicalized: 15 stills + 18 clips on GCS bucket `liminal-sin-assets` (includes `flashlight_sweep_01.mp4`).
-- Acecard mechanic live: triggerAcecardReveal, step 22 keyword gate.
-- Wildcard prewarm architecture live.
-- RAI safety level set to `BLOCK_ONLY_HIGH` in Veo config.
-
-### Files Modified This Session (Frontend — Cloudflare)
+### Files Modified — Backend (Cloud Run)
 | File | Change |
 |---|---|
-| `workers/signup-api.ts` | Added D1 comments CRUD routes (handleGetComments, handlePostComment, ensureCommentsTable) |
-| `app/ls/comments/page.tsx` | NEW — D1-backed anonymous comments page |
-| `app/ls/LiminalSinAccessFooter.tsx` | Removed Request Access section; added Comments footer link |
-| `app/ls/game/usePlayerSubtitles.ts` | NEW — Web Speech API hook with inline type declarations |
-| `app/ls/game/PlayerSubtitles.tsx` | NEW — Cinematic subtitle overlay component |
-| `app/ls/game/GameHUD.tsx` | Added PlayerSubtitles import + render |
-| `app/ls/LiminalSinHero.tsx` | Timed LOCKED→PLAY button (March 17 01:13 UTC unlock) |
-| `app/ls/game/page.tsx` | Access cutoff guard (March 23 17:11 UTC), GamePageShell wrapper |
-| `app/ls/game/GamePageShell.tsx` | NEW — Auto-hiding header + fixed footer for game pages |
-| `app/ls/judges/game/page.tsx` | Added GamePageShell wrapper |
+| `server/services/npc/jason.ts` | Removed card example, fixed SEPARATION contradiction |
+| `server/services/stepMachine.ts` | Step 10 autoplayText → "decide to try starting the generator" |
+| `server/services/keywordLibrary.ts` | generator_card_reveal context rewritten (no premature light description) |
+| `server/services/gemini.ts` | GM Beat 4 card race removed; try/catch on all LiveSession send methods |
+| `server/server.ts` | jasonReadyTimer 18000→10000ms |
+| `server/services/clipCues.ts` | Thinned elevator cues (0ms→1500ms+, consolidated) |
 
-### Files Modified This Session (Backend — Cloud Run)
+### Files Modified — Frontend (Cloudflare)
 | File | Change |
 |---|---|
-| `server/services/stepMachine.ts` | maintenance_reveal_01 timeout=15s; step 10 autoplayText card ref removed |
-| `server/services/clipCues.ts` | card_joker_01 cues at 5000ms, 8000ms, 13000ms |
-| `server/server.ts` | card_discovered delay = 16_000ms |
-| `server/services/keywordLibrary.ts` | generator_card_reveal context → generator description |
+| `app/ls/game/usePlayerSubtitles.ts` | Restart delay 300→50ms, fade timer 2000→3000ms |
+| `app/ls/game/useAgentAudio.ts` | transmission_ping 0.4→0.18, barge_in 1.0→0.25 |
 
 ---
 
