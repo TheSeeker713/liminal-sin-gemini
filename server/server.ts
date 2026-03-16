@@ -228,6 +228,14 @@ app.post("/log-client-error", async (req, res) => {
 
 wss.on("connection", (ws: WebSocket) => {
   const sessionId = randomUUID();
+
+  // ── Keep-alive ping: prevent Cloud Run idle timeout from killing the WS ──
+  const pingInterval = setInterval(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.ping();
+    }
+  }, 20_000);
+
   const gmLiveModel = process.env.GM_LIVE_MODEL || "gemini-live-2.5-flash";
   const jasonManager = new LiveSessionManager(); // NPC - speaks, audio out, Enceladus voice
   const gmManager = new LiveSessionManager(gmLiveModel); // GM - silent, function calls only
@@ -1311,6 +1319,7 @@ wss.on("connection", (ws: WebSocket) => {
 
   ws.on("close", () => {
     console.log(`[WS] Client disconnected - session ${sessionId}`);
+    clearInterval(pingInterval);
     if (hintTimer) clearTimeout(hintTimer);
     if (jasonReadyTimer) clearTimeout(jasonReadyTimer);
     clearStepTimer();
