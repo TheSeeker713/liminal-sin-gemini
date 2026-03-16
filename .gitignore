@@ -33,3 +33,6 @@ assets/screen-records/
 !assets/generated_clips/**
 !assets/generated_clips_web/**
 
+# Contest video blog — allow .mp4 submissions
+!CONTEST_VIDEO_BLOG/**
+
