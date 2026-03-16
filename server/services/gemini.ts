@@ -172,6 +172,10 @@ export class LiveSessionManager {
   private onInterruptCallback: (() => void) | null = null;
   private onFunctionCallCallback: ((id: string, name: string, args: Record<string, unknown>) => void) | null = null;
   private readonly modelName: string;
+  private lastConnectPrompt: string | null = null;
+  private lastConnectMode: 'npc' | 'gm' = 'npc';
+  private lastConnectVoice: string = 'Enceladus';
+  private reconnecting = false;
 
   /**
    * @param modelName Override the Gemini model. NPC agents use the native-audio model (default).
@@ -190,6 +194,9 @@ export class LiveSessionManager {
    * @param voiceName Optional Gemini Live voice name override (default: 'Enceladus' for npc mode).
    */
   async connect(systemPrompt: string, mode: 'npc' | 'gm' = 'npc', voiceName = 'Enceladus'): Promise<void> {
+    this.lastConnectPrompt = systemPrompt;
+    this.lastConnectMode = mode;
+    this.lastConnectVoice = voiceName;
     console.log(`[LiveSessionManager] Opening Vertex AI Live session — mode: ${mode}, model: ${this.modelName}...`);
 
     const config = mode === 'npc'
@@ -300,7 +307,7 @@ export class LiveSessionManager {
    * Sends a base64-encoded PCM audio chunk to the active Gemini Live stream.
    */
   sendAudio(base64Chunk: string) {
-    if (!this.session) return;
+    if (!this.session) { this.tryReconnect(); return; }
     try {
       this.session.sendRealtimeInput({
         audio: { data: base64Chunk, mimeType: 'audio/pcm;rate=16000' },
@@ -308,6 +315,7 @@ export class LiveSessionManager {
     } catch (err) {
       console.error('[LiveSessionManager] sendAudio failed (session likely dead):', (err as Error).message);
       this.session = null;
+      this.tryReconnect();
     }
   }
 
@@ -331,12 +339,13 @@ export class LiveSessionManager {
    * This uses sendClientContent which bypasses VAD and triggers a response.
    */
   sendText(text: string) {
-    if (!this.session) return;
+    if (!this.session) { this.tryReconnect(); return; }
     try {
       this.session.sendClientContent({ turns: text, turnComplete: true });
     } catch (err) {
       console.error('[LiveSessionManager] sendText failed (session likely dead):', (err as Error).message);
       this.session = null;
+      this.tryReconnect();
     }
   }
 
@@ -377,12 +386,34 @@ export class LiveSessionManager {
     }
   }
 
+  /**
+   * Attempts a single reconnect if the session died mid-game.
+   * No-ops if already reconnecting or if no prior connect() was made.
+   */
+  private tryReconnect() {
+    if (this.reconnecting || !this.lastConnectPrompt) return;
+    this.reconnecting = true;
+    console.log('[LiveSessionManager] Session dead — attempting reconnect...');
+    this.connect(this.lastConnectPrompt, this.lastConnectMode, this.lastConnectVoice)
+      .then(() => {
+        console.log('[LiveSessionManager] Reconnect succeeded.');
+      })
+      .catch((err) => {
+        console.error('[LiveSessionManager] Reconnect failed:', (err as Error).message);
+        this.session = null;
+      })
+      .finally(() => {
+        this.reconnecting = false;
+      });
+  }
+
   disconnect() {
     if (this.session) {
       console.log('[LiveSessionManager] Disconnecting session');
       this.session.close();
       this.session = null;
     }
+    this.lastConnectPrompt = null; // Prevent reconnect after intentional disconnect
   }
 }
 

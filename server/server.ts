@@ -247,6 +247,7 @@ wss.on("connection", (ws: WebSocket) => {
   let card1Collected = false;
   let card1AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
   let card2AutoPickTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastInterruptForwardedAt = 0; // Throttle agent_interrupt to 1 per 2s
   const acecardGateState = createAcecardGateState();
   let latestPlayerFrame: string | null = null;
   let wildcardVisionPreparing = false;
@@ -984,6 +985,9 @@ wss.on("connection", (ws: WebSocket) => {
       });
 
       jasonManager.onAgentInterrupt(() => {
+        const now = Date.now();
+        if (now - lastInterruptForwardedAt < 2000) return; // Throttle: max 1 per 2s
+        lastInterruptForwardedAt = now;
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: "agent_interrupt", agent: "jason" }));
         }
