@@ -1099,11 +1099,12 @@ wss.on("connection", (ws: WebSocket) => {
       });
 
       jasonManager.onAgentInterrupt(() => {
-        // Radio static should only play once at landing — suppress all agent_interrupt
-        // forwarding to the frontend. The frontend plays barge_in (radio static) on
-        // every agent_interrupt, so not forwarding prevents repeated radio static.
-        // Gemini-side barge-in (interrupting Jason's audio generation) still works
-        // internally — we just don't notify the frontend with a WS event.
+        // Forward interrupt to the frontend so it flushes Jason's buffered audio.
+        // Without this the frontend keeps playing queued audio chunks even after
+        // Gemini has stopped generating, making it appear Jason can't be interrupted.
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "agent_interrupt", agent: "jason" }));
+        }
       });
 
       // Audrey NPC session - Aoede voice, single echo, trust-gated

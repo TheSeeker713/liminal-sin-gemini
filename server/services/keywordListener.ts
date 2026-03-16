@@ -37,25 +37,31 @@ const keywordListenerTools: Tool[] = [
   },
 ];
 
+/**
+ * Keywords that are always included in every active list regardless of step.
+ * Adding them directly to the payload (not just the prompt) makes them stable
+ * across KEYWORD_UPDATE messages even if the model loses track of "permanent" rules.
+ */
+const ALWAYS_ACTIVE_KEYWORDS = ["matrix", "the matrix"];
+
 function buildKeywordListenerPrompt(keywords: string[]): string {
+  const merged = [...new Set([...keywords, ...ALWAYS_ACTIVE_KEYWORDS])];
   const kwList =
-    keywords.length > 0
-      ? keywords.map((k) => `"${k}"`).join(", ")
+    merged.length > 0
+      ? merged.map((k) => `"${k}"`).join(", ")
       : "(no active keywords — wait for an update)";
 
   return `You are a keyword detector. Your ONLY purpose is to listen to audio input and detect when the speaker says any word or phrase from the active keyword list.
 
 ACTIVE KEYWORDS: [${kwList}]
 
-PERMANENT KEYWORDS (always active regardless of updates): ["matrix", "the matrix"]
-
 RULES:
-1. When you hear ANY of these words, phrases, or close synonyms/paraphrases from EITHER the active or permanent list, IMMEDIATELY call reportKeywordDetected with the matched keyword.
+1. When you hear ANY of these words, phrases, or close synonyms/paraphrases, IMMEDIATELY call reportKeywordDetected with the matched keyword.
 2. Speed is critical. Call the function AS SOON as you detect a match. Do not wait for the speaker to finish their sentence.
 3. Accept reasonable synonyms and paraphrases. For example, if "flashlight" is a keyword, also match "flash light", "turn on the light", "do you have a light", "use your phone light", etc.
 4. Do NOT respond with text. Do NOT acknowledge anything. Do NOT make conversation. Your ONLY output is reportKeywordDetected function calls.
 5. If no keywords match, stay completely silent. Do not respond at all.
-6. When you receive a [KEYWORD_UPDATE] message, replace your ACTIVE keyword list with the new list provided. Permanent keywords are never replaced.
+6. When you receive a [KEYWORD_UPDATE] message, replace your entire active keyword list with the new list provided.
 7. You may match multiple keywords in a single utterance — call reportKeywordDetected once for each distinct match.`;
 }
 
@@ -131,13 +137,11 @@ export class KeywordListener {
   updateKeywords(step: number): void {
     if (step === this.currentStep) return;
     this.currentStep = step;
-    const keywords = getKeywordListForStep(step);
-    const kwList =
-      keywords.length > 0
-        ? keywords.map((k) => `"${k}"`).join(", ")
-        : "(no active keywords — stay silent)";
+    const base = getKeywordListForStep(step);
+    const keywords = [...new Set([...base, ...ALWAYS_ACTIVE_KEYWORDS])];
+    const kwList = keywords.map((k) => `"${k}"`).join(", ");
     this.manager.sendText(
-      `[KEYWORD_UPDATE: Replace your active keyword list. New active keywords: [${kwList}]]`,
+      `[KEYWORD_UPDATE: Replace your entire active keyword list with: [${kwList}]]`,
     );
     console.log(
       `[KeywordListener] Updated keywords for step ${step}: [${keywords.join(", ")}]`,
@@ -146,18 +150,16 @@ export class KeywordListener {
 
   /**
    * Push an arbitrary keyword list (bypasses step dedup).
-   * Used for phases without a step number, e.g. card_pickup_02.
+   * Always_active keywords are merged in so "matrix" survives every push.
    */
   pushKeywords(keywords: string[]): void {
-    const kwList =
-      keywords.length > 0
-        ? keywords.map((k) => `"${k}"`).join(", ")
-        : "(no active keywords — stay silent)";
+    const merged = [...new Set([...keywords, ...ALWAYS_ACTIVE_KEYWORDS])];
+    const kwList = merged.map((k) => `"${k}"`).join(", ");
     this.manager.sendText(
-      `[KEYWORD_UPDATE: Replace your active keyword list. New active keywords: [${kwList}]]`,
+      `[KEYWORD_UPDATE: Replace your entire active keyword list with: [${kwList}]]`,
     );
     console.log(
-      `[KeywordListener] Pushed custom keywords: [${keywords.join(", ")}]`,
+      `[KeywordListener] Pushed custom keywords: [${merged.join(", ")}]`,
     );
   }
 
