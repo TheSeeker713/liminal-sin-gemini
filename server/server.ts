@@ -889,7 +889,11 @@ wss.on("connection", (ws: WebSocket) => {
               call.fnName,
               call.args,
               ws,
-              jasonManager,
+              // Don't pass jasonManager for chained_auto steps — startClipCues
+              // fires jason_dialogue cues that use sendClientContent, which resets
+              // Gemini's VAD state and discards any in-flight player audio.
+              // This was the root cause of Jason ignoring the player post-WILDCARD1.
+              stepMeta?.triggerType === "chained_auto" ? undefined : jasonManager,
             );
             // 120ms gap between WS sends so React 18+ automatic batching
             // doesn't swallow the scene_change event when the next event
