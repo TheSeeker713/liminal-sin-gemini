@@ -108,7 +108,7 @@ export const STEP_AUTOPLAY_ACTIONS: Record<number, StepAutoplayAction> = {
   },
   10: {
     autoplayText:
-      "[AUTOPLAY_TIMEOUT: No player response. You start the generator, the tunnel lights come on, and something appears on the floor by the machine.]",
+      "[AUTOPLAY_TIMEOUT: No player response. You start the generator and the tunnel lights come on.]",
     gmCalls: [
       { fnName: "triggerSceneChange",    args: { sceneKey: "generator_card_reveal" } },
     ],

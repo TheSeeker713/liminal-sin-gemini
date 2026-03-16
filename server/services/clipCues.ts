@@ -58,6 +58,7 @@ const CLIP_CUES: Record<string, ClipCue[]> = {
   // ── card_joker_01 | 15s | no native sound ───────────────────────────────────
   card_joker_01: [
     { offsetMs: 5000, type: "jason_dialogue", text: "[SCENE_CUE: You are turning the generator on now. Say something like 'I'm turning it on now'.]" },
+    { offsetMs: 8000, type: "jason_dialogue", text: "[SCENE_CUE: The lights are on. The tunnel is lit. React to seeing the tunnel clearly for the first time.]" },
     // 9000ms: flashlight CSS overlay removal — DEFERRED (BE_AUDIT #13)
     { offsetMs: 13000, type: "jason_dialogue", text: "[SCENE_CUE: You look down and see a Joker playing card on the ground near the generator base. React with confusion — a playing card should not be here underground.]" },
   ],

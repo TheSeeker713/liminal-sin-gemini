@@ -844,8 +844,9 @@ wss.on("connection", (ws: WebSocket) => {
 
           // Handle step extras (card auto-pick, wildcard prewarm, acecard gate)
           if (action.extra === "card1_auto_pick") {
-            // Delay card_discovered by 3s so the generator_card_reveal scene
-            // has time to load on the frontend before the card overlay appears.
+            // Delay card_discovered by 16s — card_joker_01.mp4 is 15s long.
+            // The card icon must NOT appear during clip playback. It appears
+            // only after the clip ends and the still (card_joker_01.png) loads.
             setTimeout(() => {
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({
@@ -855,7 +856,7 @@ wss.on("connection", (ws: WebSocket) => {
                 }));
                 console.log(`[WS] Delayed card_discovered(card1) emitted for session ${sessionId}`);
               }
-            }, 3_000);
+            }, 16_000);
             if (!card1Collected && !card1AutoPickTimer) {
               card1AutoPickTimer = setTimeout(() => {
                 if (card1Collected) return;
