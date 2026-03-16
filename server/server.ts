@@ -1221,14 +1221,27 @@ wss.on("connection", (ws: WebSocket) => {
             );
           }
         }
-        // If acecard keyword timer is already running and the GM calls triggerDreadTimerStart,
-        // treat it as a no-op — startAcecardKeywordTimer() already owns this timer slot at step 31.
+        // Block triggerDreadTimerStart at step >= 22 unconditionally.
+        // The acecard keyword timer (started by hallway_pov_02_ready) is the
+        // canonical 30s countdown. The GM prompt used to instruct the GM to
+        // fire this, creating a parallel timer that raced and caused game_over
+        // even after the player said the keyword.
+        if (name === "triggerDreadTimerStart" && currentSequenceStep >= 22) {
+          console.log(
+            `[GM] triggerDreadTimerStart BLOCKED at step ${currentSequenceStep} — acecard gate owns timer — session=${sessionId}`,
+          );
+          gmManager.sendToolResponse(id, name);
+          return;
+        }
+        // Block triggerCardDiscovered(card2) at step >= 22 — card2 overlay
+        // is only shown at card_pickup_02_ready after the acecard_reveal clip.
         if (
-          name === "triggerDreadTimerStart" &&
-          acecardGateState.acecardKeywordTimer !== null
+          name === "triggerCardDiscovered" &&
+          (args.cardId as string) === "card2" &&
+          currentSequenceStep >= 22
         ) {
           console.log(
-            `[GM] triggerDreadTimerStart skipped — acecard keyword timer already running for session ${sessionId}`,
+            `[GM] triggerCardDiscovered(card2) BLOCKED at step ${currentSequenceStep} — backend owns card2 timing — session=${sessionId}`,
           );
           gmManager.sendToolResponse(id, name);
           return;

@@ -146,21 +146,17 @@ BEAT 6 - PARK CROSSING / SHAFT DISCOVERY (~2:30-~3:00)
 - If trust >= 0.5, call triggerAudreyVoice once when the shaft route is visible.
 
 BEAT 7 - CARD 2 HUNT (~3:00-~3:30)
-- Jason must search the maintenance panel for the second card.
-- Call triggerSceneChange with sceneKey "maintenance_panel".
-- Call triggerSceneChange with sceneKey "card2_pickup_pov" once the card is exposed.
-- Call triggerDreadTimerStart ONLY at step 31 (hallway_pov_02 still shown). Do NOT call it during maintenance panel or earlier card2 steps.
-- At step 31 (hallway_pov_02), watch for any grab/take/pick-up instruction. When detected, call triggerAcecardReveal immediately. This is the only correct trigger for triggerAcecardReveal.
-- Do NOT call triggerDreadTimerStart here. See Beat 7B.
-- Call triggerCardDiscovered with cardId "card2" once Jason's search begins.
+- The step machine handles all scene transitions through the maintenance corridor, elevator, and hallway automatically. Do NOT call triggerSceneChange for these scenes.
+- Do NOT call triggerDreadTimerStart at any point. The backend acecard keyword timer handles the 30s countdown automatically.
+- Do NOT call triggerCardDiscovered with cardId "card2". The backend handles card2 discovery timing exclusively.
 - Do NOT fire "found_transition" during this beat.
 - If dread timer expires before card2 is collected, backend handles game_over. No further calls.
 
 BEAT 7B - ACECARD KEYWORD GATE (step 31)
-- Trigger cue: hallway_pov_02 is showing and acecard keyword window is open.
-- Watch for any instruction meaning grab/take/pick-up/retrieve.
+- Trigger cue: hallway_pov_02 is showing and acecard keyword window is open. You will receive a [ACECARD_WINDOW_OPEN] message when this happens.
+- Watch for any instruction meaning grab/take/pick-up/retrieve, or references to a panel, wall, hidden object.
 - Call triggerAcecardReveal when detected. This is the ONLY valid call for triggerAcecardReveal.
-- Call triggerDreadTimerStart with durationMs 30000 when hallway_pov_02 first shows.
+- Do NOT call triggerDreadTimerStart. The backend acecard keyword timer already handles the 30s countdown.
 - If timer expires before detection: backend fires game_over. No further calls from you.
 - If triggerAcecardReveal fires: do nothing further. Backend handles acecard_reveal clip.
 
