@@ -1471,6 +1471,31 @@ wss.on("connection", (ws: WebSocket) => {
         // Enable voice-triggered card pickup via keyword listener
         cardPickupKeywordPhase = true;
         keywordListener.pushKeywords(CARD_PICKUP_KEYWORDS);
+
+        // Safety net: auto-collect card2 after 10s if not collected by click or voice.
+        // Prevents game_over when keyword listener unreliably fails to detect speech.
+        if (card2AutoPickTimer) {
+          clearTimeout(card2AutoPickTimer);
+          card2AutoPickTimer = null;
+        }
+        card2AutoPickTimer = setTimeout(() => {
+          card2AutoPickTimer = null;
+          if (acecardGateState.cardPickup02Timer === null) return; // already collected
+          console.log(`[WS] card2 auto-collect safety net fired — session=${sessionId}`);
+          // Cancel the 15s game-over timer
+          clearTimeout(acecardGateState.cardPickup02Timer);
+          acecardGateState.cardPickup02Timer = null;
+          cardPickupKeywordPhase = false;
+          handleCardCollected("card2", sessionId, jasonManager, ws, {
+            deferGoodEnding: true,
+          })
+            .then(() => {
+              queueWildcardGoodEndingPlayback();
+            })
+            .catch((err: Error) => {
+              console.error(`[WS] card2 auto-collect error: ${err.message}`);
+            });
+        }, 10_000);
         return;
       }
 
