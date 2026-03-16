@@ -176,6 +176,7 @@ export class LiveSessionManager {
   private lastConnectMode: 'npc' | 'gm' = 'npc';
   private lastConnectVoice: string = 'Enceladus';
   private reconnecting = false;
+  private lastReconnectAttempt = 0;
 
   /**
    * @param modelName Override the Gemini model. NPC agents use the native-audio model (default).
@@ -392,6 +393,9 @@ export class LiveSessionManager {
    */
   private tryReconnect() {
     if (this.reconnecting || !this.lastConnectPrompt) return;
+    const now = Date.now();
+    if (now - this.lastReconnectAttempt < 30_000) return; // 30s cooldown — prevents reconnect loops
+    this.lastReconnectAttempt = now;
     this.reconnecting = true;
     console.log('[LiveSessionManager] Session dead — attempting reconnect...');
     this.connect(this.lastConnectPrompt, this.lastConnectMode, this.lastConnectVoice)

@@ -985,6 +985,9 @@ wss.on("connection", (ws: WebSocket) => {
       });
 
       jasonManager.onAgentInterrupt(() => {
+        // During chained_auto steps, Jason audio is muted so interrupts are residual noise — suppress entirely.
+        const stepMeta = STEP_MEDIA_TRIGGER[currentSequenceStep];
+        if (stepMeta?.triggerType === "chained_auto") return;
         const now = Date.now();
         if (now - lastInterruptForwardedAt < 2000) return; // Throttle: max 1 per 2s
         lastInterruptForwardedAt = now;
@@ -1203,7 +1206,13 @@ wss.on("connection", (ws: WebSocket) => {
         // Prevents ambient mic bleed from triggering Jason before the channel is discovered.
         if (!jasonReadyForPlayer) return;
         lastPlayerSpeechAt = Date.now();
-        jasonManager.sendAudio(data.audio);
+        // During chained_auto steps (elevator/tunnel/park transitions), mute Jason.
+        // Sending audio during rapid auto-advance causes interrupt floods that
+        // overwhelm the frontend audio system and can kill Jason's Gemini session.
+        const currentStepMeta = STEP_MEDIA_TRIGGER[currentSequenceStep];
+        if (!currentStepMeta || currentStepMeta.triggerType !== "chained_auto") {
+          jasonManager.sendAudio(data.audio);
+        }
         if (gmGated) gmManager.sendAudio(data.audio); // GM hears player only after intro_complete
         keywordListener.sendAudio(data.audio); // Keyword listener always hears player audio
         return;
